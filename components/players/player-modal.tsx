@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { UserPlus, UserCheck, X, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,18 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
   const [discordId, setDiscordId] = useState(playerToEdit?.discordId || "");
   const [isActive, setIsActive] = useState(playerToEdit?.isActive ?? true);
 
+  useEffect(() => {
+    if (isOpen) {
+      setName(playerToEdit?.name || "");
+      setRiotId(playerToEdit?.riotId || "");
+      setPrimaryRole((playerToEdit?.primaryRole as ValorantRole) || "Flex");
+      setDiscordId(playerToEdit?.discordId || "");
+      setIsActive(playerToEdit?.isActive ?? true);
+      setLoading(false);
+      setErrorMsg(null);
+    }
+  }, [isOpen, playerToEdit]);
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,8 +67,9 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
         await createPlayer(payload);
       }
 
-      router.refresh();
+      setLoading(false);
       onClose();
+      router.refresh();
     } catch (err: any) {
       setErrorMsg(err.message || "Gagal menyimpan data pemain.");
       setLoading(false);
