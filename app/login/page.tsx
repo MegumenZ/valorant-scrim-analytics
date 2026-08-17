@@ -58,10 +58,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <div className="rounded-2xl border border-[#242e40] bg-[#141a24] p-6 sm:p-7 shadow-2xl space-y-6">
           <div className="space-y-1 text-center">
             <h2 className="text-base font-bold text-slate-100">
-              Otentikasi Akun Discord
+              Masuk dengan Akun Discord
             </h2>
             <p className="text-xs text-slate-400">
-              Sistem akan membaca ID Discord Anda untuk menentukan hak akses (Admin / Member).
+              Gunakan akun Discord Anda untuk sinkronisasi profil dan statistik tim secara aman.
             </p>
           </div>
 
@@ -110,23 +110,14 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             </div>
           )}
 
-          {/* Security Features Badge List */}
-          <div className="pt-3 border-t border-[#242e40]/70 grid grid-cols-2 gap-2 text-[11px] text-slate-400">
-            <div className="flex items-center gap-1.5">
-              <Shield className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span>Anti-Brute Force</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Lock className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-              <span>Encrypted JWE</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-              <span>PKCE Anti-CSRF</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              <span>Auto Whitelist Role</span>
+          {/* Privacy & Trust Notice */}
+          <div className="pt-3.5 border-t border-[#242e40]/70 flex items-start gap-2.5 text-slate-400 text-xs">
+            <Shield className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+            <div className="space-y-0.5 text-[11px] leading-relaxed">
+              <span className="font-bold text-slate-200 block">Jaminan Privasi & Keamanan Data</span>
+              <p className="text-slate-400">
+                Aplikasi ini hanya membaca nama pengguna dan foto profil dasar melalui protokol resmi Discord OAuth. Kami <span className="text-slate-300 font-semibold">tidak pernah mengakses</span> kata sandi, pesan pribadi, maupun memegang kendali data sensitif Anda.
+              </p>
             </div>
           </div>
         </div>
