@@ -20,11 +20,11 @@ export function RecentMatchesTable({ matches }: RecentMatchesTableProps) {
             <Swords className="w-4 h-4 text-rose-500" />
             <span>Log Scrim Terkini</span>
           </CardTitle>
-          <CardDescription>Riwayat 5 pertandingan scrimmage terakhir</CardDescription>
+          <CardDescription>5 hasil scrimmage terakhir</CardDescription>
         </div>
         <Link href="/matches">
           <Button variant="outline" size="sm" className="text-xs gap-1 h-8">
-            <span>Lihat Semua Match</span>
+            <span>Semua Match</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </Button>
         </Link>
@@ -35,12 +35,12 @@ export function RecentMatchesTable({ matches }: RecentMatchesTableProps) {
             <tr className="border-y border-[#242e40] bg-[#0e131b] text-slate-400 font-semibold text-[11px]">
               <th className="py-3 px-4">Tanggal</th>
               <th className="py-3 px-4">Map</th>
-              <th className="py-3 px-4">Tim Lawan</th>
-              <th className="py-3 px-4 text-center">Skor Akhir</th>
+              <th className="py-3 px-4">Lawan</th>
+              <th className="py-3 px-4 text-center">Skor</th>
               <th className="py-3 px-4 text-center">Hasil</th>
-              <th className="py-3 px-4 text-center">Sisi Awal</th>
+              <th className="py-3 px-4 text-center">Sisi</th>
               <th className="py-3 px-4">MVP / Top Fragger</th>
-              <th className="py-3 px-4 text-right">Aksi</th>
+              <th className="py-3 px-4 text-right"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#242e40]/70 font-medium">

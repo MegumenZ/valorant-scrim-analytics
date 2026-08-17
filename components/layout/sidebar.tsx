@@ -124,21 +124,6 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
           );
         })}
       </div>
-
-
-      {/* User Role Footer */}
-      <div className="px-4 py-3 border-t border-[#242e40] bg-[#0b0e14] flex items-center justify-between text-xs">
-        <div className="flex items-center gap-2">
-          <span className={cn(
-            "w-2 h-2 rounded-full",
-            isAdmin ? "bg-emerald-400" : "bg-sky-400"
-          )} />
-          <span className="text-slate-400">Mode:</span>
-          <span className="font-bold text-slate-200">
-            {isAdmin ? "Admin / IGL" : "Member"}
-          </span>
-        </div>
-      </div>
     </aside>
   );
 }

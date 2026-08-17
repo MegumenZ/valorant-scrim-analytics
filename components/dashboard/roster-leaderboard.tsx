@@ -29,9 +29,9 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
         <div>
           <CardTitle className="flex items-center gap-2">
             <Trophy className="w-4 h-4 text-amber-400" />
-            <span>Leaderboard Individu Roster</span>
+            <span>Leaderboard Roster</span>
           </CardTitle>
-          <CardDescription>Akumulasi performa individu seluruh pemain dalam tim</CardDescription>
+          <CardDescription>Akumulasi performa seluruh pemain</CardDescription>
         </div>
         <Link href="/roster">
           <Button variant="outline" size="sm" className="text-xs gap-1 h-8">
@@ -44,17 +44,17 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="border-y border-[#242e40] bg-[#0e131b] text-slate-400 font-semibold text-[11px]">
-              <th className="py-3 px-4 text-center w-12">#</th>
+              <th className="py-3 px-4 text-center w-10">#</th>
               <th className="py-3 px-4">Pemain</th>
-              <th className="py-3 px-4">Role Utama</th>
+              <th className="py-3 px-4">Role</th>
               <th className="py-3 px-4 text-center">Match</th>
               <th className="py-3 px-4 text-right">Avg ACS</th>
               <th className="py-3 px-4 text-right">Avg ADR</th>
-              <th className="py-3 px-4 text-right">K/D Ratio</th>
+              <th className="py-3 px-4 text-right">K/D</th>
               <th className="py-3 px-4 text-right">HS %</th>
               <th className="py-3 px-4 text-center">FK / FD</th>
-              <th className="py-3 px-4 text-center">Clutch (1vX)</th>
-              <th className="py-3 px-4 text-right">Aksi</th>
+              <th className="py-3 px-4 text-center">Clutch</th>
+              <th className="py-3 px-4 text-right"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#242e40]/70 font-medium">

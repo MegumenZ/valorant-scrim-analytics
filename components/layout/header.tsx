@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { PlusCircle, Menu, X, Shield, LogOut, LogIn, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUserRole } from "./role-context";
@@ -8,8 +9,22 @@ import { useState } from "react";
 import { Sidebar } from "./sidebar";
 
 export function Header() {
+  const pathname = usePathname();
   const { user, isAdmin, logout, isLoading } = useUserRole();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const getPageTitle = () => {
+    if (pathname === "/") return "Dashboard";
+    if (pathname.startsWith("/matches/new")) return "Catat Scrim";
+    if (pathname.includes("/edit")) return "Edit Scrim";
+    if (pathname.startsWith("/matches/")) return "Detail Match";
+    if (pathname.startsWith("/matches")) return "Riwayat Match";
+    if (pathname.startsWith("/roster")) return "Roster Skuad";
+    if (pathname.startsWith("/players/")) return "Profil Pemain";
+    if (pathname.startsWith("/maps")) return "Analitik Map";
+    if (pathname.startsWith("/login")) return "Masuk Akun";
+    return "Scrim Analytics";
+  };
 
   return (
     <>
@@ -30,7 +45,8 @@ export function Header() {
               <span className="text-xs font-bold text-slate-100 tracking-wide">
                 Team Alpha
               </span>
-              <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">| Scrim Tracker</span>
+              <span className="text-slate-600 font-normal">/</span>
+              <span className="text-xs text-rose-400 font-semibold">{getPageTitle()}</span>
             </div>
           </div>
         </div>
