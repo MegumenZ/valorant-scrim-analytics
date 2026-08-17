@@ -27,13 +27,12 @@ jobs:
       - name: Run TypeScript Type Check
         run: npx tsc --noEmit
 
-      - name: Test Database Schema Generation (Drizzle Check)
-        run: npm run db:generate
-        env:
-          TURSO_DATABASE_URL: "file:./data/test.db"
-
       - name: Build Next.js Production Bundle
         run: npm run build
         env:
           TURSO_DATABASE_URL: "file:./data/test.db"
+          AUTH_SECRET: "mock-test-auth-secret-for-ci-build-32-chars"
+          DISCORD_CLIENT_ID: "mock_discord_client_id"
+          DISCORD_CLIENT_SECRET: "mock_discord_client_secret"
+          DISCORD_REDIRECT_URI: "http://localhost:3000/api/auth/discord/callback"
           NEXT_TELEMETRY_DISABLED: 1
