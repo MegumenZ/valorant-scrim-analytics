@@ -5,9 +5,12 @@ export const VALORANT_MAPS = [
   "Split",
   "Icebox",
   "Breeze",
+  "Fracture",
+  "Pearl",
   "Lotus",
   "Sunset",
   "Abyss",
+  "Summit",
 ] as const;
 
 export type ValorantMap = typeof VALORANT_MAPS[number];
@@ -70,6 +73,22 @@ export const MAP_METADATA: Record<ValorantMap, MapDetails> = {
     splash: "https://media.valorant-api.com/maps/2fb9a4fd-47b8-4e7d-a969-74b4046ebd53/splash.png",
     listViewIcon: "https://media.valorant-api.com/maps/2fb9a4fd-47b8-4e7d-a969-74b4046ebd53/listviewicon.png",
   },
+  Fracture: {
+    name: "Fracture",
+    location: "Santa Fe, New Mexico, USA",
+    callout: "H-shaped layout with split attacker spawns",
+    color: "from-emerald-900 to-amber-950",
+    splash: "https://media.valorant-api.com/maps/b529448b-4d60-346e-e89e-00a4c527a405/splash.png",
+    listViewIcon: "https://media.valorant-api.com/maps/b529448b-4d60-346e-e89e-00a4c527a405/listviewicon.png",
+  },
+  Pearl: {
+    name: "Pearl",
+    location: "Lisbon, Portugal (Omega Earth)",
+    callout: "Underwater geo-dome without special gimmicks",
+    color: "from-blue-900 to-teal-950",
+    splash: "https://media.valorant-api.com/maps/fd267378-4d1d-484f-ff52-77821ed10dc2/splash.png",
+    listViewIcon: "https://media.valorant-api.com/maps/fd267378-4d1d-484f-ff52-77821ed10dc2/listviewicon.png",
+  },
   Lotus: {
     name: "Lotus",
     location: "Western Ghats, India",
@@ -93,6 +112,14 @@ export const MAP_METADATA: Record<ValorantMap, MapDetails> = {
     color: "from-blue-950 to-indigo-950",
     splash: "https://media.valorant-api.com/maps/224b0a95-48b9-f703-1bd8-67aca101a61f/splash.png",
     listViewIcon: "https://media.valorant-api.com/maps/224b0a95-48b9-f703-1bd8-67aca101a61f/listviewicon.png",
+  },
+  Summit: {
+    name: "Summit",
+    location: "Mount Sanqing, Jiangxi, China",
+    callout: "Radiant academy hub with destructible terrain walls",
+    color: "from-slate-900 to-indigo-950",
+    splash: "https://media.valorant-api.com/maps/756da597-416b-c0f2-f47b-afbdf28670bc/splash.png",
+    listViewIcon: "https://media.valorant-api.com/maps/756da597-416b-c0f2-f47b-afbdf28670bc/listviewicon.png",
   },
 };
 
