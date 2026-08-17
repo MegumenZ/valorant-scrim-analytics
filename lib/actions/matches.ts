@@ -1,7 +1,7 @@
 "use server";
 
 import { db, ensureDbInitialized } from "../db";
-import { matches, matchPlayerStats, players, Match, Player, MatchPlayerStat } from "../db/schema";
+import { matches, matchPlayerStats, players, Match, Player, MatchPlayerStat, MatchAttachment } from "../db/schema";
 import { eq, desc, asc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { matchSchema, MatchInput } from "../validations/match";
@@ -10,6 +10,7 @@ import { VALORANT_MAPS, ValorantMap } from "../data/valorant";
 
 export interface MatchWithStats extends Match {
   playerStats: Array<MatchPlayerStat & { player: Player }>;
+  parsedAttachments?: MatchAttachment[];
 }
 
 export async function getDashboardSummary(): Promise<{
@@ -298,8 +299,18 @@ export async function getMatchById(id: string): Promise<MatchWithStats | null> {
 
   if (!match) return null;
 
+  let parsedAttachments: MatchAttachment[] = [];
+  if (match.attachments) {
+    try {
+      parsedAttachments = JSON.parse(match.attachments);
+    } catch (err) {
+      console.error("Failed to parse attachments JSON:", err);
+    }
+  }
+
   return {
     ...match,
+    parsedAttachments,
     playerStats: [...match.playerStats].sort((a, b) => b.acs - a.acs),
   };
 }
@@ -334,6 +345,9 @@ export async function createMatch(input: MatchInput) {
     startSide: validated.startSide,
     vodUrl: validated.vodUrl || null,
     notes: validated.notes || null,
+    attachments: validated.attachments && validated.attachments.length > 0
+      ? JSON.stringify(validated.attachments)
+      : null,
   });
 
   // Insert player stats
@@ -383,6 +397,9 @@ export async function updateMatch(id: string, input: MatchInput) {
       startSide: validated.startSide,
       vodUrl: validated.vodUrl || null,
       notes: validated.notes || null,
+      attachments: validated.attachments && validated.attachments.length > 0
+        ? JSON.stringify(validated.attachments)
+        : null,
     })
     .where(eq(matches.id, id));
 

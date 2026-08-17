@@ -16,6 +16,17 @@ export const playerStatSchema = z.object({
   kastPercent: z.coerce.number().min(0).max(100).optional().nullable(),
 });
 
+export const attachmentSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.enum(["image", "pdf"]),
+  mimeType: z.string(),
+  dataUrl: z.string(),
+  sizeBytes: z.number(),
+  originalSize: z.number(),
+  uploadedAt: z.string(),
+});
+
 export const matchSchema = z.object({
   matchDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal harus YYYY-MM-DD"),
   map: z.enum(VALORANT_MAPS),
@@ -24,7 +35,8 @@ export const matchSchema = z.object({
   scoreOpponent: z.coerce.number().int().min(0, "Skor lawan harus positif"),
   startSide: z.enum(["ATTACK", "DEFENSE"]).default("ATTACK"),
   vodUrl: z.string().url("URL VOD tidak valid").optional().or(z.literal("")),
-  notes: z.string().max(1000).optional().or(z.literal("")),
+  notes: z.string().max(2000).optional().or(z.literal("")),
+  attachments: z.array(attachmentSchema).optional().default([]),
   playerStats: z
     .array(playerStatSchema)
     .min(1, "Minimal 1 pemain")
@@ -40,3 +52,4 @@ export const matchSchema = z.object({
 
 export type MatchInput = z.infer<typeof matchSchema>;
 export type PlayerStatInput = z.infer<typeof playerStatSchema>;
+export type AttachmentInput = z.infer<typeof attachmentSchema>;

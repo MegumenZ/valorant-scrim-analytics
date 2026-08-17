@@ -10,9 +10,11 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { VALORANT_MAPS, VALORANT_AGENTS, ValorantMap } from "@/lib/data/valorant";
-import { Player } from "@/lib/db/schema";
+import { Player, MatchAttachment } from "@/lib/db/schema";
 import { createMatch, updateMatch } from "@/lib/actions/matches";
 import { calculateKD, calculateMatchResult } from "@/lib/utils/analytics";
+import { compressImageToWebP, processAndCompressPdf, formatFileSize } from "@/lib/utils/file-compressor";
+import { FileText, Image as ImageIcon, Trash2, UploadCloud, Eye, CheckCircle2 } from "lucide-react";
 
 interface PlayerStatRow {
   playerId: string;
@@ -40,6 +42,7 @@ interface MatchEntryFormProps {
     startSide: "ATTACK" | "DEFENSE";
     vodUrl?: string | null;
     notes?: string | null;
+    attachments?: MatchAttachment[] | null;
     stats: Array<{
       playerId: string;
       agent: string;
@@ -71,6 +74,59 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
   const [startSide, setStartSide] = useState<"ATTACK" | "DEFENSE">(initialData?.startSide || "ATTACK");
   const [vodUrl, setVodUrl] = useState(initialData?.vodUrl || "");
   const [notes, setNotes] = useState(initialData?.notes || "");
+  const [attachments, setAttachments] = useState<MatchAttachment[]>(initialData?.attachments || []);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [compressionFeedback, setCompressionFeedback] = useState<string | null>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsCompressing(true);
+    setErrorMsg(null);
+    setCompressionFeedback(null);
+
+    try {
+      const newAttachments: MatchAttachment[] = [];
+      const feedbackList: string[] = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const isImage = file.type.startsWith("image/");
+        const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+
+        if (!isImage && !isPdf) {
+          throw new Error(
+            `Berkas "${file.name}" tidak didukung. Hanya Gambar (PNG, JPG, WEBP) dan Dokumen PDF yang diperbolehkan.`
+          );
+        }
+
+        if (isImage) {
+          setCompressionFeedback(`Mengompresi gambar "${file.name}" ke WebP...`);
+          const res = await compressImageToWebP(file);
+          newAttachments.push(res.attachment);
+          feedbackList.push(`Gambar "${res.attachment.name}" dikonversi ke WebP (${res.originalSizeFormatted} ➔ ${res.compressedSizeFormatted}, hemat ${res.savingsPercent}%)`);
+        } else if (isPdf) {
+          setCompressionFeedback(`Memproses & mengompresi PDF "${file.name}"...`);
+          const res = await processAndCompressPdf(file);
+          newAttachments.push(res.attachment);
+          feedbackList.push(`PDF "${res.attachment.name}" dioptimasi (${res.compressedSizeFormatted})`);
+        }
+      }
+
+      setAttachments((prev) => [...prev, ...newAttachments]);
+      setCompressionFeedback(feedbackList.join(" | "));
+    } catch (err: any) {
+      setErrorMsg(err.message || "Gagal memproses lampiran.");
+    } finally {
+      setIsCompressing(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleRemoveAttachment = (id: string) => {
+    setAttachments((prev) => prev.filter((a) => a.id !== id));
+  };
 
   const activeStarters = availablePlayers.filter((p) => p.isActive).slice(0, 5);
 
@@ -174,6 +230,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         startSide,
         vodUrl: vodUrl.trim() || undefined,
         notes: notes.trim() || undefined,
+        attachments,
         playerStats: formattedStats,
       };
 
@@ -575,15 +632,15 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         </CardContent>
       </Card>
 
-      {/* SECTION 3: COACH EVALUATION */}
+      {/* SECTION 3: COACH EVALUATION & ATTACHMENTS */}
       <Card>
         <CardHeader className="py-3 px-5">
           <CardTitle className="text-sm font-bold">3. Evaluasi & Catatan Taktis Coach / IGL</CardTitle>
           <CardDescription>
-            Dokumentasikan hal yang perlu diperbaiki atau dievaluasi untuk scrim berikutnya.
+            Dokumentasikan catatan strategi, serta lampirkan screenshot diagram taktis (Auto WebP) atau berkas PDF playbook (&lt; 1MB).
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-5 pt-0">
+        <CardContent className="p-5 pt-0 space-y-4">
           <Textarea
             rows={3}
             placeholder="Contoh: Eksekusi B-site retake sangat lambat, perlu timing smoke yang lebih sinkron. Mid control round buy sudah solid."
@@ -591,6 +648,102 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
             onChange={(e) => setNotes(e.target.value)}
             className="text-xs text-slate-200 leading-relaxed"
           />
+
+          {/* Attachments Section */}
+          <div className="space-y-3 pt-3 border-t border-[#242e40]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+              <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                <UploadCloud className="w-4 h-4 text-rose-500" />
+                <span>Lampiran Evaluasi (Gambar & PDF)</span>
+              </label>
+              <span className="text-[11px] text-slate-400">
+                Format: <strong className="text-slate-300">Gambar (Auto WebP)</strong> atau <strong className="text-slate-300">PDF (&lt; 1MB)</strong>
+              </span>
+            </div>
+
+            {/* Drag & Drop Upload Box */}
+            <div className="relative border-2 border-dashed border-[#242e40] hover:border-rose-500/50 bg-[#0e131b] rounded-xl p-5 transition-colors flex flex-col items-center justify-center text-center group cursor-pointer">
+              <input
+                type="file"
+                multiple
+                accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,.pdf"
+                onChange={handleFileUpload}
+                disabled={isCompressing || loading}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+              />
+              <div className="flex flex-col items-center gap-2 pointer-events-none">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 group-hover:scale-110 transition-transform">
+                  <UploadCloud className="w-5 h-5" />
+                </div>
+                <div className="text-xs font-bold text-slate-200">
+                  {isCompressing ? "Sedang Mengompresi Berkas..." : "Klik atau Tarik File Gambar / PDF ke Sini"}
+                </div>
+                <p className="text-[11px] text-slate-400 max-w-sm">
+                  Gambar resolusi tinggi otomatis dikonversi ke format WebP super ringan. PDF otomatis dioptimasi di bawah 1MB.
+                </p>
+              </div>
+            </div>
+
+            {/* Compression Feedback Banner */}
+            {compressionFeedback && (
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-start gap-2.5 text-xs text-emerald-300">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                <span className="leading-relaxed">{compressionFeedback}</span>
+              </div>
+            )}
+
+            {/* Uploaded Attachments Grid */}
+            {attachments.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-1">
+                {attachments.map((att) => (
+                  <div
+                    key={att.id}
+                    className="p-3 rounded-xl bg-[#141a24] border border-[#242e40] flex items-center justify-between gap-3 group relative overflow-hidden"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      {att.type === "image" ? (
+                        <div className="w-10 h-10 rounded-lg bg-[#0e131b] border border-[#242e40] overflow-hidden shrink-0">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={att.dataUrl}
+                            alt={att.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="w-10 h-10 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
+                          <FileText className="w-5 h-5" />
+                        </div>
+                      )}
+
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-slate-200 truncate" title={att.name}>
+                          {att.name}
+                        </p>
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
+                          <span className="px-1.5 py-0.2 rounded bg-[#0e131b] border border-[#242e40] text-emerald-400 font-semibold uppercase">
+                            {att.type === "image" ? "WebP" : "PDF"}
+                          </span>
+                          <span>{formatFileSize(att.sizeBytes)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveAttachment(att.id)}
+                      className="h-7 w-7 p-0 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 shrink-0"
+                      title="Hapus Lampiran"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 

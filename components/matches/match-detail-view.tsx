@@ -12,6 +12,11 @@ import {
   Trash2,
   ArrowLeft,
   Crown,
+  Download,
+  ExternalLink,
+  Eye,
+  X,
+  Image as ImageIcon,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +25,8 @@ import { MatchWithStats, deleteMatch } from "@/lib/actions/matches";
 import { MAP_METADATA, ValorantMap, VALORANT_AGENTS } from "@/lib/data/valorant";
 import { calculateKD } from "@/lib/utils/analytics";
 import { useUserRole } from "@/components/layout/role-context";
+import { formatFileSize } from "@/lib/utils/file-compressor";
+import { MatchAttachment } from "@/lib/db/schema";
 
 interface MatchDetailViewProps {
   match: MatchWithStats;
@@ -29,6 +36,10 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
   const router = useRouter();
   const { isAdmin } = useUserRole();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<MatchAttachment | null>(null);
+  const [selectedPdf, setSelectedPdf] = useState<MatchAttachment | null>(null);
+
+  const attachments: MatchAttachment[] = match.parsedAttachments || [];
 
   const mapMeta = MAP_METADATA[match.map as ValorantMap] || {
     name: match.map,
@@ -42,6 +53,15 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
     await deleteMatch(match.id);
     router.push("/matches");
     router.refresh();
+  };
+
+  const handleDownload = (att: MatchAttachment) => {
+    const link = document.createElement("a");
+    link.href = att.dataUrl;
+    link.download = att.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -137,115 +157,86 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
         </div>
       </div>
 
-      {/* FULL SCOREBOARD TABLE */}
+      {/* MATCH PERFORMANCE SCOREBOARD */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-3">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-base">
+        <CardHeader className="py-4 px-5 border-b border-[#242e40]">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
               <Trophy className="w-4 h-4 text-amber-400" />
-              <span>Scoreboard Statistik 5 Pemain</span>
+              <span>Scoreboard Statistik Performa 5 Pemain Inti</span>
             </CardTitle>
-            <CardDescription>
-              Detail perolehan combat score, kills, damage, dan clutch per pemain
-            </CardDescription>
+            <span className="text-xs text-slate-400">
+              Disortir berdasarkan ACS tertinggi
+            </span>
           </div>
-          <span className="text-xs text-slate-400">
-            Diurutkan berdasarkan ACS tertinggi
-          </span>
         </CardHeader>
+
         <CardContent className="p-0 overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-y border-[#242e40] bg-[#0e131b] text-slate-400 font-semibold text-[11px]">
+              <tr className="border-b border-[#242e40] bg-[#0e131b] text-slate-400 font-semibold uppercase text-[11px]">
                 <th className="py-3 px-4">Pemain</th>
                 <th className="py-3 px-4">Agent</th>
                 <th className="py-3 px-4 text-right">ACS</th>
                 <th className="py-3 px-4 text-center">K / D / A</th>
-                <th className="py-3 px-4 text-right">K/D</th>
+                <th className="py-3 px-4 text-center">K/D Ratio</th>
                 <th className="py-3 px-4 text-right">ADR</th>
                 <th className="py-3 px-4 text-right">HS %</th>
-                <th className="py-3 px-4 text-center">FK / FD</th>
-                <th className="py-3 px-4 text-center">Clutch (1vX)</th>
+                <th className="py-3 px-4 text-center">First K/D</th>
+                <th className="py-3 px-4 text-center">Clutches</th>
                 <th className="py-3 px-4 text-right">KAST %</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#242e40]/70 font-medium">
+            <tbody className="divide-y divide-[#242e40]/70">
               {match.playerStats.map((stat, idx) => {
                 const kd = calculateKD(stat.kills, stat.deaths);
-                const isMvp = idx === 0;
-                const agentInfo = VALORANT_AGENTS.find((a) => a.name === stat.agent);
+                const isMVP = idx === 0;
 
                 return (
                   <tr
                     key={stat.id}
-                    className={`transition-colors ${
-                      isMvp
-                        ? "bg-sky-500/5 hover:bg-sky-500/10"
-                        : "hover:bg-[#1c2432]/60"
+                    className={`hover:bg-[#1c2432]/50 transition-colors ${
+                      isMVP ? "bg-amber-500/5 font-medium" : ""
                     }`}
                   >
-                    <td className="py-3.5 px-4">
+                    <td className="py-3.5 px-4 font-bold text-slate-100">
                       <div className="flex items-center gap-2">
-                        {isMvp && (
-                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-400/20 text-amber-400 text-[10px] font-bold border border-amber-400/30">
-                            <Crown className="w-3 h-3 text-amber-400" />
-                            <span>MVP</span>
-                          </div>
-                        )}
-                        <div>
-                          <Link
-                            href={`/players/${stat.player?.id}`}
-                            className="font-bold text-slate-100 hover:text-rose-400 transition-colors text-sm"
-                          >
-                            {stat.player?.name || "Player"}
-                          </Link>
-                          {stat.player?.riotId && (
-                            <p className="text-[11px] text-slate-400">
-                              {stat.player.riotId}
-                            </p>
-                          )}
-                        </div>
+                        {isMVP && <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
+                        <Link
+                          href={`/players/${stat.playerId}`}
+                          className="hover:text-rose-400 transition-colors"
+                        >
+                          {stat.player.name}
+                        </Link>
                       </div>
                     </td>
 
-                    <td className="py-3.5 px-4 font-semibold text-slate-200">
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className="w-2.5 h-2.5 rounded-full"
-                          style={{ backgroundColor: agentInfo?.color || "#38BDF8" }}
-                        />
-                        <span>{stat.agent}</span>
-                      </div>
+                    <td className="py-3.5 px-4">
+                      <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#1c2432] text-slate-200 border border-[#242e40]">
+                        {stat.agent}
+                      </span>
                     </td>
 
-                    <td className="py-3.5 px-4 text-right font-bold text-sky-400 text-sm tabular-nums">
+                    <td className="py-3.5 px-4 text-right font-black text-rose-400 text-sm tabular-nums">
                       {stat.acs}
                     </td>
 
-                    <td className="py-3.5 px-4 text-center tabular-nums text-slate-200">
-                      <span className="text-emerald-400 font-bold">{stat.kills}</span>
+                    <td className="py-3.5 px-4 text-center font-bold text-slate-200 tabular-nums">
+                      <span className="text-emerald-400">{stat.kills}</span>
                       <span className="text-slate-500 mx-1">/</span>
-                      <span className="text-rose-400 font-bold">{stat.deaths}</span>
+                      <span className="text-rose-400">{stat.deaths}</span>
                       <span className="text-slate-500 mx-1">/</span>
-                      <span className="text-slate-300">{stat.assists}</span>
+                      <span className="text-sky-400">{stat.assists}</span>
                     </td>
 
-                    <td className="py-3.5 px-4 text-right font-bold tabular-nums">
-                      <span
-                        className={
-                          kd >= 1.2
-                            ? "text-emerald-400"
-                            : kd >= 1.0
-                            ? "text-slate-200"
-                            : "text-rose-400"
-                        }
-                      >
+                    <td className="py-3.5 px-4 text-center font-bold tabular-nums">
+                      <span className={kd >= 1.2 ? "text-emerald-400" : kd >= 1.0 ? "text-slate-200" : "text-rose-400"}>
                         {kd.toFixed(2)}
                       </span>
                     </td>
 
-                    <td className="py-3.5 px-4 text-right text-slate-200 tabular-nums">
-                      {stat.adr}
+                    <td className="py-3.5 px-4 text-right text-slate-200 tabular-nums font-semibold">
+                      {stat.adr.toFixed(1)}
                     </td>
 
                     <td className="py-3.5 px-4 text-right text-slate-300 tabular-nums">
@@ -273,25 +264,130 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
         </CardContent>
       </Card>
 
-      {/* TACTICAL EVALUATION & VOD GRID */}
+      {/* TACTICAL EVALUATION, ATTACHMENTS & VOD GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Tactical Notes Card */}
-        <Card>
+        {/* Tactical Notes & Coach Attachments Card */}
+        <Card className="flex flex-col justify-between">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm">
-              <FileText className="w-4 h-4 text-rose-500" />
-              <span>Catatan Evaluasi Taktis IGL / Coach</span>
+            <CardTitle className="text-sm flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-rose-500" />
+                <span>Catatan Evaluasi & Lampiran Taktis</span>
+              </div>
+              {attachments.length > 0 && (
+                <span className="text-[11px] font-semibold text-slate-400 bg-[#0e131b] px-2 py-0.5 rounded-full border border-[#242e40]">
+                  {attachments.length} Berkas
+                </span>
+              )}
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-xs leading-relaxed text-slate-300">
+          <CardContent className="text-xs leading-relaxed text-slate-300 space-y-4">
+            {/* Notes Body */}
             {match.notes ? (
               <p className="whitespace-pre-wrap bg-[#0e131b] p-4 rounded-xl border border-[#242e40]">
                 {match.notes}
               </p>
             ) : (
               <p className="text-slate-500 italic">
-                Tidak ada catatan evaluasi untuk pertandingan ini.
+                Tidak ada catatan evaluasi tertulis untuk pertandingan ini.
               </p>
+            )}
+
+            {/* Attachments Gallery */}
+            {attachments.length > 0 && (
+              <div className="space-y-2.5 pt-2 border-t border-[#242e40]">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                  <ImageIcon className="w-3.5 h-3.5 text-rose-400" />
+                  <span>Dokumen & Screenshot Taktis Coach:</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {attachments.map((att) => (
+                    <div
+                      key={att.id}
+                      className="p-3 rounded-xl bg-[#0e131b] border border-[#242e40] hover:border-[#3b4b66] transition-all flex flex-col justify-between gap-3 group"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {att.type === "image" ? (
+                          <div
+                            onClick={() => setSelectedImage(att)}
+                            className="w-10 h-10 rounded-lg bg-[#141a24] border border-[#242e40] overflow-hidden shrink-0 cursor-pointer relative group/thumb"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={att.dataUrl}
+                              alt={att.name}
+                              className="w-full h-full object-cover group-hover/thumb:scale-110 transition-transform"
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center text-white">
+                              <Eye className="w-3.5 h-3.5" />
+                            </div>
+                          </div>
+                        ) : (
+                          <div
+                            onClick={() => setSelectedPdf(att)}
+                            className="w-10 h-10 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0 cursor-pointer hover:bg-rose-500/20 transition-colors"
+                          >
+                            <FileText className="w-5 h-5" />
+                          </div>
+                        )}
+
+                        <div className="min-w-0 flex-1">
+                          <p
+                            onClick={() => att.type === "image" ? setSelectedImage(att) : setSelectedPdf(att)}
+                            className="text-xs font-bold text-slate-200 truncate cursor-pointer hover:text-rose-400 transition-colors"
+                            title={att.name}
+                          >
+                            {att.name}
+                          </p>
+                          <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
+                            <span className="px-1.5 py-0.2 rounded bg-[#141a24] border border-[#242e40] text-emerald-400 font-semibold uppercase">
+                              {att.type === "image" ? "WebP" : "PDF"}
+                            </span>
+                            <span>{formatFileSize(att.sizeBytes)}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons for Players */}
+                      <div className="flex items-center gap-2 pt-1 border-t border-[#242e40]/60">
+                        {att.type === "image" ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSelectedImage(att)}
+                            className="flex-1 h-7 text-[11px] gap-1 text-slate-300 hover:text-white"
+                          >
+                            <Eye className="w-3 h-3" />
+                            <span>Lihat</span>
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSelectedPdf(att)}
+                            className="flex-1 h-7 text-[11px] gap-1 text-slate-300 hover:text-white"
+                          >
+                            <Eye className="w-3 h-3" />
+                            <span>Buka PDF</span>
+                          </Button>
+                        )}
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDownload(att)}
+                          className="h-7 px-2.5 text-[11px] gap-1 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 font-bold"
+                          title="Unduh berkas ke perangkat"
+                        >
+                          <Download className="w-3 h-3" />
+                          <span>Unduh</span>
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -328,6 +424,111 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* IMAGE LIGHTBOX MODAL */}
+      {selectedImage && (
+        <div
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div
+            className="relative max-w-4xl w-full max-h-[90vh] bg-[#141a24] border border-[#242e40] rounded-2xl overflow-hidden shadow-2xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-4 border-b border-[#242e40] bg-[#0e131b] flex items-center justify-between">
+              <div className="flex items-center gap-2 min-w-0">
+                <ImageIcon className="w-4 h-4 text-rose-500 shrink-0" />
+                <span className="font-bold text-slate-100 text-sm truncate">{selectedImage.name}</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-400 font-semibold border border-emerald-500/30">
+                  {formatFileSize(selectedImage.sizeBytes)} WebP
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => handleDownload(selectedImage)}
+                  className="gap-1.5 h-8 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Unduh Gambar</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedImage(null)}
+                  className="h-8 w-8 p-0 text-slate-400 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-black/40">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={selectedImage.dataUrl}
+                alt={selectedImage.name}
+                className="max-h-[70vh] w-auto object-contain rounded-lg border border-[#242e40]"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PDF PREVIEW MODAL */}
+      {selectedPdf && (
+        <div
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
+          onClick={() => setSelectedPdf(null)}
+        >
+          <div
+            className="relative max-w-4xl w-full h-[85vh] bg-[#141a24] border border-[#242e40] rounded-2xl overflow-hidden shadow-2xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-4 border-b border-[#242e40] bg-[#0e131b] flex items-center justify-between">
+              <div className="flex items-center gap-2 min-w-0">
+                <FileText className="w-4 h-4 text-rose-500 shrink-0" />
+                <span className="font-bold text-slate-100 text-sm truncate">{selectedPdf.name}</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] bg-rose-500/10 text-rose-400 font-semibold border border-rose-500/30">
+                  {formatFileSize(selectedPdf.sizeBytes)} PDF
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => handleDownload(selectedPdf)}
+                  className="gap-1.5 h-8 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Unduh Dokumen PDF</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedPdf(null)}
+                  className="h-8 w-8 p-0 text-slate-400 hover:text-white"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Modal Body / Iframe */}
+            <div className="flex-1 overflow-hidden bg-[#0e131b]">
+              <iframe
+                src={selectedPdf.dataUrl}
+                title={selectedPdf.name}
+                className="w-full h-full border-0"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

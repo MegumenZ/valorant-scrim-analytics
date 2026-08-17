@@ -30,6 +30,7 @@ export default async function EditMatchPage({ params }: EditMatchPageProps) {
     startSide: match.startSide as "ATTACK" | "DEFENSE",
     vodUrl: match.vodUrl,
     notes: match.notes,
+    attachments: match.parsedAttachments || [],
     stats: match.playerStats.map((s) => ({
       playerId: s.playerId,
       agent: s.agent,

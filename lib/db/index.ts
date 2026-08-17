@@ -59,6 +59,7 @@ export async function ensureDbInitialized() {
             start_side TEXT NOT NULL DEFAULT 'ATTACK',
             vod_url TEXT,
             notes TEXT,
+            attachments TEXT,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
           )`,
           `CREATE TABLE IF NOT EXISTS match_player_stats (
@@ -103,6 +104,13 @@ export async function ensureDbInitialized() {
           `CREATE UNIQUE INDEX IF NOT EXISTS users_discord_id_idx ON users (discord_id)`,
           `CREATE INDEX IF NOT EXISTS sessions_user_id_idx ON sessions (user_id)`,
         ]);
+
+        // Non-destructive column addition for existing database files
+        try {
+          await client.execute("ALTER TABLE matches ADD COLUMN attachments TEXT;");
+        } catch {
+          // Column already exists, safe to ignore
+        }
 
         // Check if initial seeding has already been performed in the past
         const seedCheck = await client.execute("SELECT value FROM system_metadata WHERE key = 'seeded'");

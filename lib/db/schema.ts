@@ -28,6 +28,7 @@ export const matches = sqliteTable("matches", {
   startSide: text("start_side", { enum: ["ATTACK", "DEFENSE"] }).notNull().default("ATTACK"),
   vodUrl: text("vod_url"),
   notes: text("notes"),
+  attachments: text("attachments"), // JSON stringified array of MatchAttachment
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 }, (table) => [
   index("match_date_idx").on(table.matchDate),
@@ -127,3 +128,14 @@ export type NewUser = typeof users.$inferInsert;
 
 export type Session = typeof sessions.$inferSelect;
 export type NewSession = typeof sessions.$inferInsert;
+
+export interface MatchAttachment {
+  id: string;
+  name: string;
+  type: "image" | "pdf";
+  mimeType: string;
+  dataUrl: string;
+  sizeBytes: number;
+  originalSize: number;
+  uploadedAt: string;
+}
