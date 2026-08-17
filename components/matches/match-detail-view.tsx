@@ -368,7 +368,7 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
                           </p>
                           <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
                             <span className="px-1.5 py-0.2 rounded bg-[#141a24] border border-[#242e40] text-emerald-400 font-semibold uppercase">
-                              {att.type === "image" ? "WebP" : "PDF"}
+                              {att.type === "image" ? "Gambar" : "PDF"}
                             </span>
                             <span>{formatFileSize(att.sizeBytes)}</span>
                           </div>
@@ -467,7 +467,7 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
                 <ImageIcon className="w-4 h-4 text-rose-500 shrink-0" />
                 <span className="font-bold text-slate-100 text-sm truncate">{selectedImage.name}</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-400 font-semibold border border-emerald-500/30">
-                  {formatFileSize(selectedImage.sizeBytes)} WebP
+                  {formatFileSize(selectedImage.sizeBytes)}
                 </span>
               </div>
 

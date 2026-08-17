@@ -28,7 +28,7 @@ export default async function MapsAnalyticsPage() {
             <span>Analitik Peta & Side Balance</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Evaluasi persentase kemenangan tim dan perbandingan rasio kemenangan di sisi Attack (Penyerang) vs Defense (Bertahan).
+            Statistik performa tim dan rasio kemenangan berdasarkan peta serta sisi permainan.
           </p>
         </div>
 
@@ -36,7 +36,7 @@ export default async function MapsAnalyticsPage() {
           <Link href="/matches/new">
             <Button size="sm" className="gap-1.5 font-bold shadow-md shadow-rose-950/40">
               <PlusCircle className="w-4 h-4" />
-              <span>+ Catat Match Map</span>
+              <span>+ Catat Match</span>
             </Button>
           </Link>
         )}

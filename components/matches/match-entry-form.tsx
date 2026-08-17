@@ -106,20 +106,20 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         }
 
         if (isImage) {
-          setCompressionFeedback(`Mengompresi gambar "${file.name}" ke WebP...`);
+          setCompressionFeedback(`Memproses gambar "${file.name}"...`);
           const res = await compressImageToWebP(file);
           newAttachments.push(res.attachment);
-          feedbackList.push(`Gambar "${res.attachment.name}" dikonversi ke WebP (${res.originalSizeFormatted} ➔ ${res.compressedSizeFormatted}, hemat ${res.savingsPercent}%)`);
+          feedbackList.push(`Gambar "${res.attachment.name}" berhasil diunggah (${res.compressedSizeFormatted})`);
         } else if (isPdf) {
-          setCompressionFeedback(`Memproses & mengompresi PDF "${file.name}"...`);
+          setCompressionFeedback(`Memproses dokumen "${file.name}"...`);
           const res = await processAndCompressPdf(file);
           newAttachments.push(res.attachment);
-          feedbackList.push(`PDF "${res.attachment.name}" dioptimasi (${res.compressedSizeFormatted})`);
+          feedbackList.push(`Dokumen "${res.attachment.name}" berhasil diunggah (${res.compressedSizeFormatted})`);
         }
       }
 
       setAttachments((prev) => [...prev, ...newAttachments]);
-      setCompressionFeedback(feedbackList.join(" | "));
+      setCompressionFeedback(feedbackList.join(" • "));
     } catch (err: any) {
       setErrorMsg(err.message || "Gagal memproses lampiran.");
     } finally {
@@ -262,7 +262,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
             <span>{initialData ? "Edit Pertandingan Scrim" : "Catat Scrim Baru"}</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Gunakan tombol <kbd className="px-1.5 py-0.5 rounded bg-[#1c2432] border border-[#242e40] text-rose-400 font-mono font-bold">Tab</kbd> untuk berpindah kolom dengan cepat (&lt;90 detik).
+            Formulir pencatatan hasil scrim dan performa pemain.
           </p>
         </div>
 
@@ -433,7 +433,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
             <div>
               <CardTitle className="text-sm font-bold">2. Statistik 5 Pemain</CardTitle>
               <CardDescription>
-                Pindah antar kolom secara cepat dengan tombol Tab keyboard.
+                Input performa dan statistik tempur skuad
               </CardDescription>
             </div>
             <span className="text-xs text-slate-400">
@@ -643,15 +643,15 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
       {/* SECTION 3: COACH EVALUATION & ATTACHMENTS */}
       <Card>
         <CardHeader className="py-3 px-5">
-          <CardTitle className="text-sm font-bold">3. Evaluasi & Catatan Taktis Coach / IGL</CardTitle>
+          <CardTitle className="text-sm font-bold">3. Evaluasi & Catatan Taktis</CardTitle>
           <CardDescription>
-            Dokumentasikan catatan strategi, serta lampirkan screenshot diagram taktis (Auto WebP) atau berkas PDF playbook (&lt; 1MB).
+            Catatan evaluasi strategi dan lampiran dokumen pendukung pertandingan
           </CardDescription>
         </CardHeader>
         <CardContent className="p-5 pt-0 space-y-4">
           <Textarea
             rows={3}
-            placeholder="Contoh: Eksekusi B-site retake sangat lambat, perlu timing smoke yang lebih sinkron. Mid control round buy sudah solid."
+            placeholder="Catatan evaluasi strategi atau analisis rotasi..."
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             className="text-xs text-slate-200 leading-relaxed"
@@ -662,10 +662,10 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
               <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
                 <UploadCloud className="w-4 h-4 text-rose-500" />
-                <span>Lampiran Evaluasi (Gambar & PDF)</span>
+                <span>Lampiran Evaluasi</span>
               </label>
               <span className="text-[11px] text-slate-400">
-                Format: <strong className="text-slate-300">Gambar (Auto WebP)</strong> atau <strong className="text-slate-300">PDF (&lt; 1MB)</strong>
+                Maksimal 3 berkas (Gambar / PDF)
               </span>
             </div>
 
@@ -684,10 +684,10 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                   <UploadCloud className="w-5 h-5" />
                 </div>
                 <div className="text-xs font-bold text-slate-200">
-                  {isCompressing ? "Sedang Mengompresi Berkas..." : "Klik atau Tarik File Gambar / PDF ke Sini"}
+                  {isCompressing ? "Memproses berkas..." : "Klik atau Tarik File Gambar / PDF ke Sini"}
                 </div>
-                <p className="text-[11px] text-slate-400 max-w-sm">
-                  Gambar resolusi tinggi otomatis dikonversi ke format WebP super ringan. PDF otomatis dioptimasi di bawah 1MB.
+                <p className="text-[11px] text-slate-400">
+                  Mendukung format PNG, JPG, dan PDF
                 </p>
               </div>
             </div>
