@@ -23,82 +23,80 @@ export const client = createClient({
 
 export const db = drizzle(client, { schema });
 
-// Helper to initialize table schemas automatically on startup
+// In-memory initialization cache to prevent duplicate remote round-trips
 let isInitialized = false;
+let initPromise: Promise<void> | null = null;
 
 export async function ensureDbInitialized() {
   if (isInitialized) return;
 
-  await client.execute(`
-    CREATE TABLE IF NOT EXISTS players (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      riot_id TEXT,
-      primary_role TEXT NOT NULL DEFAULT 'Flex',
-      discord_id TEXT,
-      is_active INTEGER NOT NULL DEFAULT 1,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
+  if (!initPromise) {
+    initPromise = (async () => {
+      try {
+        // Execute all table creations and indexes in a SINGLE batch network round-trip
+        await client.batch([
+          `CREATE TABLE IF NOT EXISTS players (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            riot_id TEXT,
+            primary_role TEXT NOT NULL DEFAULT 'Flex',
+            discord_id TEXT,
+            is_active INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+          )`,
+          `CREATE TABLE IF NOT EXISTS matches (
+            id TEXT PRIMARY KEY,
+            match_date TEXT NOT NULL,
+            map TEXT NOT NULL,
+            opponent_name TEXT NOT NULL,
+            score_team INTEGER NOT NULL,
+            score_opponent INTEGER NOT NULL,
+            result TEXT NOT NULL,
+            start_side TEXT NOT NULL DEFAULT 'ATTACK',
+            vod_url TEXT,
+            notes TEXT,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+          )`,
+          `CREATE TABLE IF NOT EXISTS match_player_stats (
+            id TEXT PRIMARY KEY,
+            match_id TEXT NOT NULL REFERENCES matches(id) ON DELETE CASCADE,
+            player_id TEXT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+            agent TEXT NOT NULL,
+            acs INTEGER NOT NULL,
+            kills INTEGER NOT NULL,
+            deaths INTEGER NOT NULL,
+            assists INTEGER NOT NULL,
+            adr REAL NOT NULL,
+            hs_percent REAL,
+            first_kills INTEGER NOT NULL DEFAULT 0,
+            first_deaths INTEGER NOT NULL DEFAULT 0,
+            clutches_won INTEGER NOT NULL DEFAULT 0,
+            kast_percent REAL
+          )`,
+          `CREATE UNIQUE INDEX IF NOT EXISTS match_player_unique_idx ON match_player_stats (match_id, player_id)`,
+          `CREATE INDEX IF NOT EXISTS match_date_idx ON matches (match_date)`,
+          `CREATE INDEX IF NOT EXISTS match_map_idx ON matches (map)`,
+          `CREATE INDEX IF NOT EXISTS stats_match_idx ON match_player_stats (match_id)`,
+          `CREATE INDEX IF NOT EXISTS stats_player_idx ON match_player_stats (player_id)`,
+        ]);
 
-  await client.execute(`
-    CREATE TABLE IF NOT EXISTS matches (
-      id TEXT PRIMARY KEY,
-      match_date TEXT NOT NULL,
-      map TEXT NOT NULL,
-      opponent_name TEXT NOT NULL,
-      score_team INTEGER NOT NULL,
-      score_opponent INTEGER NOT NULL,
-      result TEXT NOT NULL,
-      start_side TEXT NOT NULL DEFAULT 'ATTACK',
-      vod_url TEXT,
-      notes TEXT,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
+        // Auto seed if empty (single count query)
+        const countResult = await client.execute("SELECT count(*) as count FROM players");
+        const rowCount = Number(countResult.rows[0]?.count || 0);
+        if (rowCount === 0) {
+          const { seedInitialData } = await import("./seed");
+          await seedInitialData();
+        }
 
-  await client.execute(`
-    CREATE TABLE IF NOT EXISTS match_player_stats (
-      id TEXT PRIMARY KEY,
-      match_id TEXT NOT NULL REFERENCES matches(id) ON DELETE CASCADE,
-      player_id TEXT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
-      agent TEXT NOT NULL,
-      acs INTEGER NOT NULL,
-      kills INTEGER NOT NULL,
-      deaths INTEGER NOT NULL,
-      assists INTEGER NOT NULL,
-      adr REAL NOT NULL,
-      hs_percent REAL,
-      first_kills INTEGER NOT NULL DEFAULT 0,
-      first_deaths INTEGER NOT NULL DEFAULT 0,
-      clutches_won INTEGER NOT NULL DEFAULT 0,
-      kast_percent REAL
-    );
-  `);
-
-  await client.execute(`
-    CREATE UNIQUE INDEX IF NOT EXISTS match_player_unique_idx ON match_player_stats (match_id, player_id);
-  `);
-  await client.execute(`
-    CREATE INDEX IF NOT EXISTS match_date_idx ON matches (match_date);
-  `);
-  await client.execute(`
-    CREATE INDEX IF NOT EXISTS match_map_idx ON matches (map);
-  `);
-  await client.execute(`
-    CREATE INDEX IF NOT EXISTS stats_match_idx ON match_player_stats (match_id);
-  `);
-  await client.execute(`
-    CREATE INDEX IF NOT EXISTS stats_player_idx ON match_player_stats (player_id);
-  `);
-
-  // Auto seed if empty
-  const countResult = await client.execute("SELECT count(*) as count FROM players");
-  const rowCount = Number(countResult.rows[0]?.count || 0);
-  if (rowCount === 0) {
-    const { seedInitialData } = await import("./seed");
-    await seedInitialData();
+        isInitialized = true;
+      } catch (err) {
+        console.error("Database initialization error:", err);
+        // Reset promise on error so retry is possible
+        initPromise = null;
+        throw err;
+      }
+    })();
   }
 
-  isInitialized = true;
+  await initPromise;
 }
