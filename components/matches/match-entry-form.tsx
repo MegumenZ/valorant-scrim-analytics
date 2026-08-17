@@ -87,6 +87,10 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
     setCompressionFeedback(null);
 
     try {
+      if (attachments.length + files.length > 3) {
+        throw new Error("Batas kuota lampiran: Maksimal 3 berkas (Gambar/PDF) per pertandingan untuk menjaga performa database tetap ringan.");
+      }
+
       const newAttachments: MatchAttachment[] = [];
       const feedbackList: string[] = [];
 
@@ -262,18 +266,21 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={handleFillDemoData}
-            className="text-xs gap-1.5 border-dashed border-rose-500/40 text-rose-400 hover:bg-rose-500/10"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Isi Contoh Data</span>
-          </Button>
-        </div>
+        {process.env.NODE_ENV !== "production" && (
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={handleFillDemoData}
+              className="text-xs gap-1.5 border-dashed border-rose-500/40 text-rose-400 hover:bg-rose-500/10"
+              title="Khusus mode development lokal"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Isi Contoh Data (Dev)</span>
+            </Button>
+          </div>
+        )}
       </div>
 
       {errorMsg && (

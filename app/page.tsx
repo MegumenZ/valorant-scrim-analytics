@@ -85,9 +85,9 @@ export default async function DashboardPage() {
         {/* Strongest Map */}
         <KpiCard
           title="Map Terkuat"
-          value={summary.strongestMap.map}
-          subtitle={`${summary.strongestMap.winRate}% Win Rate`}
-          detail={`${summary.strongestMap.wins} Menang - ${summary.strongestMap.losses} Kalah`}
+          value={summary.totalMatches > 0 ? summary.strongestMap.map : "Belum Ada Data"}
+          subtitle={summary.totalMatches > 0 ? `${summary.strongestMap.winRate}% Win Rate` : "Catat match pertama"}
+          detail={summary.totalMatches > 0 ? `${summary.strongestMap.wins} Menang - ${summary.strongestMap.losses} Kalah` : "Belum ada scrim"}
           icon={Target}
           variant="amber"
         />

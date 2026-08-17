@@ -87,26 +87,28 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             )}
           </div>
 
-          {/* Quick Demo Logins (Local Testing / Fallback) */}
-          <div className="pt-4 border-t border-[#242e40] space-y-2.5">
-            <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider text-center">
-              Atau Uji Coba Cepat (Mode Demo)
+          {/* Quick Demo Logins (Only shown in Development or when Discord is unconfigured) */}
+          {(!isDiscordConfigured || process.env.NODE_ENV !== "production") && (
+            <div className="pt-4 border-t border-[#242e40] space-y-2.5">
+              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider text-center">
+                Atau Uji Coba Cepat (Mode Demo Dev)
+              </div>
+              <div className="grid grid-cols-2 gap-2.5">
+                <a href="/api/auth/demo?role=ADMIN" className="block">
+                  <Button variant="secondary" size="sm" className="w-full text-xs gap-1.5 h-9 font-semibold">
+                    <Shield className="w-3.5 h-3.5 text-rose-400" />
+                    <span>Demo Admin / IGL</span>
+                  </Button>
+                </a>
+                <a href="/api/auth/demo?role=MEMBER" className="block">
+                  <Button variant="secondary" size="sm" className="w-full text-xs gap-1.5 h-9 font-semibold">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-sky-400" />
+                    <span>Demo Member</span>
+                  </Button>
+                </a>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-2.5">
-              <a href="/api/auth/demo?role=ADMIN" className="block">
-                <Button variant="secondary" size="sm" className="w-full text-xs gap-1.5 h-9 font-semibold">
-                  <Shield className="w-3.5 h-3.5 text-rose-400" />
-                  <span>Demo Admin / IGL</span>
-                </Button>
-              </a>
-              <a href="/api/auth/demo?role=MEMBER" className="block">
-                <Button variant="secondary" size="sm" className="w-full text-xs gap-1.5 h-9 font-semibold">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-sky-400" />
-                  <span>Demo Member</span>
-                </Button>
-              </a>
-            </div>
-          </div>
+          )}
 
           {/* Security Features Badge List */}
           <div className="pt-3 border-t border-[#242e40]/70 grid grid-cols-2 gap-2 text-[11px] text-slate-400">

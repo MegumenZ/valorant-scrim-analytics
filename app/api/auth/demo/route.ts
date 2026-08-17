@@ -7,6 +7,14 @@ import { eq } from "drizzle-orm";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  // Strict security check: Demo login is disabled in production
+  if (process.env.NODE_ENV === "production" && process.env.ENABLE_DEMO_LOGIN !== "true") {
+    return NextResponse.json(
+      { error: "Demo login dinonaktifkan pada lingkungan production demi keamanan." },
+      { status: 403 }
+    );
+  }
+
   const url = new URL(request.url);
   const roleParam = url.searchParams.get("role") === "MEMBER" ? "MEMBER" : "ADMIN";
   const discordId = roleParam === "ADMIN" ? "100000000000000001" : "100000000000000002";
