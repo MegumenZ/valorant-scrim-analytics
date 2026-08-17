@@ -35,6 +35,10 @@ export async function ensureDbInitialized() {
       try {
         // Execute all table creations and indexes in a SINGLE batch network round-trip
         await client.batch([
+          `CREATE TABLE IF NOT EXISTS system_metadata (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+          )`,
           `CREATE TABLE IF NOT EXISTS players (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
@@ -100,12 +104,22 @@ export async function ensureDbInitialized() {
           `CREATE INDEX IF NOT EXISTS sessions_user_id_idx ON sessions (user_id)`,
         ]);
 
-        // Auto seed if empty (single count query)
-        const countResult = await client.execute("SELECT count(*) as count FROM players");
-        const rowCount = Number(countResult.rows[0]?.count || 0);
-        if (rowCount === 0) {
-          const { seedInitialData } = await import("./seed");
-          await seedInitialData();
+        // Check if initial seeding has already been performed in the past
+        const seedCheck = await client.execute("SELECT value FROM system_metadata WHERE key = 'seeded'");
+        const alreadySeeded = seedCheck.rows.length > 0;
+
+        if (!alreadySeeded) {
+          // Check player count as secondary guard
+          const countResult = await client.execute("SELECT count(*) as count FROM players");
+          const rowCount = Number(countResult.rows[0]?.count || 0);
+          
+          if (rowCount === 0) {
+            const { seedInitialData } = await import("./seed");
+            await seedInitialData();
+          }
+
+          // Mark seed as completed permanently so user deletions are never overwritten
+          await client.execute("INSERT OR REPLACE INTO system_metadata (key, value) VALUES ('seeded', 'true')");
         }
 
         isInitialized = true;

@@ -36,14 +36,22 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
   };
 
   const handleToggleStatus = async (player: Player) => {
-    await togglePlayerActive(player.id, player.isActive);
-    router.refresh();
+    try {
+      await togglePlayerActive(player.id, player.isActive);
+      router.refresh();
+    } catch (err: any) {
+      alert("Gagal mengubah status pemain: " + (err.message || "Unknown error"));
+    }
   };
 
   const handleDelete = async (player: Player) => {
     if (!confirm(`Hapus pemain "${player.name}" dari roster tim?`)) return;
-    await deletePlayer(player.id);
-    router.refresh();
+    try {
+      await deletePlayer(player.id);
+      router.refresh();
+    } catch (err: any) {
+      alert("Gagal menghapus pemain: " + (err.message || "Unknown error"));
+    }
   };
 
   return (

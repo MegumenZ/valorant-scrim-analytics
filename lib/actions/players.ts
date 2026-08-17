@@ -263,10 +263,14 @@ export async function togglePlayerActive(id: string, currentStatus: boolean) {
 export async function deletePlayer(id: string) {
   await ensureDbInitialized();
 
+  // Delete any associated player stats first to maintain DB integrity
+  await db.delete(matchPlayerStats).where(eq(matchPlayerStats.playerId, id));
   await db.delete(players).where(eq(players.id, id));
 
   revalidatePath("/roster");
   revalidatePath("/matches/new");
+  revalidatePath("/matches");
+  revalidatePath("/maps");
   revalidatePath("/");
 
   return { success: true };
