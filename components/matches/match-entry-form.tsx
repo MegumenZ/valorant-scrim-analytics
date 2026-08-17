@@ -314,30 +314,17 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         <CardContent className="p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4">
           {/* Tanggal */}
           <div className="md:col-span-1 space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-slate-300">
-                Tanggal Match *
-              </label>
-              <button
-                type="button"
-                onClick={() => setMatchDate(new Date().toISOString().split("T")[0])}
-                className="text-[10px] text-rose-400 hover:text-rose-300 font-semibold"
-                title="Pilih tanggal hari ini"
-              >
-                Hari Ini
-              </button>
-            </div>
-            <div className="relative">
-              <Input
-                type="date"
-                value={matchDate}
-                onChange={(e) => setMatchDate(e.target.value)}
-                onClick={(e) => (e.target as HTMLInputElement).showPicker?.()}
-                required
-                className="text-xs font-mono pl-8 cursor-pointer hover:border-slate-500"
-              />
-              <Calendar className="w-3.5 h-3.5 text-rose-400 absolute left-2.5 top-3 pointer-events-none" />
-            </div>
+            <label className="text-xs font-semibold text-slate-300">
+              Tanggal Match *
+            </label>
+            <Input
+              type="date"
+              value={matchDate}
+              onChange={(e) => setMatchDate(e.target.value)}
+              onClick={(e) => (e.target as HTMLInputElement).showPicker?.()}
+              required
+              className="text-xs font-mono cursor-pointer hover:border-slate-500"
+            />
           </div>
 
           {/* Map */}
