@@ -1,7 +1,7 @@
 import { sqliteTable, text, integer, real, uniqueIndex, index } from "drizzle-orm/sqlite-core";
 import { relations, sql } from "drizzle-orm";
 
-// 1. PLAYERS TABLE
+// 1. PLAYERS TABLE (Roster Tracked Players)
 export const players = sqliteTable("players", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull(),
@@ -56,6 +56,32 @@ export const matchPlayerStats = sqliteTable("match_player_stats", {
   index("stats_player_idx").on(table.playerId),
 ]);
 
+// 4. USERS TABLE (Authenticated Discord OAuth Users)
+export const users = sqliteTable("users", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  discordId: text("discord_id").notNull().unique(),
+  username: text("username").notNull(),
+  globalName: text("global_name"),
+  avatar: text("avatar"),
+  role: text("role", { enum: ["ADMIN", "COACH", "MEMBER"] }).notNull().default("MEMBER"),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+}, (table) => [
+  uniqueIndex("users_discord_id_idx").on(table.discordId),
+]);
+
+// 5. SESSIONS TABLE
+export const sessions = sqliteTable("sessions", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+}, (table) => [
+  index("sessions_user_id_idx").on(table.userId),
+]);
+
 // RELATIONS
 export const playersRelations = relations(players, ({ many }) => ({
   stats: many(matchPlayerStats),
@@ -76,6 +102,17 @@ export const matchPlayerStatsRelations = relations(matchPlayerStats, ({ one }) =
   }),
 }));
 
+export const usersRelations = relations(users, ({ many }) => ({
+  sessions: many(sessions),
+}));
+
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  user: one(users, {
+    fields: [sessions.userId],
+    references: [users.id],
+  }),
+}));
+
 export type Player = typeof players.$inferSelect;
 export type NewPlayer = typeof players.$inferInsert;
 
@@ -84,3 +121,9 @@ export type NewMatch = typeof matches.$inferInsert;
 
 export type MatchPlayerStat = typeof matchPlayerStats.$inferSelect;
 export type NewMatchPlayerStat = typeof matchPlayerStats.$inferInsert;
+
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+
+export type Session = typeof sessions.$inferSelect;
+export type NewSession = typeof sessions.$inferInsert;

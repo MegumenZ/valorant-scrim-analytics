@@ -73,11 +73,31 @@ export async function ensureDbInitialized() {
             clutches_won INTEGER NOT NULL DEFAULT 0,
             kast_percent REAL
           )`,
+          `CREATE TABLE IF NOT EXISTS users (
+            id TEXT PRIMARY KEY,
+            discord_id TEXT NOT NULL UNIQUE,
+            username TEXT NOT NULL,
+            global_name TEXT,
+            avatar TEXT,
+            role TEXT NOT NULL DEFAULT 'MEMBER',
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+          )`,
+          `CREATE TABLE IF NOT EXISTS sessions (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            expires_at INTEGER NOT NULL,
+            ip_address TEXT,
+            user_agent TEXT,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+          )`,
           `CREATE UNIQUE INDEX IF NOT EXISTS match_player_unique_idx ON match_player_stats (match_id, player_id)`,
           `CREATE INDEX IF NOT EXISTS match_date_idx ON matches (match_date)`,
           `CREATE INDEX IF NOT EXISTS match_map_idx ON matches (map)`,
           `CREATE INDEX IF NOT EXISTS stats_match_idx ON match_player_stats (match_id)`,
           `CREATE INDEX IF NOT EXISTS stats_player_idx ON match_player_stats (player_id)`,
+          `CREATE UNIQUE INDEX IF NOT EXISTS users_discord_id_idx ON users (discord_id)`,
+          `CREATE INDEX IF NOT EXISTS sessions_user_id_idx ON sessions (user_id)`,
         ]);
 
         // Auto seed if empty (single count query)
