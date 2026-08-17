@@ -125,18 +125,6 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
         })}
       </div>
 
-      {/* Team Status Card */}
-      <div className="p-3.5 m-3 rounded-xl border border-[#242e40] bg-[#141a24] text-xs">
-        <div className="flex items-center justify-between text-slate-300 mb-1 font-semibold">
-          <span>Roster Tim Alpha</span>
-          <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full font-bold">
-            Siap Tanding
-          </span>
-        </div>
-        <p className="text-[11px] text-slate-400 leading-relaxed">
-          5 pemain inti starter aktif dan terdaftar di roster.
-        </p>
-      </div>
 
       {/* User Role Footer */}
       <div className="px-4 py-3 border-t border-[#242e40] bg-[#0b0e14] flex items-center justify-between text-xs">
