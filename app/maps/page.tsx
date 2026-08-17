@@ -67,26 +67,32 @@ export default async function MapsAnalyticsPage() {
               key={stat.map}
               className="bg-[#141a24] hover:border-[#334155] transition-all overflow-hidden flex flex-col justify-between"
             >
-              {/* Header Gradient */}
-              <div className={`p-4 bg-gradient-to-r ${meta.color} border-b border-[#242e40]`}>
-                <div className="flex items-center justify-between">
+              {/* Header with Map Splash Art Banner */}
+              <div className="relative h-28 overflow-hidden border-b border-[#242e40] flex items-end p-4">
+                <img
+                  src={meta.splash}
+                  alt={stat.map}
+                  className="absolute inset-0 w-full h-full object-cover object-center brightness-75 hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#141a24] via-[#141a24]/40 to-transparent" />
+                <div className="relative z-10 flex items-center justify-between w-full">
                   <div>
-                    <h3 className="text-lg font-black uppercase tracking-wide text-white">
+                    <h3 className="text-lg font-black uppercase tracking-wide text-white drop-shadow-md">
                       {stat.map}
                     </h3>
-                    <p className="text-xs text-slate-300">
+                    <p className="text-[11px] text-slate-300 font-medium drop-shadow-sm">
                       {meta.location}
                     </p>
                   </div>
                   {hasMatches ? (
                     <Badge
                       variant={stat.winRate >= 50 ? "win" : "loss"}
-                      className="text-xs px-2.5 py-0.5"
+                      className="text-xs px-2.5 py-0.5 shadow-md"
                     >
                       {stat.winRate}% Win
                     </Badge>
                   ) : (
-                    <Badge variant="outline" className="text-xs text-slate-400">
+                    <Badge variant="outline" className="text-xs text-slate-400 bg-black/60 backdrop-blur-sm">
                       Belum Dimainkan
                     </Badge>
                   )}

@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useUserRole } from "@/components/layout/role-context";
 import { useRouter } from "next/navigation";
-import { VALORANT_AGENTS } from "@/lib/data/valorant";
+import { getAgentIcon, getMapListViewIcon } from "@/lib/data/valorant";
 
 interface MatchHistoryClientProps {
   initialMatches: MatchWithStats[];
@@ -64,19 +64,19 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onReset={handleReset}
-        matches={filteredMatches}
+        matches={initialMatches}
       />
 
-      {/* Match Table */}
-      <div className="rounded-xl border border-[#242e40] bg-[#141a24] overflow-hidden shadow-sm">
-        <div className="p-4 border-b border-[#242e40] bg-[#0e131b] flex items-center justify-between">
+      {/* Main Table Card */}
+      <div className="rounded-2xl border border-[#242e40] bg-[#141a24] overflow-hidden shadow-sm">
+        <div className="px-5 py-3.5 border-b border-[#242e40] flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Swords className="w-4 h-4 text-rose-500" />
-            <span className="text-sm font-bold text-slate-100">
-              Daftar Pertandingan ({filteredMatches.length} Match)
+            <span className="text-xs font-bold text-slate-200">
+              Daftar Pertandingan Scrimmage ({filteredMatches.length})
             </span>
           </div>
-          <span className="text-xs text-slate-400">
+          <span className="text-[11px] text-slate-400">
             Terurut dari yang terbaru
           </span>
         </div>
@@ -87,11 +87,11 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
               <tr className="border-b border-[#242e40] bg-[#0e131b] text-slate-400 font-semibold text-[11px]">
                 <th className="py-3 px-4">Tanggal</th>
                 <th className="py-3 px-4">Map</th>
-                <th className="py-3 px-4">Tim Lawan</th>
-                <th className="py-3 px-4 text-center">Skor Akhir</th>
+                <th className="py-3 px-4">Lawan</th>
+                <th className="py-3 px-4 text-center">Skor</th>
                 <th className="py-3 px-4 text-center">Hasil</th>
-                <th className="py-3 px-4 text-center">Sisi Awal</th>
-                <th className="py-3 px-4">MVP Fragger</th>
+                <th className="py-3 px-4 text-center">Sisi</th>
+                <th className="py-3 px-4">Komposisi Tim & MVP</th>
                 <th className="py-3 px-4 text-right">Aksi</th>
               </tr>
             </thead>
@@ -105,9 +105,6 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
               ) : (
                 filteredMatches.map((m) => {
                   const topFragger = m.playerStats[0];
-                  const agentInfo = topFragger
-                    ? VALORANT_AGENTS.find((a) => a.name === topFragger.agent)
-                    : null;
 
                   return (
                     <tr
@@ -121,9 +118,14 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                         </div>
                       </td>
                       <td className="py-3.5 px-4 font-bold text-slate-100">
-                        <span className="px-2.5 py-1 rounded-md bg-[#1c2432] border border-[#242e40] text-xs">
-                          {m.map}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={getMapListViewIcon(m.map)}
+                            alt={m.map}
+                            className="w-7 h-7 rounded-md object-cover border border-[#242e40] bg-[#141a24] shrink-0"
+                          />
+                          <span className="text-xs">{m.map}</span>
+                        </div>
                       </td>
                       <td className="py-3.5 px-4 font-bold text-slate-100 whitespace-nowrap text-sm">
                         {m.opponentName}
@@ -162,25 +164,27 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                         </Badge>
                       </td>
                       <td className="py-3.5 px-4">
-                        {topFragger ? (
-                          <div className="flex items-center gap-2 whitespace-nowrap">
-                            <span
-                              className="w-2.5 h-2.5 rounded-full shrink-0"
-                              style={{ backgroundColor: agentInfo?.color || "#FF4655" }}
-                            />
-                            <span className="font-bold text-slate-100">
-                              {topFragger.player?.name || "Player"}
-                            </span>
-                            <span className="text-slate-400 text-xs font-normal">
-                              ({topFragger.agent})
-                            </span>
-                            <span className="text-xs font-bold text-sky-400 ml-1">
-                              {topFragger.acs} ACS
-                            </span>
+                        <div className="flex items-center gap-3">
+                          {/* Mini 5-Agent Comp Avatars */}
+                          <div className="flex items-center -space-x-1.5 shrink-0">
+                            {m.playerStats.slice(0, 5).map((stat) => (
+                              <img
+                                key={stat.id}
+                                src={getAgentIcon(stat.agent)}
+                                alt={stat.agent}
+                                title={`${stat.player?.name || "Player"} (${stat.agent})`}
+                                className="w-5 h-5 rounded-full border border-[#141a24] bg-[#0e131b] object-cover hover:z-10 hover:scale-125 transition-transform"
+                              />
+                            ))}
                           </div>
-                        ) : (
-                          <span className="text-slate-500">-</span>
-                        )}
+
+                          {/* Top MVP Text */}
+                          {topFragger && (
+                            <span className="text-[11px] text-slate-300 font-semibold truncate max-w-[140px]">
+                              MVP: {topFragger.player?.name} ({topFragger.acs} ACS)
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">

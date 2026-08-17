@@ -1,11 +1,11 @@
 import React from "react";
 import Link from "next/link";
-import { Swords, ChevronRight, ExternalLink, Flame } from "lucide-react";
+import { Swords, ChevronRight, ExternalLink } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MatchWithStats } from "@/lib/actions/matches";
-import { VALORANT_AGENTS } from "@/lib/data/valorant";
+import { getAgentIcon, getMapListViewIcon } from "@/lib/data/valorant";
 
 interface RecentMatchesTableProps {
   matches: MatchWithStats[];
@@ -53,9 +53,6 @@ export function RecentMatchesTable({ matches }: RecentMatchesTableProps) {
             ) : (
               matches.map((m) => {
                 const topFragger = m.playerStats[0];
-                const agentInfo = topFragger
-                  ? VALORANT_AGENTS.find((a) => a.name === topFragger.agent)
-                  : null;
 
                 return (
                   <tr
@@ -66,9 +63,14 @@ export function RecentMatchesTable({ matches }: RecentMatchesTableProps) {
                       {m.matchDate}
                     </td>
                     <td className="py-3.5 px-4 font-bold text-slate-100">
-                      <span className="px-2.5 py-1 rounded-md bg-[#1c2432] border border-[#242e40] text-xs">
-                        {m.map}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <img
+                          src={getMapListViewIcon(m.map)}
+                          alt={m.map}
+                          className="w-7 h-7 rounded-md object-cover border border-[#242e40] bg-[#141a24] shrink-0"
+                        />
+                        <span className="text-xs">{m.map}</span>
+                      </div>
                     </td>
                     <td className="py-3.5 px-4 font-bold text-slate-100 whitespace-nowrap text-sm">
                       {m.opponentName}
@@ -101,9 +103,10 @@ export function RecentMatchesTable({ matches }: RecentMatchesTableProps) {
                     <td className="py-3.5 px-4">
                       {topFragger ? (
                         <div className="flex items-center gap-2 whitespace-nowrap">
-                          <span
-                            className="w-2.5 h-2.5 rounded-full shrink-0"
-                            style={{ backgroundColor: agentInfo?.color || "#FF4655" }}
+                          <img
+                            src={getAgentIcon(topFragger.agent)}
+                            alt={topFragger.agent}
+                            className="w-6 h-6 rounded-full bg-[#141a24] border border-[#242e40] shrink-0 object-cover"
                           />
                           <span className="font-bold text-slate-100">{topFragger.player?.name || "Player"}</span>
                           <span className="text-slate-400 text-xs font-normal">({topFragger.agent})</span>

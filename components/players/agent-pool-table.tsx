@@ -2,7 +2,7 @@ import React from "react";
 import { Crosshair } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { AgentStatSummary } from "@/lib/utils/analytics";
-import { VALORANT_AGENTS } from "@/lib/data/valorant";
+import { VALORANT_AGENTS, getAgentIcon } from "@/lib/data/valorant";
 
 interface AgentPoolTableProps {
   agentPool: AgentStatSummary[];
@@ -46,17 +46,22 @@ export function AgentPoolTable({ agentPool }: AgentPoolTableProps) {
 
                 return (
                   <tr key={stat.agent} className="hover:bg-[#1c2432]/60 transition-colors">
-                    <td className="py-3.5 px-4 font-bold text-slate-100 flex items-center gap-2">
-                      <span
-                        className="w-2.5 h-2.5 rounded-full"
-                        style={{ backgroundColor: agentInfo?.color || "#38BDF8" }}
-                      />
-                      <span>{stat.agent}</span>
-                      {agentInfo && (
-                        <span className="text-xs text-slate-400 font-normal">
-                          ({agentInfo.role})
-                        </span>
-                      )}
+                    <td className="py-3 px-4 font-bold text-slate-100">
+                      <div className="flex items-center gap-2.5">
+                        <img
+                          src={getAgentIcon(stat.agent)}
+                          alt={stat.agent}
+                          className="w-8 h-8 rounded-full bg-[#141a24] border border-[#242e40] object-cover shrink-0"
+                        />
+                        <div>
+                          <div className="text-xs font-bold text-slate-100">{stat.agent}</div>
+                          {agentInfo && (
+                            <div className="text-[10px] text-slate-400 font-normal">
+                              {agentInfo.role}
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </td>
                     <td className="py-3.5 px-4 text-center text-slate-200">
                       {stat.matchesPlayed}

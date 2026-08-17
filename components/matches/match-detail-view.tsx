@@ -22,11 +22,11 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MatchWithStats, deleteMatch } from "@/lib/actions/matches";
-import { MAP_METADATA, ValorantMap, VALORANT_AGENTS } from "@/lib/data/valorant";
-import { calculateKD } from "@/lib/utils/analytics";
-import { useUserRole } from "@/components/layout/role-context";
-import { formatFileSize } from "@/lib/utils/file-compressor";
+import { MAP_METADATA, ValorantMap, VALORANT_AGENTS, getAgentIcon, getMapSplash } from "@/lib/data/valorant";
+import { useUserRole } from "../layout/role-context";
 import { MatchAttachment } from "@/lib/db/schema";
+import { calculateKD } from "@/lib/utils/analytics";
+import { formatFileSize } from "@/lib/utils/file-compressor";
 
 interface MatchDetailViewProps {
   match: MatchWithStats;
@@ -43,42 +43,53 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
 
   const mapMeta = MAP_METADATA[match.map as ValorantMap] || {
     name: match.map,
-    location: "Valorant Protocol",
+    location: "Valorant Protocol Site",
+    callout: "Standard Tactical Arena",
     color: "from-slate-900 to-slate-950",
+    splash: getMapSplash(match.map),
+    listViewIcon: "",
   };
 
   const handleDelete = async () => {
-    if (!confirm("Apakah Anda yakin ingin menghapus data match ini secara permanen?")) return;
-    setIsDeleting(true);
-    await deleteMatch(match.id);
-    router.push("/matches");
-    router.refresh();
+    if (!confirm("Apakah Anda yakin ingin menghapus data pertandingan scrim ini?")) return;
+    try {
+      setIsDeleting(true);
+      await deleteMatch(match.id);
+      router.push("/matches");
+      router.refresh();
+    } catch (err: any) {
+      alert("Gagal menghapus match: " + (err.message || "Unknown error"));
+      setIsDeleting(false);
+    }
   };
 
-  const handleDownload = (att: MatchAttachment) => {
+  const sortedStats = [...match.playerStats].sort((a, b) => b.acs - a.acs);
+  const topFragger = sortedStats[0];
+
+  const handleDownload = (attachment: MatchAttachment) => {
     const link = document.createElement("a");
-    link.href = att.dataUrl;
-    link.download = att.name;
+    link.href = attachment.dataUrl;
+    link.download = attachment.name;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-12 select-none">
-      {/* Navigation & Action Bar */}
+    <div className="space-y-6 select-none">
+      {/* Top Bar Actions */}
       <div className="flex items-center justify-between">
         <Link href="/matches">
-          <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-slate-400 hover:text-white">
+          <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-slate-400 hover:text-slate-200">
             <ArrowLeft className="w-4 h-4" />
-            <span>Kembali ke Riwayat Match</span>
+            <span>Kembali ke Riwayat</span>
           </Button>
         </Link>
 
         {isAdmin && (
           <div className="flex items-center gap-2">
             <Link href={`/matches/${match.id}/edit`}>
-              <Button variant="secondary" size="sm" className="gap-1.5 text-xs">
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs">
                 <Edit className="w-3.5 h-3.5" />
                 <span>Edit Match</span>
               </Button>
@@ -97,12 +108,22 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
         )}
       </div>
 
-      {/* MATCH HERO BANNER */}
-      <div className={`relative overflow-hidden rounded-2xl border border-[#242e40] bg-gradient-to-r ${mapMeta.color} p-6 sm:p-8 shadow-xl`}>
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      {/* MATCH HERO BANNER WITH MAP SPLASH ART */}
+      <div className="relative overflow-hidden rounded-2xl border border-[#242e40] bg-[#0e131b] p-6 sm:p-8 shadow-2xl min-h-[160px] flex items-center">
+        {/* Background Map Splash */}
+        {mapMeta.splash && (
+          <img
+            src={mapMeta.splash}
+            alt={match.map}
+            className="absolute inset-0 w-full h-full object-cover object-center opacity-30 mix-blend-luminosity scale-105 pointer-events-none"
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0e131b] via-[#0e131b]/85 to-transparent pointer-events-none" />
+
+        <div className="relative z-10 w-full flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span className="px-3 py-1 rounded-lg bg-black/50 border border-white/10 text-xs font-bold text-slate-100">
+              <span className="px-3 py-1 rounded-lg bg-black/60 border border-white/10 text-xs font-bold text-slate-100 backdrop-blur-sm">
                 {match.map}
               </span>
               <span className="text-xs text-slate-300 flex items-center gap-1.5 font-medium">
@@ -123,7 +144,7 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
           </div>
 
           {/* Big Score Box */}
-          <div className="flex items-center gap-4 bg-black/60 backdrop-blur-md px-6 py-4 rounded-xl border border-white/10 shrink-0">
+          <div className="flex items-center gap-4 bg-black/70 backdrop-blur-md px-6 py-4 rounded-xl border border-white/10 shrink-0">
             <div className="text-center">
               <div className="text-xs text-slate-400 font-semibold uppercase">TEAM SC</div>
               <div className={`text-4xl font-black tabular-nums ${
@@ -212,9 +233,14 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
                     </td>
 
                     <td className="py-3.5 px-4">
-                      <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#1c2432] text-slate-200 border border-[#242e40]">
-                        {stat.agent}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <img
+                          src={getAgentIcon(stat.agent)}
+                          alt={stat.agent}
+                          className="w-7 h-7 rounded-full bg-[#141a24] border border-[#242e40] shrink-0 object-cover"
+                        />
+                        <span className="font-semibold text-slate-200">{stat.agent}</span>
+                      </div>
                     </td>
 
                     <td className="py-3.5 px-4 text-right font-black text-rose-400 text-sm tabular-nums">
