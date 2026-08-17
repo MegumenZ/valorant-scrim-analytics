@@ -304,8 +304,19 @@ export async function getMatchById(id: string): Promise<MatchWithStats | null> {
   };
 }
 
+import { getCurrentUser } from "../auth/session";
+
+async function requireAdmin() {
+  const user = await getCurrentUser();
+  if (!user || (user.role !== "ADMIN" && user.role !== "COACH")) {
+    throw new Error("Akses ditolak: Anda harus login sebagai Admin / IGL untuk melakukan aksi ini.");
+  }
+  return user;
+}
+
 export async function createMatch(input: MatchInput) {
   await ensureDbInitialized();
+  await requireAdmin();
 
   const validated = matchSchema.parse(input);
   const result = calculateMatchResult(validated.scoreTeam, validated.scoreOpponent);
@@ -355,6 +366,7 @@ export async function createMatch(input: MatchInput) {
 
 export async function updateMatch(id: string, input: MatchInput) {
   await ensureDbInitialized();
+  await requireAdmin();
 
   const validated = matchSchema.parse(input);
   const result = calculateMatchResult(validated.scoreTeam, validated.scoreOpponent);
@@ -407,6 +419,7 @@ export async function updateMatch(id: string, input: MatchInput) {
 
 export async function deleteMatch(id: string) {
   await ensureDbInitialized();
+  await requireAdmin();
 
   await db.delete(matches).where(eq(matches.id, id));
 

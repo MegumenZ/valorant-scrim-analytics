@@ -199,8 +199,19 @@ export async function getPlayerProfile(id: string): Promise<{
   };
 }
 
+import { getCurrentUser } from "../auth/session";
+
+async function requireAdmin() {
+  const user = await getCurrentUser();
+  if (!user || (user.role !== "ADMIN" && user.role !== "COACH")) {
+    throw new Error("Akses ditolak: Anda harus login sebagai Admin / IGL untuk melakukan aksi ini.");
+  }
+  return user;
+}
+
 export async function createPlayer(input: PlayerInput) {
   await ensureDbInitialized();
+  await requireAdmin();
 
   const validated = playerSchema.parse(input);
   const id = `player-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
@@ -223,6 +234,7 @@ export async function createPlayer(input: PlayerInput) {
 
 export async function updatePlayer(id: string, input: PlayerInput) {
   await ensureDbInitialized();
+  await requireAdmin();
 
   const validated = playerSchema.parse(input);
 
@@ -247,6 +259,7 @@ export async function updatePlayer(id: string, input: PlayerInput) {
 
 export async function togglePlayerActive(id: string, currentStatus: boolean) {
   await ensureDbInitialized();
+  await requireAdmin();
 
   await db
     .update(players)
@@ -262,6 +275,7 @@ export async function togglePlayerActive(id: string, currentStatus: boolean) {
 
 export async function deletePlayer(id: string) {
   await ensureDbInitialized();
+  await requireAdmin();
 
   // Delete any associated player stats first to maintain DB integrity
   await db.delete(matchPlayerStats).where(eq(matchPlayerStats.playerId, id));

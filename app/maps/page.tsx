@@ -6,11 +6,17 @@ import { MAP_METADATA, ValorantMap } from "@/lib/data/valorant";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
 export default async function MapsAnalyticsPage() {
-  const mapData = await getMapAnalyticsData();
+  const [mapData, user] = await Promise.all([
+    getMapAnalyticsData(),
+    getCurrentUser(),
+  ]);
+
+  const isAdmin = user ? (user.role === "ADMIN" || user.role === "COACH") : false;
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12 select-none">
@@ -26,12 +32,14 @@ export default async function MapsAnalyticsPage() {
           </p>
         </div>
 
-        <Link href="/matches/new">
-          <Button size="sm" className="gap-1.5 font-bold shadow-md shadow-rose-950/40">
-            <PlusCircle className="w-4 h-4" />
-            <span>+ Catat Match Map</span>
-          </Button>
-        </Link>
+        {isAdmin && (
+          <Link href="/matches/new">
+            <Button size="sm" className="gap-1.5 font-bold shadow-md shadow-rose-950/40">
+              <PlusCircle className="w-4 h-4" />
+              <span>+ Catat Match Map</span>
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* MAPS GRID */}

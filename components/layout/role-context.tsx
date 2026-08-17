@@ -23,8 +23,8 @@ interface RoleContextType {
 
 const RoleContext = createContext<RoleContextType>({
   user: null,
-  role: "ADMIN",
-  isAdmin: true,
+  role: "MEMBER",
+  isAdmin: false,
   isLoading: true,
   logout: async () => {},
   refreshUser: async () => {},
@@ -68,8 +68,9 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const isAdmin = user ? (user.role === "ADMIN" || user.role === "COACH") : true;
-  const currentRole = user ? (isAdmin ? "ADMIN" : "MEMBER") : "ADMIN";
+  // Only true if user is authenticated AND has ADMIN or COACH role
+  const isAdmin = user ? (user.role === "ADMIN" || user.role === "COACH") : false;
+  const currentRole = isAdmin ? "ADMIN" : "MEMBER";
 
   return (
     <RoleContext.Provider

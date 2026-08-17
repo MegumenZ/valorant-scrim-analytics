@@ -8,11 +8,17 @@ import { AcsTrendChart } from "@/components/dashboard/acs-trend-chart";
 import { RecentMatchesTable } from "@/components/dashboard/recent-matches-table";
 import { RosterLeaderboard } from "@/components/dashboard/roster-leaderboard";
 import { Button } from "@/components/ui/button";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const { summary, recentMatches, leaderboard } = await getDashboardSummary();
+  const [{ summary, recentMatches, leaderboard }, user] = await Promise.all([
+    getDashboardSummary(),
+    getCurrentUser(),
+  ]);
+
+  const isAdmin = user ? (user.role === "ADMIN" || user.role === "COACH") : false;
 
   return (
     <div className="space-y-6 pb-12 select-none">
@@ -32,14 +38,16 @@ export default async function DashboardPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <Link href="/matches/new">
-            <Button size="sm" className="gap-1.5 font-bold shadow-md shadow-rose-950/40">
-              <PlusCircle className="w-4 h-4" />
-              <span>+ Catat Match Baru</span>
-            </Button>
-          </Link>
-        </div>
+        {isAdmin && (
+          <div className="flex items-center gap-2.5">
+            <Link href="/matches/new">
+              <Button size="sm" className="gap-1.5 font-bold shadow-md shadow-rose-950/40">
+                <PlusCircle className="w-4 h-4" />
+                <span>+ Catat Match Baru</span>
+              </Button>
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* KPI Cards Grid */}
