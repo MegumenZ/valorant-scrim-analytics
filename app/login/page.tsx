@@ -25,6 +25,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     rate_limited: "Terlalu banyak percobaan login dalam waktu singkat. Harap tunggu beberapa saat untuk melindungi sistem dari serangan brute force.",
     unconfigured: "Kredensial Discord OAuth belum dikonfigurasi di file environment (.env). Anda dapat menggunakan tombol Demo Login di bawah untuk mencoba aplikasi.",
     oauth_failed: "Gagal melakukan otentikasi dengan Discord. Silakan coba lagi.",
+    not_authorized: "Akses Ditolak: Akun Discord Anda tidak terdaftar sebagai anggota resmi Team SC. Hubungi Coach / IGL untuk mendaftarkan akun Anda ke dalam sistem.",
   };
 
   return (

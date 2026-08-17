@@ -13,38 +13,56 @@ const encodedSecret = new TextEncoder().encode(authSecretString);
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Protected Admin Routes that require ADMIN role
-  const isAdminRoute =
-    pathname.startsWith("/matches/new") ||
-    (pathname.startsWith("/matches/") && pathname.endsWith("/edit"));
-
-  if (!isAdminRoute) {
-    return NextResponse.next();
-  }
+  // 1. Unprotected Public Routes (Login, OAuth, and Auth Endpoints)
+  const isPublicRoute =
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/api/auth/") ||
+    pathname === "/favicon.ico" ||
+    pathname.startsWith("/team-sc-logo");
 
   const token = request.cookies.get(COOKIE_NAME)?.value;
 
+  // If user is not authenticated and is trying to access ANY private page -> Redirect to /login
   if (!token) {
+    if (isPublicRoute) {
+      return NextResponse.next();
+    }
     const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("callbackUrl", pathname);
+    if (pathname !== "/") {
+      loginUrl.searchParams.set("callbackUrl", pathname);
+    }
     return NextResponse.redirect(loginUrl);
   }
 
+  // If token exists, verify validity
   try {
     const { payload } = await jwtVerify(token, encodedSecret);
     const role = (payload as any).role;
 
-    if (role !== "ADMIN" && role !== "COACH") {
-      // User is logged in but doesn't have ADMIN permissions
-      const homeUrl = new URL("/", request.url);
-      return NextResponse.redirect(homeUrl);
+    // If already logged in and visiting /login -> redirect to home
+    if (pathname.startsWith("/login")) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+
+    // Protected Admin-Only Routes
+    const isAdminRoute =
+      pathname.startsWith("/matches/new") ||
+      (pathname.startsWith("/matches/") && pathname.endsWith("/edit"));
+
+    if (isAdminRoute && role !== "ADMIN" && role !== "COACH") {
+      // User is a member but not an Admin -> redirect to home
+      return NextResponse.redirect(new URL("/", request.url));
     }
 
     return NextResponse.next();
   } catch (err) {
-    // Invalid or expired token -> redirect to login
+    // Invalid or expired token -> delete cookie and redirect to login
+    if (isPublicRoute) {
+      const response = NextResponse.next();
+      response.cookies.delete(COOKIE_NAME);
+      return response;
+    }
     const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("callbackUrl", pathname);
     const response = NextResponse.redirect(loginUrl);
     response.cookies.delete(COOKIE_NAME);
     return response;

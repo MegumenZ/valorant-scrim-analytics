@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import { db, ensureDbInitialized } from "../db";
-import { users, User } from "../db/schema";
+import { users, players, User } from "../db/schema";
 import { eq } from "drizzle-orm";
 
 const COOKIE_NAME = "valo_scrim_session";
@@ -23,6 +23,51 @@ export interface SessionPayload {
   avatar?: string | null;
   role: "ADMIN" | "COACH" | "MEMBER";
   exp?: number;
+}
+
+/**
+ * Check whether a Discord account is an authorized member of Team SC
+ */
+export async function isAuthorizedTeamMember(discordId: string, username?: string): Promise<boolean> {
+  const adminIds = (process.env.DISCORD_ADMIN_IDS || "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+
+  const memberIds = (process.env.DISCORD_MEMBER_IDS || "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+
+  // 1. Admin/IGL Whitelist
+  if (adminIds.includes(discordId)) {
+    return true;
+  }
+
+  // 2. Member ID Whitelist
+  if (memberIds.includes(discordId)) {
+    return true;
+  }
+
+  // 3. Match against Roster players by discordId or username
+  await ensureDbInitialized();
+  const allRoster = await db.query.players.findMany();
+  const isRosterMatch = allRoster.some(
+    (p) =>
+      (p.discordId && p.discordId.toLowerCase() === discordId.toLowerCase()) ||
+      (username && p.discordId && p.discordId.toLowerCase() === username.toLowerCase())
+  );
+
+  if (isRosterMatch) {
+    return true;
+  }
+
+  // 4. Initial fallback if no whitelist set in .env
+  if (adminIds.length === 0 && memberIds.length === 0) {
+    return true;
+  }
+
+  return false;
 }
 
 /**

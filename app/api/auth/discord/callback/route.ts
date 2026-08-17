@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { discord, isDiscordConfigured, DiscordUser, getDiscordAvatarUrl } from "@/lib/auth/discord";
-import { createSessionCookie, determineUserRole } from "@/lib/auth/session";
+import { createSessionCookie, determineUserRole, isAuthorizedTeamMember } from "@/lib/auth/session";
 import { checkRateLimit, getClientIp } from "@/lib/auth/rate-limit";
 import { db, ensureDbInitialized } from "@/lib/db";
 import { users } from "@/lib/db/schema";
@@ -66,7 +66,14 @@ export async function GET(request: Request) {
 
     await ensureDbInitialized();
 
-    // 5. Check if user already exists
+    // 5. Anti-Outsider Gate: Check if user is an authorized Team SC member
+    const isAuthorized = await isAuthorizedTeamMember(discordUser.id, discordUser.username);
+    if (!isAuthorized) {
+      console.warn(`[Security Alert] Unauthorized outsider tried to log in: ${discordUser.username} (${discordUser.id})`);
+      return NextResponse.redirect(
+        new URL("/login?error=not_authorized", request.url)
+      );
+    }
     const existingUser = await db.query.users.findFirst({
       where: eq(users.discordId, discordUser.id),
     });
