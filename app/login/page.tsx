@@ -126,14 +126,6 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             </div>
           </div>
         </div>
-
-        {/* Back Link */}
-        <div className="text-center">
-          <Link href="/" className="text-xs text-slate-400 hover:text-slate-200 inline-flex items-center gap-1">
-            <span>Kembali ke Halaman Utama</span>
-            <ArrowRight className="w-3 h-3" />
-          </Link>
-        </div>
       </div>
     </div>
   );
