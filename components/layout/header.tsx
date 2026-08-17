@@ -41,9 +41,13 @@ export function Header() {
 
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#141a24] border border-[#242e40]">
-              <span className="w-2 h-2 rounded-full bg-rose-500" />
+              <img
+                src="/team-sc-logo.png"
+                alt="Team SC"
+                className="w-4 h-4 object-contain"
+              />
               <span className="text-xs font-bold text-slate-100 tracking-wide">
-                Team Alpha
+                Team SC
               </span>
               <span className="text-slate-600 font-normal">/</span>
               <span className="text-xs text-rose-400 font-semibold">{getPageTitle()}</span>

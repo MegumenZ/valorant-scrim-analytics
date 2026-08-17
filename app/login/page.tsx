@@ -32,14 +32,18 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       <div className="w-full max-w-md space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-rose-700 shadow-xl shadow-rose-950/50 mb-2">
-            <Crosshair className="w-8 h-8 text-white" />
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-[#141a24] border border-[#242e40] p-2 shadow-2xl shadow-rose-950/40 mb-1 overflow-hidden">
+            <img
+              src="/team-sc-logo.png"
+              alt="Team SC Logo"
+              className="w-full h-full object-contain"
+            />
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-            VALO<span className="text-rose-500">SCRIM</span> ANALYTICS
+            TEAM <span className="text-rose-500">SC</span> ANALYTICS
           </h1>
           <p className="text-xs text-slate-400">
-            Masuk untuk mengakses analitik scrimmage, catatan evaluasi, dan rekap squad.
+            Masuk untuk mengakses analitik scrimmage, catatan evaluasi, dan rekap skuad.
           </p>
         </div>
 

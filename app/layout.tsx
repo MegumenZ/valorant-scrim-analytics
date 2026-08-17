@@ -5,9 +5,14 @@ import { Header } from "@/components/layout/header";
 import { RoleProvider } from "@/components/layout/role-context";
 
 export const metadata: Metadata = {
-  title: "Valorant Scrim Analytics Platform | Tactical HUD",
+  title: "Team SC | Valorant Scrim Analytics",
   description:
-    "Aplikasi analitik dan pencatatan statistik scrimmage tim esports Valorant berkecepatan tinggi dengan arsitektur Zero-Cost.",
+    "Platform analitik taktis dan evaluasi performa scrimmage resmi Team SC.",
+  icons: {
+    icon: "/team-sc-logo.png",
+    shortcut: "/team-sc-logo.png",
+    apple: "/team-sc-logo.png",
+  },
 };
 
 export default function RootLayout({

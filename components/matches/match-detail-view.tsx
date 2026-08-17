@@ -115,7 +115,7 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white">
-              Team Alpha <span className="text-slate-400 font-normal">vs</span> <span className="text-rose-400">{match.opponentName}</span>
+              Team SC <span className="text-slate-400 font-normal">vs</span> <span className="text-rose-400">{match.opponentName}</span>
             </h1>
             <p className="text-xs text-slate-300 mt-1">
               Lokasi: {mapMeta.location}
@@ -125,7 +125,7 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
           {/* Big Score Box */}
           <div className="flex items-center gap-4 bg-black/60 backdrop-blur-md px-6 py-4 rounded-xl border border-white/10 shrink-0">
             <div className="text-center">
-              <div className="text-xs text-slate-400 font-semibold uppercase">TIM KITA</div>
+              <div className="text-xs text-slate-400 font-semibold uppercase">TEAM SC</div>
               <div className={`text-4xl font-black tabular-nums ${
                 match.result === "WIN" ? "text-emerald-400" : match.result === "LOSS" ? "text-rose-400" : "text-amber-400"
               }`}>

@@ -58,19 +58,23 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
     >
       {/* Brand Header */}
       <div className="flex items-center gap-3 px-5 py-4 border-b border-[#242e40]/70">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-500 to-rose-700 flex items-center justify-center shadow-lg shadow-rose-950/40">
-          <Crosshair className="w-5 h-5 text-white" />
+        <div className="w-10 h-10 rounded-xl bg-[#141a24] border border-[#242e40] flex items-center justify-center p-1 shadow-md shrink-0 overflow-hidden">
+          <img
+            src="/team-sc-logo.png"
+            alt="Team SC Logo"
+            className="w-full h-full object-contain"
+          />
         </div>
         <div>
           <div className="flex items-center gap-1.5">
             <span className="font-extrabold text-sm tracking-tight text-slate-100">
-              VALO<span className="text-rose-500">SCRIM</span>
+              TEAM <span className="text-rose-500">SC</span>
             </span>
             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/30">
               PRO
             </span>
           </div>
-          <p className="text-[11px] text-slate-400">Team Scrim Tracker</p>
+          <p className="text-[11px] text-slate-400">Valorant Scrim Hub</p>
         </div>
       </div>
 
