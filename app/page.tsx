@@ -53,8 +53,8 @@ export default async function DashboardPage() {
         <KpiCard
           title="Rata-rata Combat Score"
           value={`${summary.teamAvgAcs} ACS`}
-          subtitle={`Avg ADR: ${summary.teamAvgAdr}`}
-          detail="Damage output tim per round"
+          subtitle="Performa kolektif 5 pemain"
+          detail="Rata-rata combat score per match"
           icon={Zap}
           variant="highlight"
         />

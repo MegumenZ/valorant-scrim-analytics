@@ -47,11 +47,9 @@ export function MatchFilters({
       "Kills",
       "Deaths",
       "Assists",
-      "ADR",
-      "HS_Percent",
+      "KD_Ratio",
       "FirstKills",
-      "FirstDeaths",
-      "Clutches",
+      "ClutchesWon",
     ];
 
     const rows: string[] = [];
@@ -59,6 +57,7 @@ export function MatchFilters({
 
     for (const m of matches) {
       for (const s of m.playerStats) {
+        const kd = (s.kills / Math.max(1, s.deaths)).toFixed(2);
         rows.push([
           m.id,
           m.matchDate,
@@ -74,11 +73,9 @@ export function MatchFilters({
           s.kills,
           s.deaths,
           s.assists,
-          s.adr,
-          s.hsPercent ?? "",
+          kd,
           s.firstKills,
-          s.firstDeaths,
-          s.clutchesWon,
+          s.clutchesWon ?? 0,
         ].join(","));
       }
     }
