@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { TopProgressBar } from "@/components/layout/top-progress-bar";
 import { RoleProvider } from "@/components/layout/role-context";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -32,6 +34,9 @@ export default function RootLayout({
   return (
     <html lang="id" className={`dark ${plusJakartaSans.variable}`}>
       <body className="bg-[#090C10] text-[#F1F5F9] font-sans antialiased min-h-screen selection:bg-[#FF4655] selection:text-white">
+        <Suspense fallback={null}>
+          <TopProgressBar />
+        </Suspense>
         <RoleProvider>
           <div className="flex h-screen overflow-hidden">
             {/* Desktop Tactical Sidebar */}

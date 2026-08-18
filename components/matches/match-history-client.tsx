@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
-import { Swords, ExternalLink, Calendar, Trash2, Edit } from "lucide-react";
+import { Swords, ExternalLink, Calendar, Trash2, Edit, RefreshCw } from "lucide-react";
 import { MatchWithStats, deleteMatch } from "@/lib/actions/matches";
 import { MatchFilters } from "./match-filters";
 import { Badge } from "@/components/ui/badge";
@@ -192,7 +192,11 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                             className="h-7 w-7 p-0 text-rose-400 hover:text-rose-300"
                             title="Hapus Match"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            {isDeleting === m.id ? (
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-3.5 h-3.5" />
+                            )}
                           </Button>
                         </>
                       )}
@@ -343,7 +347,11 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                                 className="h-7 w-7 p-0 text-rose-400 hover:text-rose-300"
                                 title="Hapus Match"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                {isDeleting === m.id ? (
+                                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                )}
                               </Button>
                             </>
                           )}

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { UserPlus, UserCheck, Edit, Trash2, ExternalLink } from "lucide-react";
+import { UserPlus, Edit, Trash2, ExternalLink, RefreshCw } from "lucide-react";
 import { Player } from "@/lib/db/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
@@ -21,6 +21,8 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
   const { isAdmin } = useUserRole();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
+  const [isUpdating, setIsUpdating] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   const activeStarters = initialPlayers.filter((p) => p.isActive);
   const substitutes = initialPlayers.filter((p) => !p.isActive);
@@ -36,21 +38,27 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
   };
 
   const handleToggleStatus = async (player: Player) => {
+    setIsUpdating(player.id);
     try {
       await togglePlayerActive(player.id, player.isActive);
       router.refresh();
     } catch (err: any) {
       alert("Gagal mengubah status pemain: " + (err.message || "Unknown error"));
+    } finally {
+      setIsUpdating(null);
     }
   };
 
   const handleDelete = async (player: Player) => {
     if (!confirm(`Hapus pemain "${player.name}" dari roster tim?`)) return;
+    setIsDeleting(player.id);
     try {
       await deletePlayer(player.id);
       router.refresh();
     } catch (err: any) {
       alert("Gagal menghapus pemain: " + (err.message || "Unknown error"));
+    } finally {
+      setIsDeleting(null);
     }
   };
 
@@ -149,15 +157,21 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleToggleStatus(player)}
+                        disabled={isUpdating === player.id || isDeleting === player.id}
                         className="h-7 px-2 text-xs text-[#94A3B8] hover:text-amber-400"
                         title="Pindahkan ke Cadangan"
                       >
-                        Set Sub
+                        {isUpdating === player.id ? (
+                          <RefreshCw className="w-3 h-3 animate-spin" />
+                        ) : (
+                          "Set Sub"
+                        )}
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleOpenEdit(player)}
+                        disabled={isUpdating === player.id || isDeleting === player.id}
                         className="h-7 w-7 p-0 text-[#94A3B8] hover:text-white"
                         title="Edit Data Pemain"
                       >
@@ -167,10 +181,15 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDelete(player)}
+                        disabled={isUpdating === player.id || isDeleting === player.id}
                         className="h-7 w-7 p-0 text-rose-400 hover:text-rose-300"
                         title="Hapus Pemain"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        {isDeleting === player.id ? (
+                          <RefreshCw className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
                       </Button>
                     </div>
                   )}
@@ -248,14 +267,20 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleToggleStatus(player)}
+                          disabled={isUpdating === player.id || isDeleting === player.id}
                           className="h-7 px-2 text-xs text-emerald-400 hover:bg-emerald-500/10"
                         >
-                          Set Starter
+                          {isUpdating === player.id ? (
+                            <RefreshCw className="w-3 h-3 animate-spin" />
+                          ) : (
+                            "Set Starter"
+                          )}
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleOpenEdit(player)}
+                          disabled={isUpdating === player.id || isDeleting === player.id}
                           className="h-7 w-7 p-0 text-[#94A3B8]"
                         >
                           <Edit className="w-3.5 h-3.5" />
@@ -264,9 +289,14 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDelete(player)}
+                          disabled={isUpdating === player.id || isDeleting === player.id}
                           className="h-7 w-7 p-0 text-rose-400"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          {isDeleting === player.id ? (
+                            <RefreshCw className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-3.5 h-3.5" />
+                          )}
                         </Button>
                       </div>
                     )}
