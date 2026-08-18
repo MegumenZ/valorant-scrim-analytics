@@ -35,12 +35,15 @@ import { calculateKD } from "@/lib/utils/analytics";
 import { formatFileSize } from "@/lib/utils/file-compressor";
 import { RoundOutcomeType, RoundWinType } from "@/lib/validations/match";
 import { getOutcomeConfig } from "@/components/matches/match-entry-form";
+import { evaluateMatchTactics } from "@/lib/utils/tactical-expert-engine";
+import { TacticalExpertCard } from "@/components/matches/tactical-expert-card";
 
 interface MatchDetailViewProps {
   match: MatchWithStats;
+  pastMatches?: MatchWithStats[];
 }
 
-export function MatchDetailView({ match }: MatchDetailViewProps) {
+export function MatchDetailView({ match, pastMatches = [] }: MatchDetailViewProps) {
   const router = useRouter();
   const { isAdmin } = useUserRole();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -187,6 +190,12 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
           </div>
         </div>
       </div>
+
+      {/* TACTICAL EXPERT & COACH EVALUATION CARD */}
+      {(() => {
+        const tacticalReport = evaluateMatchTactics(match, pastMatches);
+        return <TacticalExpertCard report={tacticalReport} />;
+      })()}
 
       {/* ROUND PROGRESSION TIMELINE (IF RECORDED) */}
       {match.parsedRoundTimeline && match.parsedRoundTimeline.length > 0 && (

@@ -7,11 +7,14 @@ import { AcsTrendChart } from "@/components/dashboard/acs-trend-chart";
 import { TacticalWinBreakdownWidget } from "@/components/dashboard/tactical-win-breakdown";
 import { RecentMatchesTable } from "@/components/dashboard/recent-matches-table";
 import { RosterLeaderboard } from "@/components/dashboard/roster-leaderboard";
+import { evaluateTeamTacticalHealth } from "@/lib/utils/tactical-expert-engine";
+import { TeamTacticalHealthWidget } from "@/components/dashboard/team-tactical-health-widget";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const { summary, recentMatches, leaderboard } = await getDashboardSummary();
+  const { summary, recentMatches, allMatches, leaderboard } = await getDashboardSummary();
+  const tacticalOverview = evaluateTeamTacticalHealth(allMatches);
 
   return (
     <div className="space-y-6 pb-12 select-none">
@@ -66,6 +69,9 @@ export default async function DashboardPage() {
           variant="amber"
         />
       </div>
+
+      {/* Team Collective Tactical Health & Coach Priorities Widget */}
+      <TeamTacticalHealthWidget overview={tacticalOverview} />
 
       {/* Tactical Win & Loss Conditions and Trading Kills Breakdown */}
       <TacticalWinBreakdownWidget

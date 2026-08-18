@@ -1,6 +1,6 @@
 import React from "react";
 import { notFound } from "next/navigation";
-import { getMatchById } from "@/lib/actions/matches";
+import { getMatchById, getAllMatches } from "@/lib/actions/matches";
 import { MatchDetailView } from "@/components/matches/match-detail-view";
 
 export const dynamic = "force-dynamic";
@@ -17,5 +17,8 @@ export default async function MatchDetailPage({ params }: MatchDetailPageProps) 
     notFound();
   }
 
-  return <MatchDetailView match={match} />;
+  const allMatches = await getAllMatches();
+  const pastMatches = allMatches.filter((m) => m.id !== id);
+
+  return <MatchDetailView match={match} pastMatches={pastMatches} />;
 }

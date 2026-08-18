@@ -17,6 +17,7 @@ export interface MatchWithStats extends Match {
 export async function getDashboardSummary(): Promise<{
   summary: DashboardSummary;
   recentMatches: MatchWithStats[];
+  allMatches: MatchWithStats[];
   leaderboard: Array<{
     player: Player;
     matches: number;
@@ -220,11 +221,23 @@ export async function getDashboardSummary(): Promise<{
     }))
     .sort((a, b) => b.avgAcs - a.avgAcs);
 
+  // Formatted all matches with parsed round timeline
+  const formattedAllMatches: MatchWithStats[] = allMatches.map((m) => {
+    let parsedRoundTimeline: RoundItem[] | undefined;
+    if (m.roundTimeline) {
+      try {
+        parsedRoundTimeline = JSON.parse(m.roundTimeline);
+      } catch (e) {}
+    }
+    return {
+      ...m,
+      playerStats: [...m.playerStats].sort((a, b) => b.acs - a.acs),
+      parsedRoundTimeline,
+    };
+  });
+
   // Recent 5 matches with player stats sorted by ACS desc
-  const recentMatches: MatchWithStats[] = allMatches.slice(0, 5).map((m) => ({
-    ...m,
-    playerStats: [...m.playerStats].sort((a, b) => b.acs - a.acs),
-  }));
+  const recentMatches: MatchWithStats[] = formattedAllMatches.slice(0, 5);
 
   // Tactical Win Conditions Calculation
   // Tactical Win & Loss Breakdown Calculation (Contextual to Attacker vs Defender)
@@ -378,6 +391,7 @@ export async function getDashboardSummary(): Promise<{
       acsTrend,
     },
     recentMatches,
+    allMatches: formattedAllMatches,
     leaderboard,
   };
 }
