@@ -436,6 +436,12 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
       if (emptyPlayerRow) {
         throw new Error("Mohon pilih 5 pemain aktif untuk match ini.");
       }
+
+      const playerIds = playerRows.map((r) => r.playerId).filter(Boolean);
+      const uniquePlayerIds = new Set(playerIds);
+      if (uniquePlayerIds.size !== 5) {
+        throw new Error("Pastikan 5 slot diisi oleh 5 pemain yang berbeda (tidak boleh ada pemain yang dipilih lebih dari satu kali).");
+      }
       
       const formattedStats = playerRows.map((row) => ({
         playerId: row.playerId,
@@ -466,12 +472,18 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         };
       });
 
+      // Synchronize exact team score from final timeline if timeline exists
+      const timelineTeamWins = finalRoundsTimeline.filter((r) => r.winner === "TEAM").length;
+      const timelineOppWins = finalRoundsTimeline.filter((r) => r.winner === "OPPONENT").length;
+      const finalScoreTeam = finalRoundsTimeline.length > 0 ? timelineTeamWins : (Number(scoreTeam) || 0);
+      const finalScoreOpponent = finalRoundsTimeline.length > 0 ? timelineOppWins : (Number(scoreOpponent) || 0);
+
       const payload = {
         matchDate,
         map,
         opponentName: opponentName.trim(),
-        scoreTeam: Number(scoreTeam) || 0,
-        scoreOpponent: Number(scoreOpponent) || 0,
+        scoreTeam: finalScoreTeam,
+        scoreOpponent: finalScoreOpponent,
         startSide,
         vodUrl: vodUrl.trim() || undefined,
         notes: notes.trim() || undefined,
@@ -609,6 +621,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
               max="99"
               value={scoreTeam}
               onChange={(e) => setScoreTeam(e.target.value)}
+              onFocus={(e) => e.target.select()}
               required
               className="font-bold text-emerald-400 text-center text-sm"
             />
@@ -624,6 +637,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
               max="99"
               value={scoreOpponent}
               onChange={(e) => setScoreOpponent(e.target.value)}
+              onFocus={(e) => e.target.select()}
               required
               className="font-bold text-rose-400 text-center text-sm"
             />
@@ -1109,6 +1123,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           placeholder="240"
                           value={row.acs}
                           onChange={(e) => handleRowChange(index, "acs", e.target.value)}
+                          onFocus={(e) => e.target.select()}
                           required
                           className="h-8 text-center font-bold text-sky-400 px-1 text-xs"
                         />
@@ -1121,6 +1136,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           placeholder="18"
                           value={row.kills}
                           onChange={(e) => handleRowChange(index, "kills", e.target.value)}
+                          onFocus={(e) => e.target.select()}
                           required
                           className="h-8 text-center font-bold text-emerald-400 px-1 text-xs"
                         />
@@ -1133,6 +1149,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           placeholder="12"
                           value={row.deaths}
                           onChange={(e) => handleRowChange(index, "deaths", e.target.value)}
+                          onFocus={(e) => e.target.select()}
                           required
                           className="h-8 text-center font-bold text-rose-400 px-1 text-xs"
                         />
@@ -1145,6 +1162,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           placeholder="5"
                           value={row.assists}
                           onChange={(e) => handleRowChange(index, "assists", e.target.value)}
+                          onFocus={(e) => e.target.select()}
                           required
                           className="h-8 text-center font-bold text-[#F1F5F9] px-1 text-xs"
                         />
@@ -1157,6 +1175,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           placeholder="2"
                           value={row.firstKills}
                           onChange={(e) => handleRowChange(index, "firstKills", e.target.value)}
+                          onFocus={(e) => e.target.select()}
                           className="h-8 text-center text-emerald-400 px-1 text-xs"
                         />
                       </div>
@@ -1168,6 +1187,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           placeholder="0"
                           value={row.clutchesWon}
                           onChange={(e) => handleRowChange(index, "clutchesWon", e.target.value)}
+                          onFocus={(e) => e.target.select()}
                           className="h-8 text-center text-amber-400 font-bold px-1 text-xs"
                         />
                       </div>
@@ -1257,6 +1277,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           placeholder="240"
                           value={row.acs}
                           onChange={(e) => handleRowChange(index, "acs", e.target.value)}
+                          onFocus={(e) => e.target.select()}
                           required
                           className="h-8 text-center font-bold text-sky-400 px-1"
                         />
@@ -1270,6 +1291,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           placeholder="18"
                           value={row.kills}
                           onChange={(e) => handleRowChange(index, "kills", e.target.value)}
+                          onFocus={(e) => e.target.select()}
                           required
                           className="h-8 text-center font-bold text-emerald-400 px-1"
                         />
@@ -1283,6 +1305,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           placeholder="12"
                           value={row.deaths}
                           onChange={(e) => handleRowChange(index, "deaths", e.target.value)}
+                          onFocus={(e) => e.target.select()}
                           required
                           className="h-8 text-center font-bold text-rose-400 px-1"
                         />
@@ -1296,6 +1319,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           placeholder="5"
                           value={row.assists}
                           onChange={(e) => handleRowChange(index, "assists", e.target.value)}
+                          onFocus={(e) => e.target.select()}
                           required
                           className="h-8 text-center text-slate-200 px-1"
                         />
@@ -1309,6 +1333,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           placeholder="2"
                           value={row.firstKills}
                           onChange={(e) => handleRowChange(index, "firstKills", e.target.value)}
+                          onFocus={(e) => e.target.select()}
                           className="h-8 text-center text-emerald-400 px-1"
                         />
                       </td>
@@ -1321,6 +1346,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           placeholder="0"
                           value={row.clutchesWon}
                           onChange={(e) => handleRowChange(index, "clutchesWon", e.target.value)}
+                          onFocus={(e) => e.target.select()}
                           className="h-8 text-center text-amber-400 font-bold px-1"
                         />
                       </td>
@@ -1413,6 +1439,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                   max={totalTeamDeaths || 100}
                   value={tradeKills}
                   onChange={(e) => setTradeKills(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                  onFocus={(e) => e.target.select()}
                   title="Ketik jumlah trade kill langsung"
                   className="w-14 text-center font-bold text-base bg-[#0F141C] border border-[#1C2433] rounded px-1 py-1 text-emerald-400 focus:outline-none focus:border-emerald-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
