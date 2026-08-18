@@ -67,8 +67,12 @@ export default async function DashboardPage() {
         />
       </div>
 
-      {/* Tactical Win Conditions Breakdown */}
-      <TacticalWinBreakdownWidget data={summary.tacticalWins} />
+      {/* Tactical Win Conditions, Trading Kills & Round Duration Breakdown */}
+      <TacticalWinBreakdownWidget
+        data={summary.tacticalWins}
+        tradingStats={summary.tradingStats}
+        pacingStats={summary.pacingStats}
+      />
 
       {/* Dual Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

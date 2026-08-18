@@ -74,6 +74,33 @@ export interface TacticalWinBreakdown {
   timeoutRate: number;
 }
 
+export interface TradingKillStats {
+  tradesWon: number;        // Total kill trade balasan oleh tim
+  tradedDeaths: number;     // Kematian tim yang berhasil di-trade oleh rekan
+  untradedDeaths: number;   // Kematian tanpa trade (dry death / terisolasi)
+  totalDeaths: number;      // Total kematian tim
+  tradeEfficiency: number;  // % kematian yang berhasil di-trade (0-100%)
+  tradeRating: "EXCELLENT" | "GOOD" | "POOR";
+}
+
+export interface RoundPacingStats {
+  avgWinDurationSec: number;   // Rata-rata durasi ronde menang dalam detik
+  avgLossDurationSec: number;  // Rata-rata durasi ronde kalah dalam detik
+  fastWins: number;            // Menang < 45s
+  midWins: number;             // Menang 45 - 75s
+  lateWins: number;            // Menang > 75s
+  fastLosses: number;          // Kalah < 45s
+  midLosses: number;           // Kalah 45 - 75s
+  lateLosses: number;          // Kalah > 75s
+}
+
+export function formatRoundDuration(seconds: number): string {
+  if (!seconds || seconds <= 0) return "0:00";
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.round(seconds % 60);
+  return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+}
+
 export interface DashboardSummary {
   totalMatches: number;
   wins: number;
@@ -93,6 +120,8 @@ export interface DashboardSummary {
     defenseWinRate: number;
   };
   tacticalWins: TacticalWinBreakdown;
+  tradingStats: TradingKillStats;
+  pacingStats: RoundPacingStats;
   mapBreakdown: Array<{
     map: ValorantMap;
     total: number;

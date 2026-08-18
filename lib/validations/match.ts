@@ -41,6 +41,9 @@ export const roundItemSchema = z.object({
   side: z.enum(["ATTACK", "DEFENSE"]),
   winner: z.enum(["TEAM", "OPPONENT"]),
   winType: roundWinTypeSchema.optional().nullable(),
+  durationSeconds: z.coerce.number().int().min(5).max(300).optional().nullable(),
+  tradedDeaths: z.coerce.number().int().min(0).max(10).optional().nullable(),
+  tradesWon: z.coerce.number().int().min(0).max(10).optional().nullable(),
 });
 
 export const matchSchema = z.object({

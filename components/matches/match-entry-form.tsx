@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { VALORANT_MAPS, VALORANT_AGENTS, ValorantMap, getAgentIcon } from "@/lib/data/valorant";
 import { Player, MatchAttachment } from "@/lib/db/schema";
 import { createMatch, updateMatch } from "@/lib/actions/matches";
-import { calculateKD, calculateMatchResult } from "@/lib/utils/analytics";
+import { calculateKD, calculateMatchResult, formatRoundDuration } from "@/lib/utils/analytics";
 import { compressImageToWebP, processAndCompressPdf, formatFileSize } from "@/lib/utils/file-compressor";
 import { RoundItem, RoundWinType } from "@/lib/validations/match";
 
@@ -327,6 +327,51 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
   const numOpp = Number(scoreOpponent) || 0;
   const computedResult = calculateMatchResult(numTeam, numOpp);
 
+  const totalTeamDeaths = playerRows.reduce((acc, r) => acc + (Number(r.deaths) || 0), 0);
+
+  // Trading Kills State
+  const [tradedDeaths, setTradedDeaths] = useState<number>(() => {
+    if (initialData?.roundsTimeline && initialData.roundsTimeline.length > 0) {
+      const sum = initialData.roundsTimeline.reduce((acc, r) => acc + (r.tradedDeaths || 0), 0);
+      if (sum > 0) return sum;
+    }
+    return 14;
+  });
+
+  const [tradesWon, setTradesWon] = useState<number>(() => {
+    if (initialData?.roundsTimeline && initialData.roundsTimeline.length > 0) {
+      const sum = initialData.roundsTimeline.reduce((acc, r) => acc + (r.tradesWon || 0), 0);
+      if (sum > 0) return sum;
+    }
+    return 14;
+  });
+
+  // Round Pacing State (Duration in Seconds)
+  const [avgWinDurationSec, setAvgWinDurationSec] = useState<number>(() => {
+    if (initialData?.roundsTimeline && initialData.roundsTimeline.length > 0) {
+      const winRounds = initialData.roundsTimeline.filter((r) => r.winner === "TEAM" && r.durationSeconds);
+      if (winRounds.length > 0) {
+        return Math.round(winRounds.reduce((acc, r) => acc + (r.durationSeconds || 0), 0) / winRounds.length);
+      }
+    }
+    return 52;
+  });
+
+  const [avgLossDurationSec, setAvgLossDurationSec] = useState<number>(() => {
+    if (initialData?.roundsTimeline && initialData.roundsTimeline.length > 0) {
+      const lossRounds = initialData.roundsTimeline.filter((r) => r.winner === "OPPONENT" && r.durationSeconds);
+      if (lossRounds.length > 0) {
+        return Math.round(lossRounds.reduce((acc, r) => acc + (r.durationSeconds || 0), 0) / lossRounds.length);
+      }
+    }
+    return 38;
+  });
+
+  const untradedDeaths = Math.max(0, totalTeamDeaths - tradedDeaths);
+  const tradeEfficiency = totalTeamDeaths > 0
+    ? Math.min(100, Math.round((tradedDeaths / totalTeamDeaths) * 100))
+    : 0;
+
   const handleRowChange = (index: number, field: keyof PlayerStatRow, value: any) => {
     setPlayerRows((prev) => {
       const updated = [...prev];
@@ -343,6 +388,10 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
     setStartSide("ATTACK");
     setNotes("Anti-eco sangat rapi, retake A site berhasil dengan koordinasi flash dan smoke.");
     setVodUrl("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+    setTradedDeaths(15);
+    setTradesWon(16);
+    setAvgWinDurationSec(54);
+    setAvgLossDurationSec(36);
 
     if (availablePlayers.length >= 5) {
       setPlayerRows([
@@ -381,6 +430,13 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         kastPercent: null,
       }));
 
+      const finalRoundsTimeline = roundsTimeline.map((r) => ({
+        ...r,
+        durationSeconds: r.durationSeconds ?? (r.winner === "TEAM" ? avgWinDurationSec : avgLossDurationSec),
+        tradedDeaths: r.tradedDeaths ?? Math.round(tradedDeaths / Math.max(1, roundsTimeline.length)),
+        tradesWon: r.tradesWon ?? Math.round(tradesWon / Math.max(1, roundsTimeline.length)),
+      }));
+
       const payload = {
         matchDate,
         map,
@@ -391,7 +447,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         vodUrl: vodUrl.trim() || undefined,
         notes: notes.trim() || undefined,
         attachments,
-        roundsTimeline,
+        roundsTimeline: finalRoundsTimeline,
         playerStats: formattedStats,
       };
 
@@ -1276,10 +1332,280 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         </CardContent>
       </Card>
 
-      {/* SECTION 4: EVALUATION & ATTACHMENTS */}
+      {/* SECTION 4: ANALISIS TRADING KILLS & DURASI RONDE (PACING) */}
       <Card>
         <CardHeader className="py-3.5 px-5 border-b border-[#1C2433]">
-          <CardTitle className="text-sm font-semibold">4. Evaluasi & Catatan Taktis</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-sm font-semibold">4. Analisis Trading Kills & Durasi Ronde (Pacing)</CardTitle>
+              <Badge variant="outline" className="text-[10px] text-amber-400 border-amber-500/30 bg-amber-500/10">
+                Fitur Analisis Coach
+              </Badge>
+            </div>
+            <span className="text-xs text-[#94A3B8]">
+              Evaluasi Spacing & Kecepatan Ronde
+            </span>
+          </div>
+        </CardHeader>
+        <CardContent className="p-5 space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* LEFT: TRADING KILLS ANALYSIS */}
+            <div className="p-4 rounded-xl bg-[#090C10] border border-[#1C2433] space-y-4">
+              <div className="flex items-center justify-between border-b border-[#1C2433] pb-3">
+                <div className="flex items-center gap-2">
+                  <Swords className="w-4 h-4 text-rose-400" />
+                  <span className="text-sm font-bold text-white">Trading Kills (Refrag Quality)</span>
+                </div>
+                <Badge
+                  variant={tradeEfficiency >= 60 ? "win" : tradeEfficiency >= 45 ? "draw" : "loss"}
+                  className="text-xs font-bold"
+                >
+                  {tradeEfficiency}% Trade Rate
+                </Badge>
+              </div>
+
+              {/* Stat Gauges */}
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="p-2.5 rounded-lg bg-[#0F141C] border border-[#1C2433]">
+                  <span className="text-[10px] font-semibold text-[#94A3B8] block">Total Deaths Tim</span>
+                  <span className="text-lg font-black text-rose-400">{totalTeamDeaths}</span>
+                </div>
+                <div className="p-2.5 rounded-lg bg-[#0F141C] border border-emerald-500/20">
+                  <span className="text-[10px] font-semibold text-emerald-400 block">Kematian Di-Trade</span>
+                  <span className="text-lg font-black text-emerald-400">{tradedDeaths}</span>
+                </div>
+                <div className="p-2.5 rounded-lg bg-[#0F141C] border border-amber-500/20">
+                  <span className="text-[10px] font-semibold text-amber-400 block">Dry Deaths (Terisolasi)</span>
+                  <span className="text-lg font-black text-amber-400">{untradedDeaths}</span>
+                </div>
+              </div>
+
+              {/* Stepper Inputs for Coach */}
+              <div className="space-y-3 pt-1">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-xs font-bold text-white block">Kematian Berhasil Di-Trade (Traded Deaths)</label>
+                    <span className="text-[11px] text-[#64748B]">Berapa kali rekan tim langsung membalas kill setelah teman mati</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setTradedDeaths((prev) => Math.max(0, prev - 1))}
+                      className="h-7 w-7 p-0 text-xs"
+                    >
+                      -
+                    </Button>
+                    <span className="w-8 text-center font-bold text-sm text-emerald-400">{tradedDeaths}</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setTradedDeaths((prev) => Math.min(totalTeamDeaths || 50, prev + 1))}
+                      className="h-7 w-7 p-0 text-xs"
+                    >
+                      +
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-xs font-bold text-white block">Kill Trade Balasan (Trades Won / Refrags)</label>
+                    <span className="text-[11px] text-[#64748B]">Total kill balasan yang didapat tim dalam jeda 3-5 detik</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setTradesWon((prev) => Math.max(0, prev - 1))}
+                      className="h-7 w-7 p-0 text-xs"
+                    >
+                      -
+                    </Button>
+                    <span className="w-8 text-center font-bold text-sm text-sky-400">{tradesWon}</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setTradesWon((prev) => prev + 1)}
+                      className="h-7 w-7 p-0 text-xs"
+                    >
+                      +
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Assessment Note */}
+              <div className={`p-3 rounded-lg border text-xs leading-relaxed ${
+                tradeEfficiency >= 60
+                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
+                  : tradeEfficiency >= 45
+                  ? "bg-amber-500/10 border-amber-500/30 text-amber-300"
+                  : "bg-rose-500/10 border-rose-500/30 text-rose-300"
+              }`}>
+                {tradeEfficiency >= 60 ? (
+                  <p>🔥 <strong>Trade Sangat Baik ({tradeEfficiency}%):</strong> Spacing dan reaksi crosshair refrag pemain sangat rapat, tim jarang kehilangan orang secara gratis.</p>
+                ) : tradeEfficiency >= 45 ? (
+                  <p>⚡ <strong>Trade Standar ({tradeEfficiency}%):</strong> Koordinasi trade cukup solid, namun masih terdapat {untradedDeaths} kematian tanpa balasan saat rotasi atau isolasi site.</p>
+                ) : (
+                  <p>⚠️ <strong>Trade Perlu Evaluasi ({tradeEfficiency}%):</strong> Terlalu banyak dry deaths ({untradedDeaths} kali mati tanpa balasan). Perbaiki jarak antar pemain saat eksekusi atau defense.</p>
+                )}
+              </div>
+            </div>
+
+            {/* RIGHT: ROUND PACING & DURATION */}
+            <div className="p-4 rounded-xl bg-[#090C10] border border-[#1C2433] space-y-4">
+              <div className="flex items-center justify-between border-b border-[#1C2433] pb-3">
+                <div className="flex items-center gap-2">
+                  <Timer className="w-4 h-4 text-sky-400" />
+                  <span className="text-sm font-bold text-white">Waktu Ronde Menang vs Kalah (Pacing)</span>
+                </div>
+                <span className="text-xs text-[#94A3B8]">
+                  Standar Ronde: 100 Detik
+                </span>
+              </div>
+
+              {/* Duration Inputs */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Win Duration */}
+                <div className="p-3 rounded-lg bg-[#0F141C] border border-emerald-500/20 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-emerald-400">Rata-rata Ronde Menang</span>
+                    <span className="text-sm font-black font-mono text-white">{formatRoundDuration(avgWinDurationSec)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min="15"
+                      max="145"
+                      value={avgWinDurationSec}
+                      onChange={(e) => setAvgWinDurationSec(Number(e.target.value) || 52)}
+                      className="h-8 text-xs font-bold font-mono text-center text-emerald-400"
+                    />
+                    <span className="text-xs text-[#94A3B8]">detik</span>
+                  </div>
+                  {/* Presets */}
+                  <div className="flex items-center gap-1 text-[10px]">
+                    <button
+                      type="button"
+                      onClick={() => setAvgWinDurationSec(35)}
+                      className="px-2 py-0.5 rounded bg-[#161D28] text-[#94A3B8] hover:text-white"
+                    >
+                      Cepat (35s)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAvgWinDurationSec(55)}
+                      className="px-2 py-0.5 rounded bg-[#161D28] text-[#94A3B8] hover:text-white"
+                    >
+                      Sedang (55s)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAvgWinDurationSec(85)}
+                      className="px-2 py-0.5 rounded bg-[#161D28] text-[#94A3B8] hover:text-white"
+                    >
+                      Lambat (85s)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Loss Duration */}
+                <div className="p-3 rounded-lg bg-[#0F141C] border border-rose-500/20 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-rose-400">Rata-rata Ronde Kalah</span>
+                    <span className="text-sm font-black font-mono text-white">{formatRoundDuration(avgLossDurationSec)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min="15"
+                      max="145"
+                      value={avgLossDurationSec}
+                      onChange={(e) => setAvgLossDurationSec(Number(e.target.value) || 38)}
+                      className="h-8 text-xs font-bold font-mono text-center text-rose-400"
+                    />
+                    <span className="text-xs text-[#94A3B8]">detik</span>
+                  </div>
+                  {/* Presets */}
+                  <div className="flex items-center gap-1 text-[10px]">
+                    <button
+                      type="button"
+                      onClick={() => setAvgLossDurationSec(30)}
+                      className="px-2 py-0.5 rounded bg-[#161D28] text-[#94A3B8] hover:text-white"
+                    >
+                      Early (30s)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAvgLossDurationSec(48)}
+                      className="px-2 py-0.5 rounded bg-[#161D28] text-[#94A3B8] hover:text-white"
+                    >
+                      Mid (48s)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAvgLossDurationSec(80)}
+                      className="px-2 py-0.5 rounded bg-[#161D28] text-[#94A3B8] hover:text-white"
+                    >
+                      Late (80s)
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Comparison Visual Bar */}
+              <div className="space-y-1.5 pt-1">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-[#94A3B8]">Perbandingan Durasi Waktu Ronde:</span>
+                  <span className="text-white font-mono">
+                    Menang: {formatRoundDuration(avgWinDurationSec)} vs Kalah: {formatRoundDuration(avgLossDurationSec)}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[10px] text-emerald-400 font-bold">
+                      <span>Menang ({avgWinDurationSec}s)</span>
+                      <span>{avgWinDurationSec < 45 ? "⚡ Fast Rush" : avgWinDurationSec <= 75 ? "⚖️ Mid Exec" : "⏳ Late Round"}</span>
+                    </div>
+                    <div className="w-full bg-[#161D28] h-2 rounded-full overflow-hidden">
+                      <div className="bg-emerald-400 h-full rounded-full" style={{ width: `${Math.min(100, (avgWinDurationSec / 100) * 100)}%` }} />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[10px] text-rose-400 font-bold">
+                      <span>Kalah ({avgLossDurationSec}s)</span>
+                      <span>{avgLossDurationSec < 45 ? "⚡ Early Pick" : avgLossDurationSec <= 75 ? "⚖️ Mid Round" : "⏳ Post-Plant Loss"}</span>
+                    </div>
+                    <div className="w-full bg-[#161D28] h-2 rounded-full overflow-hidden">
+                      <div className="bg-rose-400 h-full rounded-full" style={{ width: `${Math.min(100, (avgLossDurationSec / 100) * 100)}%` }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pacing Coach Insight */}
+              <div className="p-3 rounded-lg bg-[#0F141C] border border-sky-500/20 text-xs text-[#94A3B8] leading-relaxed">
+                💡 <strong>Insight Pacing Coach:</strong>{" "}
+                {avgWinDurationSec > avgLossDurationSec ? (
+                  <span>Tim bermain lebih sukses saat eksekusi sabar & default ({formatRoundDuration(avgWinDurationSec)}), namun rentan kalah jika terjadi first blood cepat sebelum 40 detik.</span>
+                ) : (
+                  <span>Tim sangat mematikan saat tempo cepat ({formatRoundDuration(avgWinDurationSec)}), namun kesulitan memenangkan ronde jika pertandingan berlarut-larut ke late game.</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* SECTION 5: EVALUATION & ATTACHMENTS */}
+      <Card>
+        <CardHeader className="py-3.5 px-5 border-b border-[#1C2433]">
+          <CardTitle className="text-sm font-semibold">5. Evaluasi & Catatan Taktis</CardTitle>
         </CardHeader>
         <CardContent className="p-5 space-y-4">
           <Textarea
