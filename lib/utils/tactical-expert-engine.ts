@@ -239,8 +239,8 @@ export function evaluateMatchTactics(
     });
     drills.push({
       category: "DRILL",
-      title: "Pistol Round Default & Micro-Utility Setup",
-      desc: "Perbaiki strategi round 1 dengan setup utility flash/smoke yang lebih terstruktur daripada adu tembak mentah.",
+      title: "Pistol Round Default & Crossfire Setup",
+      desc: "Perbaiki strategi round 1 dengan setup crossfire dan positioning sudut rapat daripada adu duel satu lawan satu.",
       icon: "ShieldAlert",
       impact: "MEDIUM",
     });
@@ -251,7 +251,7 @@ export function evaluateMatchTactics(
     strengths.push({
       category: "STRENGTH",
       title: `Retake Protocol Sangat Solid (${defuseWins} Kali Defuse)`,
-      desc: "Koordinasi utility retake defensif berjalan rapi saat membersihkan site yang sudah dikuasai musuh.",
+      desc: "Koordinasi retake defensif berjalan rapi saat membersihkan site dan mengamankan defuse spike.",
       icon: "ShieldCheck",
       impact: "HIGH",
     });
@@ -261,14 +261,14 @@ export function evaluateMatchTactics(
     weaknesses.push({
       category: "FLAW",
       title: `Post-Plant Rentan Dibongkar (${defusedLosses} Kali Gagal Tahan Spike)`,
-      desc: "Spike sudah terpasang namun posisi penjagaan pasca-plant mudah diisolasi oleh utilitas retake tim lawan.",
+      desc: "Spike sudah terpasang namun posisi penjagaan pasca-plant mudah diisolasi oleh manuver retake tim lawan.",
       icon: "Bomb",
       impact: "HIGH",
     });
     drills.push({
       category: "DRILL",
-      title: "Post-Plant Crossfire & Delay Lineup",
-      desc: "Terapkan setup posisi crossfire pasca-plant yang saling melindungi serta delay lineup utilitas untuk menghabiskan timer defuse.",
+      title: "Post-Plant Crossfire & Delay Position",
+      desc: "Terapkan setup posisi crossfire pasca-plant yang saling melindungi untuk menghabiskan timer defuse lawan.",
       icon: "Timer",
       impact: "HIGH",
     });
@@ -333,8 +333,8 @@ export function evaluateMatchTactics(
   if (weaknesses.length === 0) {
     weaknesses.push({
       category: "FLAW",
-      title: "Optimasi Detail Mikro Pertarungan",
-      desc: "Secara taktis pertandingan berjalan sangat bersih. Fokus evaluasi berikutnya ada pada timing utility mikro.",
+      title: "Optimasi Detail Mikro & Disiplin Posisi",
+      desc: "Secara taktis pertandingan berjalan sangat bersih tanpa kesalahan fatal. Pertahankan disiplin sudut duel dan tempo rotasi.",
       icon: "Sparkles",
       impact: "LOW",
     });
@@ -343,8 +343,8 @@ export function evaluateMatchTactics(
   if (drills.length === 0) {
     drills.push({
       category: "DRILL",
-      title: "Retain Current Playbook & Refine Timing",
-      desc: "Pertahankan struktur rotasi yang sudah solid dan poles komunikasi calling di detik-detik krusial.",
+      title: "Pertahankan Struktur & Poles Komunikasi Mid-Round",
+      desc: "Pertahankan struktur rotasi yang sudah solid dan pertajam calling informasi di detik-detik krusial.",
       icon: "Flame",
       impact: "LOW",
     });
@@ -452,7 +452,7 @@ export function evaluateTeamTacticalHealth(matches: MatchWithStats[]): TeamTacti
   } else {
     topTeamPriorities.push({
       title: "Pertahankan Konsistensi Spacing",
-      desc: `Disiplin trade tim (${currTrade}%) sudah sangat solid. Terus asah timing eksekusi utility pendukung.`,
+      desc: `Disiplin trade tim (${currTrade}%) sudah sangat solid. Terus asah koordinasi eksekusi site dan tempo rotasi.`,
       icon: "ShieldCheck",
       urgency: "MEDIUM",
     });
