@@ -1189,7 +1189,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                   <th className="py-3 px-2 text-center w-16">K *</th>
                   <th className="py-3 px-2 text-center w-16">D *</th>
                   <th className="py-3 px-2 text-center w-16">A *</th>
-                  <th className="py-3 px-2 text-center w-20">First Bloods (FK)</th>
+                  <th className="py-3 px-2 text-center w-20">First Blood (FK)</th>
                   <th className="py-3 px-2 text-center w-20">Clutch (1vX)</th>
                   <th className="py-3 px-3 text-center min-w-[90px]">Live K/D</th>
                 </tr>

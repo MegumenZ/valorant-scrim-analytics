@@ -1,15 +1,18 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   ShieldCheck,
   AlertTriangle,
   Target,
   CheckCircle2,
   BrainCircuit,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { TacticalMatchReport } from "@/lib/utils/tactical-expert-engine";
 
 interface TacticalExpertCardProps {
@@ -17,6 +20,36 @@ interface TacticalExpertCardProps {
 }
 
 export function TacticalExpertCard({ report }: TacticalExpertCardProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyDiscordSummary = () => {
+    const text = `📋 **RAPOR TAKTIS SCRIM - TEAM SC**
+🎯 **Grade: ${report.grade} (${report.score}/100)** | ${report.momentum.trendLabel}
+
+📝 **Ringkasan Evaluasi:**
+${report.summary}
+
+📊 **5 Pilar Fundamental Taktis:**
+• Win Rate Ronde: ${report.pillars.roundWinRate}%
+• Efisiensi Trade: ${report.pillars.tradeRate}%
+• Ronde Pistol: ${report.pillars.pistolConversionRate}%
+• Keseimbangan Sisi: ${report.pillars.sideBalanceScore}%
+• Retake & Post-Plant: ${report.pillars.postPlantRetakeScore}%
+
+✅ **Kekuatan Taktis Tim:**
+${report.strengths.map((s) => `• ${s.title}: ${s.desc}`).join("\n")}
+
+⚠️ **Celah & Evaluasi Kritis:**
+${report.weaknesses.map((w) => `• ${w.title}: ${w.desc}`).join("\n")}
+
+🎯 **Menu Latihan Taktis (Drill):**
+${report.drills.map((d) => `• ${d.title}: ${d.desc}`).join("\n")}`;
+
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
   return (
     <Card className="bg-[#0F141C] border-[#1C2433] overflow-hidden shadow-sm">
       {/* Top Header */}
@@ -41,9 +74,30 @@ export function TacticalExpertCard({ report }: TacticalExpertCardProps) {
             </div>
           </div>
 
-          {/* Tactical Grade & Momentum */}
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-[#94A3B8] font-medium hidden sm:inline">
+          {/* Tactical Grade & Actions */}
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleCopyDiscordSummary}
+              className="h-8 px-2.5 text-xs gap-1.5 text-[#94A3B8] hover:text-white hover:border-[#2A364F]"
+              title="Salin ringkasan evaluasi untuk dibagikan ke Discord / WhatsApp tim"
+            >
+              {copied ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-emerald-400 font-bold text-[11px]">Tersalin!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5" />
+                  <span className="text-[11px]">Salin Ringkasan</span>
+                </>
+              )}
+            </Button>
+
+            <span className="text-xs text-[#94A3B8] font-medium hidden md:inline">
               {report.momentum.trendLabel}
             </span>
             <div className={`px-3 py-1 rounded-lg border flex items-center gap-2 ${report.gradeBg} ${report.gradeBorder}`}>
@@ -68,7 +122,7 @@ export function TacticalExpertCard({ report }: TacticalExpertCardProps) {
         {/* 5 Tactical Pillars Gauge */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center text-xs">
           <div className="p-2.5 rounded-xl bg-[#090C10] border border-[#1C2433]">
-            <span className="text-[10px] text-[#94A3B8] font-semibold block">Winrate Ronde</span>
+            <span className="text-[10px] text-[#94A3B8] font-semibold block">Win Rate Ronde</span>
             <span className="text-sm font-black text-white font-mono">{report.pillars.roundWinRate}%</span>
           </div>
           <div className="p-2.5 rounded-xl bg-[#090C10] border border-[#1C2433]">

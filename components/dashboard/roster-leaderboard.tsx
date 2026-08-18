@@ -118,7 +118,7 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
                       </div>
                     </div>
                     <div className="p-2 rounded-lg bg-[#090C10] border border-[#1C2433]">
-                      <div className="text-[10px] text-[#94A3B8] font-medium">First Bloods</div>
+                      <div className="text-[10px] text-[#94A3B8] font-medium">First Blood (FK)</div>
                       <div className="font-bold text-sm text-emerald-400 tabular-nums">
                         {item.firstKills} FK
                       </div>
@@ -141,7 +141,7 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
                 <th className="py-3 px-4 text-center">Match</th>
                 <th className="py-3 px-4 text-right">Avg ACS</th>
                 <th className="py-3 px-4 text-right">K/D Ratio</th>
-                <th className="py-3 px-4 text-center">First Bloods (FK)</th>
+                <th className="py-3 px-4 text-center">First Blood (FK)</th>
                 <th className="py-3 px-4 text-center">Clutch (1vX)</th>
                 <th className="py-3 px-4 text-right"></th>
               </tr>

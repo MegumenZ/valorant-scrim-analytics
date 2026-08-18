@@ -303,7 +303,7 @@ export function MatchDetailView({ match, pastMatches = [] }: MatchDetailViewProp
                   <th className="py-3 px-4 text-right">ACS</th>
                   <th className="py-3 px-4 text-center">K / D / A</th>
                   <th className="py-3 px-4 text-center">K/D Ratio</th>
-                  <th className="py-3 px-4 text-center">First Bloods (FK)</th>
+                  <th className="py-3 px-4 text-center">First Blood (FK)</th>
                   <th className="py-3 px-4 text-center">Clutch (1vX)</th>
                 </tr>
               </thead>

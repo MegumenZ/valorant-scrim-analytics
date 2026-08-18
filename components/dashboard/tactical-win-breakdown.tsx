@@ -51,7 +51,7 @@ export function TacticalWinBreakdownWidget({ winData, lossData, tradingStats }: 
       <CardHeader className="py-4 px-5 border-b border-[#1C2433]">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-bold text-white">
-            Analisis Taktikal Ronde (Cara Menang, Cara Kalah & Trading Kills)
+            Analisis Taktis Ronde (Cara Menang, Cara Kalah & Trading Kills)
           </CardTitle>
           <div className="flex items-center gap-2 text-xs">
             <span className="text-emerald-400 font-bold">{wins.totalWins} W</span>

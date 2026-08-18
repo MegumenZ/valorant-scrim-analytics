@@ -1,5 +1,6 @@
 import React from "react";
-import { Swords, Trophy, Target, Zap } from "lucide-react";
+import Link from "next/link";
+import { Swords, Trophy, Target, Zap, PlusCircle } from "lucide-react";
 import { getDashboardSummary } from "@/lib/actions/matches";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { MapWinrateChart } from "@/components/dashboard/map-winrate-chart";
@@ -9,6 +10,7 @@ import { RecentMatchesTable } from "@/components/dashboard/recent-matches-table"
 import { RosterLeaderboard } from "@/components/dashboard/roster-leaderboard";
 import { evaluateTeamTacticalHealth } from "@/lib/utils/tactical-expert-engine";
 import { TeamTacticalHealthWidget } from "@/components/dashboard/team-tactical-health-widget";
+import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +28,26 @@ export default async function DashboardPage() {
           </h1>
         </div>
       </div>
+
+      {/* Empty State Welcome for New Teams */}
+      {summary.totalMatches === 0 && (
+        <div className="p-6 rounded-2xl bg-[#0F141C] border border-[#1C2433] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h2 className="text-base font-bold text-white">
+              Selamat datang di Platform Analisis Scrim Team SC!
+            </h2>
+            <p className="text-xs text-[#94A3B8]">
+              Mulai rekam pertandingan latihan tim Anda untuk membuka Rapor Taktis real-time, tren efisiensi trade, dan leaderboard pemain.
+            </p>
+          </div>
+          <Link href="/matches/new">
+            <Button className="gap-2 shrink-0 font-semibold shadow-sm">
+              <PlusCircle className="w-4 h-4" />
+              <span>Catat Scrim Pertama</span>
+            </Button>
+          </Link>
+        </div>
+      )}
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -51,10 +73,10 @@ export default async function DashboardPage() {
 
         {/* Team Avg ACS */}
         <KpiCard
-          title="Rata-rata Combat Score"
+          title="Rata-rata ACS"
           value={`${summary.teamAvgAcs} ACS`}
           subtitle="Performa kolektif 5 pemain"
-          detail="Rata-rata combat score per match"
+          detail="Average Combat Score per match"
           icon={Zap}
           variant="highlight"
         />
