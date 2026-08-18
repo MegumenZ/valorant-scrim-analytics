@@ -410,11 +410,11 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
                     </div>
                   </div>
 
-                  {/* 2-Stat Grid: KDA & First Blood */}
-                  <div className="grid grid-cols-2 gap-2 text-center text-xs pt-1 border-t border-[#242e40]/50">
+                  {/* 3-Stat Grid: KDA, First Blood, Clutch */}
+                  <div className="grid grid-cols-3 gap-1.5 text-center text-xs pt-1 border-t border-[#242e40]/50">
                     <div className="p-1.5 rounded-lg bg-[#0e131b] border border-[#242e40]/60">
                       <div className="text-[9px] text-slate-400">K/D/A</div>
-                      <div className="font-bold text-[12px] tabular-nums">
+                      <div className="font-bold text-[11px] tabular-nums">
                         <span className="text-emerald-400">{stat.kills}</span>/
                         <span className="text-rose-400">{stat.deaths}</span>/
                         <span className="text-sky-400">{stat.assists}</span>
@@ -423,8 +423,15 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
 
                     <div className="p-1.5 rounded-lg bg-[#0e131b] border border-[#242e40]/60">
                       <div className="text-[9px] text-slate-400">First Blood</div>
-                      <div className="font-bold text-[12px] text-emerald-400 tabular-nums">
+                      <div className="font-bold text-[11px] text-emerald-400 tabular-nums">
                         {stat.firstKills} FK
+                      </div>
+                    </div>
+
+                    <div className="p-1.5 rounded-lg bg-[#0e131b] border border-[#242e40]/60">
+                      <div className="text-[9px] text-slate-400">Clutch 1vX</div>
+                      <div className="font-bold text-[11px] text-amber-400 tabular-nums">
+                        {stat.clutchesWon > 0 ? `${stat.clutchesWon} W` : "-"}
                       </div>
                     </div>
                   </div>
@@ -444,6 +451,7 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
                   <th className="py-3 px-4 text-center">K / D / A</th>
                   <th className="py-3 px-4 text-center">K/D Ratio</th>
                   <th className="py-3 px-4 text-center">First Bloods (FK)</th>
+                  <th className="py-3 px-4 text-center">Clutch (1vX)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#242e40]/70">
@@ -501,6 +509,10 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
 
                       <td className="py-3.5 px-4 text-center font-bold text-emerald-400 tabular-nums">
                         {stat.firstKills} FK
+                      </td>
+
+                      <td className="py-3.5 px-4 text-center font-bold text-amber-400 tabular-nums">
+                        {stat.clutchesWon > 0 ? `${stat.clutchesWon} Menang` : "-"}
                       </td>
                     </tr>
                   );

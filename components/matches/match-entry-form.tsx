@@ -24,6 +24,7 @@ interface PlayerStatRow {
   deaths: number | string;
   assists: number | string;
   firstKills: number | string;
+  clutchesWon: number | string;
 }
 
 interface MatchEntryFormProps {
@@ -250,11 +251,11 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
   const activeStarters = availablePlayers.filter((p) => p.isActive).slice(0, 5);
 
   const defaultRows: PlayerStatRow[] = [
-    { playerId: activeStarters[0]?.id || availablePlayers[0]?.id || "", agent: "Jett", acs: 240, kills: 18, deaths: 12, assists: 4, firstKills: 4 },
-    { playerId: activeStarters[1]?.id || availablePlayers[1]?.id || "", agent: "Raze", acs: 220, kills: 16, deaths: 14, assists: 5, firstKills: 3 },
-    { playerId: activeStarters[2]?.id || availablePlayers[2]?.id || "", agent: "Omen", acs: 195, kills: 14, deaths: 11, assists: 9, firstKills: 1 },
-    { playerId: activeStarters[3]?.id || availablePlayers[3]?.id || "", agent: "Sova", acs: 185, kills: 13, deaths: 12, assists: 11, firstKills: 2 },
-    { playerId: activeStarters[4]?.id || availablePlayers[4]?.id || "", agent: "Cypher", acs: 160, kills: 11, deaths: 10, assists: 6, firstKills: 0 },
+    { playerId: activeStarters[0]?.id || availablePlayers[0]?.id || "", agent: "Jett", acs: 240, kills: 18, deaths: 12, assists: 4, firstKills: 4, clutchesWon: 1 },
+    { playerId: activeStarters[1]?.id || availablePlayers[1]?.id || "", agent: "Raze", acs: 220, kills: 16, deaths: 14, assists: 5, firstKills: 3, clutchesWon: 0 },
+    { playerId: activeStarters[2]?.id || availablePlayers[2]?.id || "", agent: "Omen", acs: 195, kills: 14, deaths: 11, assists: 9, firstKills: 1, clutchesWon: 2 },
+    { playerId: activeStarters[3]?.id || availablePlayers[3]?.id || "", agent: "Sova", acs: 185, kills: 13, deaths: 12, assists: 11, firstKills: 2, clutchesWon: 0 },
+    { playerId: activeStarters[4]?.id || availablePlayers[4]?.id || "", agent: "Cypher", acs: 160, kills: 11, deaths: 10, assists: 6, firstKills: 0, clutchesWon: 1 },
   ];
 
   const [playerRows, setPlayerRows] = useState<PlayerStatRow[]>(() => {
@@ -267,6 +268,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         deaths: s.deaths,
         assists: s.assists,
         firstKills: s.firstKills,
+        clutchesWon: s.clutchesWon ?? 0,
       }));
     }
     return defaultRows;
@@ -295,11 +297,11 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
 
     if (availablePlayers.length >= 5) {
       setPlayerRows([
-        { playerId: availablePlayers[0].id, agent: "Jett", acs: 285, kills: 22, deaths: 11, assists: 4, firstKills: 5 },
-        { playerId: availablePlayers[1].id, agent: "Raze", acs: 245, kills: 18, deaths: 13, assists: 5, firstKills: 4 },
-        { playerId: availablePlayers[2].id, agent: "Omen", acs: 210, kills: 15, deaths: 10, assists: 10, firstKills: 1 },
-        { playerId: availablePlayers[3].id, agent: "Fade", acs: 190, kills: 13, deaths: 12, assists: 12, firstKills: 2 },
-        { playerId: availablePlayers[4].id, agent: "Cypher", acs: 165, kills: 11, deaths: 9, assists: 7, firstKills: 0 },
+        { playerId: availablePlayers[0].id, agent: "Jett", acs: 285, kills: 22, deaths: 11, assists: 4, firstKills: 5, clutchesWon: 1 },
+        { playerId: availablePlayers[1].id, agent: "Raze", acs: 245, kills: 18, deaths: 13, assists: 5, firstKills: 4, clutchesWon: 0 },
+        { playerId: availablePlayers[2].id, agent: "Omen", acs: 210, kills: 15, deaths: 10, assists: 10, firstKills: 1, clutchesWon: 2 },
+        { playerId: availablePlayers[3].id, agent: "Fade", acs: 190, kills: 13, deaths: 12, assists: 12, firstKills: 2, clutchesWon: 0 },
+        { playerId: availablePlayers[4].id, agent: "Cypher", acs: 165, kills: 11, deaths: 9, assists: 7, firstKills: 0, clutchesWon: 1 },
       ]);
     }
   };
@@ -326,7 +328,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         hsPercent: null,
         firstKills: Number(row.firstKills) || 0,
         firstDeaths: 0,
-        clutchesWon: 0,
+        clutchesWon: Number(row.clutchesWon) || 0,
         kastPercent: null,
       }));
 
@@ -832,10 +834,10 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                     </div>
                   </div>
 
-                  {/* Primary Combat Stats Grid (5 cols) */}
+                  {/* Primary Combat Stats Grid (6 cols) */}
                   <div className="space-y-1 pt-1">
                     <div className="text-[10px] font-semibold text-[#94A3B8]">Statistik Pertandingan</div>
-                    <div className="grid grid-cols-5 gap-1.5 text-center">
+                    <div className="grid grid-cols-6 gap-1 text-center">
                       <div className="space-y-0.5">
                         <span className="text-[9px] text-sky-400 font-bold">ACS *</span>
                         <Input
@@ -849,7 +851,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                         />
                       </div>
                       <div className="space-y-0.5">
-                        <span className="text-[9px] text-emerald-400 font-bold">Kills *</span>
+                        <span className="text-[9px] text-emerald-400 font-bold">K *</span>
                         <Input
                           type="number"
                           min="0"
@@ -861,7 +863,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                         />
                       </div>
                       <div className="space-y-0.5">
-                        <span className="text-[9px] text-rose-400 font-bold">Deaths *</span>
+                        <span className="text-[9px] text-rose-400 font-bold">D *</span>
                         <Input
                           type="number"
                           min="0"
@@ -873,7 +875,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                         />
                       </div>
                       <div className="space-y-0.5">
-                        <span className="text-[9px] text-[#94A3B8] font-bold">Assists *</span>
+                        <span className="text-[9px] text-[#94A3B8] font-bold">A *</span>
                         <Input
                           type="number"
                           min="0"
@@ -895,6 +897,17 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           className="h-8 text-center text-emerald-400 px-1 text-xs"
                         />
                       </div>
+                      <div className="space-y-0.5">
+                        <span className="text-[9px] text-amber-400 font-bold">1vX</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={row.clutchesWon}
+                          onChange={(e) => handleRowChange(index, "clutchesWon", e.target.value)}
+                          className="h-8 text-center text-amber-400 font-bold px-1 text-xs"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -909,12 +922,13 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                 <tr className="border-b border-[#1C2433] bg-[#090C10] text-[#94A3B8] font-semibold text-[11px]">
                   <th className="py-3 px-3.5 min-w-[150px]">Pemain *</th>
                   <th className="py-3 px-3.5 min-w-[165px]">Agent *</th>
-                  <th className="py-3 px-2 text-center w-24">ACS *</th>
-                  <th className="py-3 px-2 text-center w-20">K *</th>
-                  <th className="py-3 px-2 text-center w-20">D *</th>
-                  <th className="py-3 px-2 text-center w-20">A *</th>
-                  <th className="py-3 px-2 text-center w-24">First Bloods (FK)</th>
-                  <th className="py-3 px-3 text-center min-w-[95px]">Live K/D</th>
+                  <th className="py-3 px-2 text-center w-20">ACS *</th>
+                  <th className="py-3 px-2 text-center w-16">K *</th>
+                  <th className="py-3 px-2 text-center w-16">D *</th>
+                  <th className="py-3 px-2 text-center w-16">A *</th>
+                  <th className="py-3 px-2 text-center w-20">First Bloods (FK)</th>
+                  <th className="py-3 px-2 text-center w-20">Clutch (1vX)</th>
+                  <th className="py-3 px-3 text-center min-w-[90px]">Live K/D</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#1C2433]">
@@ -1033,6 +1047,18 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           value={row.firstKills}
                           onChange={(e) => handleRowChange(index, "firstKills", e.target.value)}
                           className="h-8 text-center text-emerald-400 px-1"
+                        />
+                      </td>
+
+                      {/* Clutches */}
+                      <td className="p-1.5">
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={row.clutchesWon}
+                          onChange={(e) => handleRowChange(index, "clutchesWon", e.target.value)}
+                          className="h-8 text-center text-amber-400 font-bold px-1"
                         />
                       </td>
 

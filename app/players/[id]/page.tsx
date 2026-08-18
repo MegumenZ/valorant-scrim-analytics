@@ -152,13 +152,14 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
                 <th className="py-3 px-4 text-center">K / D / A</th>
                 <th className="py-3 px-4 text-right">K/D Ratio</th>
                 <th className="py-3 px-4 text-center">First Bloods (FK)</th>
+                <th className="py-3 px-4 text-center">Clutch (1vX)</th>
                 <th className="py-3 px-4 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#242e40]/70 font-medium">
               {recentMatches.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-8 text-center text-slate-500">
+                  <td colSpan={11} className="py-8 text-center text-slate-500">
                     Pemain ini belum memiliki catatan pertandingan.
                   </td>
                 </tr>
@@ -226,6 +227,9 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
                       </td>
                       <td className="py-3.5 px-4 text-center text-emerald-400 font-bold tabular-nums">
                         {m.firstKills} FK
+                      </td>
+                      <td className="py-3.5 px-4 text-center text-amber-400 font-bold tabular-nums">
+                        {m.clutchesWon > 0 ? `${m.clutchesWon} W` : "-"}
                       </td>
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
                         <Link href={`/matches/${m.matchId}`}>

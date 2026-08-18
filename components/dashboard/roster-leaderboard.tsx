@@ -142,13 +142,14 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
                 <th className="py-3 px-4 text-right">Avg ACS</th>
                 <th className="py-3 px-4 text-right">K/D Ratio</th>
                 <th className="py-3 px-4 text-center">First Bloods (FK)</th>
+                <th className="py-3 px-4 text-center">Clutch (1vX)</th>
                 <th className="py-3 px-4 text-right"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#1C2433] font-medium">
               {leaderboard.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-[#64748B]">
+                  <td colSpan={9} className="py-8 text-center text-[#64748B]">
                     Belum ada data pemain.
                   </td>
                 </tr>
@@ -223,6 +224,9 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
                       </td>
                       <td className="py-3.5 px-4 text-center text-emerald-400 font-semibold tabular-nums">
                         {item.firstKills} FK
+                      </td>
+                      <td className="py-3.5 px-4 text-center font-bold text-amber-400 tabular-nums">
+                        {item.clutchesWon > 0 ? `${item.clutchesWon} W` : "-"}
                       </td>
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
                         <Link href={`/players/${item.player.id}`}>
