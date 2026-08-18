@@ -28,76 +28,76 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-[#1f2c42] bg-[#090D14]/95 backdrop-blur-md px-3 sm:px-4 lg:px-6 select-none">
-        {/* Left Section: Mobile Menu Toggle & Tactical Breadcrumb */}
+      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-[#1C2433] bg-[#090C10]/90 backdrop-blur-md px-3 sm:px-4 lg:px-6 select-none">
+        {/* Left Section: Mobile Menu Toggle & Clean Breadcrumb */}
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={() => setMobileMenuOpen(true)}
-            className="lg:hidden p-2 rounded border border-[#1f2c42] bg-[#121824] text-[#ece8e1] hover:bg-[#1a2333]"
+            className="lg:hidden p-2 rounded-lg border border-[#1C2433] bg-[#161D28] text-[#F1F5F9] hover:bg-[#202A3B]"
             aria-label="Buka Menu"
           >
             <Menu className="w-4 h-4" />
           </button>
 
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded border border-[#1f2c42] bg-[#0e141f]">
+            <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg border border-[#1C2433] bg-[#0F141C]">
               <img
                 src="/team-sc-logo.png"
                 alt="Team SC"
                 className="w-4 h-4 object-contain shrink-0"
               />
-              <span className="font-display font-black text-xs text-white tracking-wider">
-                TEAM SC
+              <span className="font-bold text-xs text-white">
+                Team SC
               </span>
-              <span className="text-[#54657e] font-mono-stat">//</span>
-              <span className="font-display font-bold text-xs text-[#FF4655] uppercase tracking-wider truncate max-w-[130px] sm:max-w-none">
+              <span className="text-[#64748B] font-normal">/</span>
+              <span className="font-semibold text-xs text-[#FF4655] truncate max-w-[130px] sm:max-w-none">
                 {getPageTitle()}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Right Section: User Profile & Tactical Actions */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        {/* Right Section: User Profile & Actions */}
+        <div className="flex items-center gap-2.5 sm:gap-3">
           {/* Authenticated User Profile Display */}
           {!isLoading && user ? (
-            <div className="flex items-center gap-2 bg-[#0e141f] border border-[#1f2c42] pl-2 pr-1.5 py-1 rounded">
+            <div className="flex items-center gap-2.5 bg-[#0F141C] border border-[#1C2433] pl-2.5 pr-1.5 py-1 rounded-lg">
               {/* Avatar */}
               {user.avatar ? (
                 <img
                   src={user.avatar}
                   alt={user.username}
-                  className="w-6 h-6 rounded-full border border-[#2b3d5c] shrink-0"
+                  className="w-6 h-6 rounded-full border border-[#2A364F] shrink-0"
                 />
               ) : (
-                <div className="w-6 h-6 rounded-full bg-[#121824] text-[#ece8e1] flex items-center justify-center text-[10px] font-mono-stat font-bold">
+                <div className="w-6 h-6 rounded-full bg-[#161D28] text-[#F1F5F9] flex items-center justify-center text-[10px] font-bold">
                   {user.username.substring(0, 2).toUpperCase()}
                 </div>
               )}
 
               {/* Name & Role */}
-              <div className="hidden md:flex flex-col text-left font-display">
-                <span className="text-xs font-bold text-white leading-tight uppercase">
+              <div className="hidden md:flex flex-col text-left">
+                <span className="text-xs font-semibold text-white leading-tight">
                   {user.globalName || user.username}
                 </span>
-                <span className={`text-[9px] font-mono-stat font-bold leading-tight ${
-                  isAdmin ? "text-[#FF4655]" : "text-[#00F5D4]"
+                <span className={`text-[10px] font-medium leading-tight ${
+                  isAdmin ? "text-rose-400" : "text-sky-400"
                 }`}>
-                  {isAdmin ? "SYS_ADMIN // IGL" : "SQUAD_MEMBER"}
+                  {isAdmin ? "Admin / IGL" : "Squad Member"}
                 </span>
               </div>
 
               {/* Role Badge for Mobile */}
-              <span className={`md:hidden px-1.5 py-0.2 rounded-[2px] font-mono-stat text-[9px] font-bold ${
-                isAdmin ? "bg-[#FF4655]/20 text-[#FF4655]" : "bg-[#00F5D4]/20 text-[#00F5D4]"
+              <span className={`md:hidden px-1.5 py-0.5 rounded text-[9px] font-semibold ${
+                isAdmin ? "bg-rose-500/15 text-rose-400" : "bg-sky-500/15 text-sky-400"
               }`}>
-                {isAdmin ? "ADMIN" : "MEMBER"}
+                {isAdmin ? "Admin" : "Member"}
               </span>
 
               {/* Logout Button */}
               <button
                 onClick={logout}
-                className="p-1.5 text-[#8b9bb4] hover:text-[#FF4655] hover:bg-[#121824] rounded transition-colors cursor-pointer"
+                className="p-1 text-[#94A3B8] hover:text-rose-400 hover:bg-[#161D28] rounded-md transition-colors cursor-pointer"
                 title="Keluar (Logout)"
               >
                 <LogOut className="w-3.5 h-3.5" />
@@ -105,7 +105,7 @@ export function Header() {
             </div>
           ) : !isLoading && (
             <Link href="/login">
-              <Button variant="secondary" size="sm" className="gap-1.5 text-xs h-8 border-[#5865F2]/40 text-[#8ea1e1] hover:bg-[#5865F2]/20">
+              <Button variant="secondary" size="sm" className="gap-1.5 text-xs h-8">
                 <LogIn className="w-3.5 h-3.5 text-[#5865F2]" />
                 <span>Login Discord</span>
               </Button>
@@ -115,7 +115,7 @@ export function Header() {
           {/* Quick Record CTA for Admin */}
           {isAdmin && (
             <Link href="/matches/new">
-              <Button size="sm" className="hidden sm:inline-flex gap-1.5 font-display font-black h-8 shadow-md shadow-[#FF4655]/20">
+              <Button size="sm" className="hidden sm:inline-flex gap-1.5 font-semibold h-8 shadow-sm">
                 <PlusCircle className="w-3.5 h-3.5" />
                 <span>+ Catat Scrim</span>
               </Button>

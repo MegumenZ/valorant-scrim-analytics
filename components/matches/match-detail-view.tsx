@@ -109,25 +109,25 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
       </div>
 
       {/* MATCH HERO BANNER WITH MAP SPLASH ART */}
-      <div className="relative overflow-hidden rounded-lg border border-[#1f2c42] bg-[#0c111a] p-6 sm:p-8 shadow-2xl min-h-[160px] flex items-center">
+      <div className="relative overflow-hidden rounded-xl border border-[#1C2433] bg-[#0F141C] p-6 sm:p-8 shadow-sm min-h-[160px] flex items-center">
         {/* Background Map Splash */}
         {mapMeta.splash && (
           <img
             src={mapMeta.splash}
             alt={match.map}
-            className="absolute inset-0 w-full h-full object-cover object-center opacity-25 mix-blend-luminosity scale-105 pointer-events-none"
+            className="absolute inset-0 w-full h-full object-cover object-center opacity-20 mix-blend-luminosity scale-105 pointer-events-none"
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0c111a] via-[#0c111a]/85 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0F141C] via-[#0F141C]/90 to-transparent pointer-events-none" />
 
         <div className="relative z-10 w-full flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span className="px-2.5 py-0.5 rounded-[3px] bg-[#121824] border border-[#2b3d5c] text-xs font-display font-black text-white uppercase tracking-wider">
+              <span className="px-2.5 py-0.5 rounded-md bg-[#161D28] border border-[#2A364F] text-xs font-bold text-white">
                 {match.map}
               </span>
-              <span className="text-xs font-mono-stat text-[#8b9bb4] flex items-center gap-1.5 font-medium">
-                <Calendar className="w-3.5 h-3.5 text-[#54657e]" />
+              <span className="text-xs text-[#94A3B8] flex items-center gap-1.5 font-medium">
+                <Calendar className="w-3.5 h-3.5 text-[#64748B]" />
                 {match.matchDate}
               </span>
               <Badge variant={match.startSide === "ATTACK" ? "attack" : "defense"}>
@@ -135,32 +135,32 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
               </Badge>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-display font-black uppercase tracking-wider text-white">
-              TEAM SC <span className="text-[#54657e] font-mono-stat">//</span> <span className="text-[#FF4655]">{match.opponentName}</span>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+              Team SC <span className="text-[#64748B] font-normal">vs</span> <span className="text-[#FF4655]">{match.opponentName}</span>
             </h1>
-            <p className="text-[11px] font-mono-stat text-[#8b9bb4] mt-1">
-              // LOKASI: {mapMeta.location}
+            <p className="text-xs text-[#94A3B8] mt-1">
+              Lokasi: {mapMeta.location}
             </p>
           </div>
 
-          {/* Big Broadcast Score Box */}
-          <div className="flex items-center gap-4 bg-[#080B10]/90 backdrop-blur-md px-6 py-4 rounded-lg border border-[#1f2c42] shrink-0 shadow-xl">
+          {/* Clean Modern Score Box */}
+          <div className="flex items-center gap-4 bg-[#090C10]/95 backdrop-blur-sm px-6 py-4 rounded-xl border border-[#1C2433] shrink-0 shadow-sm">
             <div className="text-center">
-              <div className="text-[10px] font-mono-stat text-[#8b9bb4] font-bold uppercase tracking-widest">TEAM SC</div>
-              <div className={`font-display text-4xl sm:text-5xl font-black tabular-nums ${
-                match.result === "WIN" ? "text-[#10E7B2]" : match.result === "LOSS" ? "text-[#FF4655]" : "text-[#FFD166]"
+              <div className="text-[11px] font-semibold text-[#94A3B8] uppercase">Team SC</div>
+              <div className={`text-4xl sm:text-5xl font-extrabold tabular-nums tracking-tight ${
+                match.result === "WIN" ? "text-emerald-400" : match.result === "LOSS" ? "text-rose-400" : "text-amber-400"
               }`}>
                 {match.scoreTeam}
               </div>
             </div>
-            <div className="text-2xl font-display font-black text-[#54657e]">:</div>
+            <div className="text-2xl font-bold text-[#64748B]">:</div>
             <div className="text-center">
-              <div className="text-[10px] font-mono-stat text-[#8b9bb4] font-bold uppercase tracking-widest">LAWAN</div>
-              <div className="font-display text-4xl sm:text-5xl font-black text-[#ece8e1] tabular-nums">
+              <div className="text-[11px] font-semibold text-[#94A3B8] uppercase">Lawan</div>
+              <div className="text-4xl sm:text-5xl font-extrabold text-[#F1F5F9] tabular-nums tracking-tight">
                 {match.scoreOpponent}
               </div>
             </div>
-            <div className="ml-2 pl-4 border-l border-[#1f2c42]">
+            <div className="ml-2 pl-4 border-l border-[#1C2433]">
               <Badge
                 variant={
                   match.result === "WIN"
@@ -169,7 +169,7 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
                     ? "loss"
                     : "draw"
                 }
-                className="text-xs px-3 py-1 font-display font-black"
+                className="text-xs px-3 py-1 font-bold"
               >
                 {match.result}
               </Badge>
@@ -180,13 +180,13 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
 
       {/* MATCH PERFORMANCE SCOREBOARD */}
       <Card>
-        <CardHeader className="py-4 px-5 border-b border-[#242e40]">
+        <CardHeader className="py-4 px-5 border-b border-[#1C2433]">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
               <Trophy className="w-4 h-4 text-amber-400" />
-              <span>Scoreboard Statistik Performa 5 Pemain Inti</span>
+              <span>Scoreboard Performa 5 Pemain Inti</span>
             </CardTitle>
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-[#94A3B8]">
               Disortir berdasarkan ACS tertinggi
             </span>
           </div>

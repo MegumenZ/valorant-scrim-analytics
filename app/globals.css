@@ -2,140 +2,60 @@
 
 @layer base {
   :root {
-    --font-rajdhani: "Rajdhani", sans-serif;
-    --font-mono: "JetBrains Mono", monospace;
-
-    --bg-main: #080b10;
-    --bg-surface: #0e141f;
-    --bg-surface-hover: #151e2e;
-    --bg-surface-elevated: #1a2538;
-    --border-subtle: #1f2c42;
-    --border-tactical: #2b3d5c;
+    --bg-main: #090c10;
+    --bg-surface: #0f141c;
+    --bg-surface-hover: #161d28;
+    --bg-surface-elevated: #1c2432;
+    --border-subtle: #1c2433;
+    --border-hover: #2a364f;
     --border-focus: #ff4655;
 
     --brand-red: #ff4655;
-    --brand-red-hover: #ff2b3d;
-    --brand-red-soft: rgba(255, 70, 85, 0.15);
+    --brand-red-hover: #e03e4c;
+    --brand-red-soft: rgba(255, 70, 85, 0.12);
 
-    --accent-cyan: #00f5d4;
-    --accent-sky: #38bdf8;
-    --accent-emerald: #10e7b2;
-    --accent-amber: #ffd166;
-    --accent-gold: #ffb703;
-    --accent-rose: #ff4655;
+    --accent-emerald: #10b981;
+    --accent-rose: #f43f5e;
+    --accent-amber: #f59e0b;
+    --accent-sky: #0ea5e9;
 
-    --text-main: #ece8e1;
-    --text-muted: #8b9bb4;
-    --text-dim: #54657e;
+    --text-main: #f1f5f9;
+    --text-muted: #94a3b8;
+    --text-dim: #64748b;
   }
 
   body {
-    background-color: #080b10;
-    color: #ece8e1;
-    font-family: var(--font-rajdhani), system-ui, -apple-system, sans-serif;
+    background-color: #090c10;
+    color: #f1f5f9;
+    font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
     min-height: 100vh;
     overflow-x: hidden;
-    letter-spacing: 0.02em;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-rajdhani), sans-serif;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-weight: 700;
   }
 }
 
-/* Typography utilities */
-.font-display {
-  font-family: var(--font-rajdhani), sans-serif;
-  letter-spacing: 0.06em;
-}
-
-.font-mono-stat {
-  font-family: var(--font-mono), monospace;
-  letter-spacing: -0.02em;
-}
-
-/* Tactical Background Patterns */
-.bg-tactical-grid {
-  background-image: radial-gradient(rgba(139, 155, 180, 0.12) 1px, transparent 1px);
-  background-size: 20px 20px;
-}
-
-.bg-tactical-stripes {
-  background-image: repeating-linear-gradient(
-    -45deg,
-    rgba(255, 70, 85, 0.04),
-    rgba(255, 70, 85, 0.04) 8px,
-    transparent 8px,
-    transparent 16px
-  );
-}
-
-.bg-carbon {
-  background-color: #0c1018;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 0);
-  background-size: 12px 12px;
-}
-
-/* Tactical Chamfer & Cut Angles */
-.tactical-cut {
-  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
-}
-
-.tactical-cut-both {
-  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
-}
-
-/* Tactical Crosshairs & Corner Accents */
-.tactical-card {
-  position: relative;
-  background: #0e141f;
-  border: 1px solid #1f2c42;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.tactical-card:hover {
-  border-color: #2e4162;
-  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.5);
-}
-
-/* Glow effects */
-.vct-glow-red {
-  box-shadow: 0 0 25px -5px rgba(255, 70, 85, 0.35);
-}
-
-.vct-glow-cyan {
-  box-shadow: 0 0 25px -5px rgba(0, 245, 212, 0.25);
-}
-
-.vct-glow-gold {
-  box-shadow: 0 0 25px -5px rgba(255, 209, 102, 0.25);
-}
-
-/* Tabular numbers for clean numerical stats alignment */
+/* Tabular numbers for clean stats alignment */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
 }
 
-/* Smooth sleek scrollbars */
+/* Sleek Minimalist Scrollbars */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #080b10;
+  background: #090c10;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1f2c42;
-  border-radius: 2px;
+  background: #1c2433;
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #ff4655;
+  background: #2a364f;
 }
+
 

@@ -9,41 +9,35 @@ import {
   Users,
   Map as MapIcon,
   ChevronRight,
-  Radio,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useUserRole } from "./role-context";
 
 const navItems = [
   {
-    idx: "01",
     label: "Dashboard",
     href: "/",
     icon: LayoutDashboard,
   },
   {
-    idx: "02",
     label: "Riwayat Scrim",
     href: "/matches",
     icon: Swords,
   },
   {
-    idx: "03",
     label: "Catat Match",
     href: "/matches/new",
     icon: PlusCircle,
-    badge: "ACT",
     adminOnly: true,
   },
   {
-    idx: "04",
-    label: "Roster Skuad",
+    label: "Roster Pemain",
     href: "/roster",
     icon: Users,
   },
   {
-    idx: "05",
-    label: "Analitik Map",
+    label: "Statistik Map",
     href: "/maps",
     icon: MapIcon,
   },
@@ -56,16 +50,13 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
   return (
     <aside
       className={cn(
-        "flex flex-col h-full bg-[#090D14] border-r border-[#1f2c42] w-64 select-none relative",
+        "flex flex-col h-full bg-[#090C10] border-r border-[#1C2433] w-64 select-none",
         className
       )}
     >
-      {/* Tactical Grid Overlay */}
-      <div className="absolute inset-0 bg-tactical-grid opacity-40 pointer-events-none" />
-
       {/* Brand Header */}
-      <div className="relative flex items-center gap-3 px-5 py-4 border-b border-[#1f2c42] bg-[#0c111a]/80">
-        <div className="w-10 h-10 rounded-md bg-[#121824] border border-[#2b3d5c] flex items-center justify-center p-1.5 shadow-md shrink-0 relative group">
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-[#1C2433]">
+        <div className="w-9 h-9 rounded-lg bg-[#161D28] border border-[#2A364F] flex items-center justify-center p-1.5 shadow-sm shrink-0">
           <img
             src="/team-sc-logo.png"
             alt="Team SC Logo"
@@ -73,25 +64,19 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
           />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="font-display font-black text-sm tracking-wider text-white">
-              TEAM <span className="text-[#FF4655]">SC</span>
-            </span>
-            <span className="font-display text-[9px] font-black px-1.5 py-0.2 rounded-[2px] bg-[#FF4655]/20 text-[#FF4655] border border-[#FF4655]/40">
-              VCT
-            </span>
-          </div>
-          <p className="text-[10px] font-mono-stat text-[#8b9bb4] tracking-tight truncate">
-            // TACTICAL.SCRIM.HUB
+          <h2 className="text-sm font-bold text-white tracking-tight leading-tight">
+            Team SC
+          </h2>
+          <p className="text-xs text-[#94A3B8] font-normal truncate">
+            Scrim Analytics
           </p>
         </div>
       </div>
 
-      {/* Navigation List */}
-      <div className="relative flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
-        <div className="flex items-center justify-between px-3 pb-2 text-[10px] font-mono-stat text-[#54657e] uppercase tracking-widest">
-          <span>// NAVIGATION</span>
-          <span>SYS.01</span>
+      {/* Navigation Menu */}
+      <div className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        <div className="px-3 pb-2 text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
+          Menu Utama
         </div>
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -110,49 +95,42 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
               href={item.href}
               onClick={onClose}
               className={cn(
-                "flex items-center justify-between px-3 py-2 rounded-md text-xs font-display uppercase tracking-wider transition-all group relative",
+                "flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-all group",
                 isActive
-                  ? "bg-[#FF4655]/15 text-white font-bold border-l-2 border-[#FF4655] shadow-sm shadow-[#FF4655]/10"
-                  : "text-[#8b9bb4] hover:text-white hover:bg-[#121824] border-l-2 border-transparent"
+                  ? "bg-[#161D28] text-white font-semibold border border-[#2A364F]"
+                  : "text-[#94A3B8] hover:text-[#F1F5F9] hover:bg-[#161D28]/60 border border-transparent"
               )}
             >
-              <div className="flex items-center gap-2.5">
-                <span className="font-mono-stat text-[10px] text-[#54657e] group-hover:text-[#8b9bb4]">
-                  {item.idx}
-                </span>
+              <div className="flex items-center gap-3">
                 <Icon
                   className={cn(
                     "w-4 h-4 transition-colors",
-                    isActive ? "text-[#FF4655]" : "text-[#8b9bb4] group-hover:text-white"
+                    isActive ? "text-[#FF4655]" : "text-[#64748B] group-hover:text-[#94A3B8]"
                   )}
                 />
-                <span className="tracking-wide">{item.label}</span>
+                <span>{item.label}</span>
               </div>
 
-              <div className="flex items-center gap-1.5">
-                {item.badge && (
-                  <span className="px-1.5 py-0.2 text-[9px] font-mono-stat font-bold rounded-[2px] bg-[#FF4655] text-white">
-                    {item.badge}
-                  </span>
-                )}
-                {isActive && <ChevronRight className="w-3.5 h-3.5 text-[#FF4655]" />}
-              </div>
+              {isActive && (
+                <div className="w-1.5 h-1.5 rounded-full bg-[#FF4655]" />
+              )}
             </Link>
           );
         })}
       </div>
 
-      {/* Tactical Status Telemetry Footer */}
-      <div className="relative p-3.5 border-t border-[#1f2c42] bg-[#0c111a]/80">
-        <div className="p-2 rounded border border-[#1f2c42] bg-[#080B10] flex items-center justify-between text-[10px] font-mono-stat">
+      {/* Clean Minimalist Footer */}
+      <div className="p-4 border-t border-[#1C2433]">
+        <div className="flex items-center justify-between text-xs text-[#64748B]">
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-[#10E7B2] animate-pulse" />
-            <span className="text-[#10E7B2] font-bold">GRID_ONLINE</span>
+            <Shield className="w-3.5 h-3.5 text-[#94A3B8]" />
+            <span>Team SC Official</span>
           </div>
-          <span className="text-[#54657e]">V2.4.0</span>
+          <span className="text-[11px]">Musim 2026</span>
         </div>
       </div>
     </aside>
   );
 }
+
 

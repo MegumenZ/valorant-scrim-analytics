@@ -14,16 +14,16 @@ interface RecentMatchesTableProps {
 export function RecentMatchesTable({ matches }: RecentMatchesTableProps) {
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-3 bg-[#0c111a]/80">
+      <CardHeader className="flex flex-row items-center justify-between pb-4">
         <div>
           <CardTitle className="flex items-center gap-2">
             <Swords className="w-4 h-4 text-[#FF4655]" />
             <span>Log Scrim Terkini</span>
           </CardTitle>
-          <CardDescription>5 hasil scrimmage kompetitif terakhir</CardDescription>
+          <CardDescription>5 hasil scrimmage tim terakhir</CardDescription>
         </div>
         <Link href="/matches">
-          <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8 font-display">
+          <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8 font-medium">
             <span>Semua Match</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </Button>
@@ -31,10 +31,10 @@ export function RecentMatchesTable({ matches }: RecentMatchesTableProps) {
       </CardHeader>
       <CardContent className="p-0">
         {/* MOBILE VIEW: Responsive Scrim Cards (md:hidden) */}
-        <div className="md:hidden divide-y divide-[#1f2c42]/80">
+        <div className="md:hidden divide-y divide-[#1C2433]">
           {matches.length === 0 ? (
-            <div className="py-8 text-center text-[#54657e] font-mono-stat text-xs">
-              // BELUM ADA CATATAN MATCH.
+            <div className="py-8 text-center text-[#64748B] text-xs">
+              Belum ada catatan match.
             </div>
           ) : (
             matches.map((m) => {
@@ -44,30 +44,30 @@ export function RecentMatchesTable({ matches }: RecentMatchesTableProps) {
                 <Link
                   key={m.id}
                   href={`/matches/${m.id}`}
-                  className="block p-3.5 hover:bg-[#151e2e] active:bg-[#1a2538] transition-colors"
+                  className="block p-4 hover:bg-[#161D28] active:bg-[#202A3B] transition-colors"
                 >
-                  <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center justify-between gap-2 mb-2.5">
                     {/* Map & Date */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2.5">
                       <img
                         src={getMapListViewIcon(m.map)}
                         alt={m.map}
-                        className="w-8 h-8 rounded object-cover border border-[#2b3d5c] bg-[#121824] shrink-0"
+                        className="w-8 h-8 rounded-lg object-cover border border-[#1C2433] bg-[#161D28] shrink-0"
                       />
                       <div>
-                        <div className="font-display font-bold text-xs uppercase text-white tracking-wider">{m.map}</div>
-                        <div className="font-mono-stat text-[10px] text-[#8b9bb4]">{m.matchDate}</div>
+                        <div className="font-bold text-xs text-white">{m.map}</div>
+                        <div className="text-[11px] text-[#94A3B8]">{m.matchDate}</div>
                       </div>
                     </div>
 
-                    {/* Result & Score Badge */}
-                    <div className="flex items-center gap-1.5">
-                      <div className="font-display text-base font-black tabular-nums tracking-wider">
-                        <span className={m.result === "WIN" ? "text-[#10E7B2]" : m.result === "LOSS" ? "text-[#FF4655]" : "text-[#FFD166]"}>
+                    {/* Result & Score */}
+                    <div className="flex items-center gap-2">
+                      <div className="text-sm font-bold tabular-nums">
+                        <span className={m.result === "WIN" ? "text-emerald-400" : m.result === "LOSS" ? "text-rose-400" : "text-amber-400"}>
                           {m.scoreTeam}
                         </span>
-                        <span className="text-[#54657e] mx-1">-</span>
-                        <span className="text-[#8b9bb4]">{m.scoreOpponent}</span>
+                        <span className="text-[#64748B] mx-1">-</span>
+                        <span className="text-[#94A3B8]">{m.scoreOpponent}</span>
                       </div>
                       <Badge
                         variant={
@@ -85,27 +85,27 @@ export function RecentMatchesTable({ matches }: RecentMatchesTableProps) {
 
                   {/* Opponent & Side */}
                   <div className="flex items-center justify-between text-xs py-1">
-                    <span className="font-display font-bold text-[#ece8e1] uppercase tracking-wide truncate">
-                      VS {m.opponentName}
+                    <span className="font-semibold text-[#F1F5F9] truncate">
+                      vs {m.opponentName}
                     </span>
                     <Badge variant={m.startSide === "ATTACK" ? "attack" : "defense"}>
                       {m.startSide === "ATTACK" ? "Attack" : "Defense"}
                     </Badge>
                   </div>
 
-                  {/* MVP Fragger */}
+                  {/* Top Fragger */}
                   {topFragger && (
-                    <div className="flex items-center justify-between pt-2 mt-1 border-t border-[#1f2c42]/60 text-xs">
-                      <div className="flex items-center gap-1.5">
+                    <div className="flex items-center justify-between pt-2.5 mt-1 border-t border-[#1C2433] text-xs">
+                      <div className="flex items-center gap-2">
                         <img
                           src={getAgentIcon(topFragger.agent)}
                           alt={topFragger.agent}
-                          className="w-5 h-5 rounded-full bg-[#121824] border border-[#2b3d5c] shrink-0 object-cover"
+                          className="w-5 h-5 rounded-full bg-[#161D28] border border-[#2A364F] shrink-0 object-cover"
                         />
-                        <span className="font-display font-bold text-[#ece8e1]">{topFragger.player?.name}</span>
-                        <span className="font-mono-stat text-[#8b9bb4] text-[10px]">({topFragger.agent})</span>
+                        <span className="font-medium text-[#F1F5F9]">{topFragger.player?.name}</span>
+                        <span className="text-[#64748B] text-[11px]">({topFragger.agent})</span>
                       </div>
-                      <span className="font-mono-stat font-bold text-[#38bdf8] text-[11px]">
+                      <span className="font-semibold text-sky-400 text-xs">
                         {topFragger.acs} ACS
                       </span>
                     </div>
@@ -120,22 +120,22 @@ export function RecentMatchesTable({ matches }: RecentMatchesTableProps) {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-y border-[#1f2c42] bg-[#0a0f18] text-[#8b9bb4] font-display uppercase tracking-wider text-[11px] font-bold">
+              <tr className="border-b border-[#1C2433] bg-[#090C10]/50 text-[#94A3B8] font-medium text-[11px]">
                 <th className="py-3 px-4">Tanggal</th>
                 <th className="py-3 px-4">Map</th>
                 <th className="py-3 px-4">Lawan</th>
                 <th className="py-3 px-4 text-center">Skor</th>
                 <th className="py-3 px-4 text-center">Hasil</th>
                 <th className="py-3 px-4 text-center">Sisi</th>
-                <th className="py-3 px-4">MVP / Top Fragger</th>
+                <th className="py-3 px-4">Top Fragger / MVP</th>
                 <th className="py-3 px-4 text-right"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#1f2c42]/60 font-medium">
+            <tbody className="divide-y divide-[#1C2433] font-medium">
               {matches.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-[#54657e] font-mono-stat">
-                    // BELUM ADA CATATAN MATCH.
+                  <td colSpan={8} className="py-8 text-center text-[#64748B]">
+                    Belum ada catatan match.
                   </td>
                 </tr>
               ) : (
@@ -145,30 +145,30 @@ export function RecentMatchesTable({ matches }: RecentMatchesTableProps) {
                   return (
                     <tr
                       key={m.id}
-                      className="hover:bg-[#151e2e] transition-colors group"
+                      className="hover:bg-[#161D28] transition-colors group"
                     >
-                      <td className="py-3.5 px-4 font-mono-stat text-[#8b9bb4] whitespace-nowrap">
+                      <td className="py-3.5 px-4 text-[#94A3B8] whitespace-nowrap">
                         {m.matchDate}
                       </td>
-                      <td className="py-3.5 px-4 font-display font-bold text-white uppercase tracking-wider">
-                        <div className="flex items-center gap-2">
+                      <td className="py-3.5 px-4 font-bold text-white">
+                        <div className="flex items-center gap-2.5">
                           <img
                             src={getMapListViewIcon(m.map)}
                             alt={m.map}
-                            className="w-7 h-7 rounded object-cover border border-[#2b3d5c] bg-[#121824] shrink-0"
+                            className="w-7 h-7 rounded-md object-cover border border-[#1C2433] bg-[#161D28] shrink-0"
                           />
-                          <span className="text-xs">{m.map}</span>
+                          <span>{m.map}</span>
                         </div>
                       </td>
-                      <td className="py-3.5 px-4 font-display font-bold text-white uppercase tracking-wide whitespace-nowrap text-sm">
+                      <td className="py-3.5 px-4 font-semibold text-white whitespace-nowrap text-sm">
                         {m.opponentName}
                       </td>
-                      <td className="py-3.5 px-4 text-center font-display font-black text-sm tracking-wider tabular-nums">
-                        <span className={m.result === "WIN" ? "text-[#10E7B2]" : m.result === "LOSS" ? "text-[#FF4655]" : "text-[#FFD166]"}>
+                      <td className="py-3.5 px-4 text-center font-bold text-sm tracking-wide tabular-nums">
+                        <span className={m.result === "WIN" ? "text-emerald-400" : m.result === "LOSS" ? "text-rose-400" : "text-amber-400"}>
                           {m.scoreTeam}
                         </span>
-                        <span className="text-[#54657e] mx-1.5">-</span>
-                        <span className="text-[#8b9bb4]">{m.scoreOpponent}</span>
+                        <span className="text-[#64748B] mx-1.5">-</span>
+                        <span className="text-[#94A3B8]">{m.scoreOpponent}</span>
                       </td>
                       <td className="py-3.5 px-4 text-center">
                         <Badge
@@ -194,16 +194,16 @@ export function RecentMatchesTable({ matches }: RecentMatchesTableProps) {
                             <img
                               src={getAgentIcon(topFragger.agent)}
                               alt={topFragger.agent}
-                              className="w-6 h-6 rounded-full bg-[#121824] border border-[#2b3d5c] shrink-0 object-cover"
+                              className="w-6 h-6 rounded-full bg-[#161D28] border border-[#2A364F] shrink-0 object-cover"
                             />
-                            <span className="font-display font-bold text-white">{topFragger.player?.name || "Player"}</span>
-                            <span className="font-mono-stat text-[#8b9bb4] text-[10px]">({topFragger.agent})</span>
-                            <span className="font-mono-stat text-xs font-bold text-[#38bdf8] ml-1">
+                            <span className="font-semibold text-white">{topFragger.player?.name || "Player"}</span>
+                            <span className="text-[#64748B] text-xs">({topFragger.agent})</span>
+                            <span className="text-xs font-semibold text-sky-400 ml-1">
                               {topFragger.acs} ACS
                             </span>
                           </div>
                         ) : (
-                          <span className="text-[#54657e] font-mono-stat">-</span>
+                          <span className="text-[#64748B]">-</span>
                         )}
                       </td>
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
@@ -211,7 +211,7 @@ export function RecentMatchesTable({ matches }: RecentMatchesTableProps) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-7 px-2.5 text-xs gap-1 hover:text-[#FF4655] hover:bg-[#FF4655]/10 font-display"
+                            className="h-7 px-2.5 text-xs gap-1 hover:text-rose-400 hover:bg-rose-500/10"
                           >
                             <span>Detail</span>
                             <ExternalLink className="w-3 h-3" />
@@ -229,3 +229,4 @@ export function RecentMatchesTable({ matches }: RecentMatchesTableProps) {
     </Card>
   );
 }
+

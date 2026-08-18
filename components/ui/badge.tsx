@@ -3,28 +3,28 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils/cn";
 
 const badgeVariants = cva(
-  "inline-flex items-center uppercase font-display px-2 py-0.5 text-[11px] font-bold tracking-wider transition-colors select-none rounded-[3px] border",
+  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold tracking-normal transition-colors select-none",
   {
     variants: {
       variant: {
         default:
-          "border-[#FF4655]/40 bg-[#FF4655]/15 text-[#FF4655]",
+          "border-rose-500/20 bg-rose-500/10 text-rose-400",
         win:
-          "border-[#10E7B2]/40 bg-[#10E7B2]/15 text-[#10E7B2] shadow-sm shadow-[#10E7B2]/20",
+          "border-emerald-500/20 bg-emerald-500/10 text-emerald-400 font-bold",
         loss:
-          "border-[#FF4655]/40 bg-[#FF4655]/15 text-[#FF4655] shadow-sm shadow-[#FF4655]/20",
+          "border-rose-500/20 bg-rose-500/10 text-rose-400 font-bold",
         draw:
-          "border-[#FFD166]/40 bg-[#FFD166]/15 text-[#FFD166]",
+          "border-amber-500/20 bg-amber-500/10 text-amber-400 font-bold",
         mvp:
-          "border-[#FFD166]/50 bg-[#FFD166]/15 text-[#FFD166] shadow-sm shadow-[#FFD166]/20",
+          "border-amber-500/25 bg-amber-500/10 text-amber-300 font-bold",
         secondary:
-          "border-[#1f2c42] bg-[#141d2b] text-[#ece8e1]",
+          "border-[#1c2433] bg-[#161d28] text-[#f1f5f9]",
         outline:
-          "border-[#1f2c42] text-[#8b9bb4] bg-transparent",
+          "border-[#1c2433] text-[#94a3b8] bg-transparent",
         attack:
-          "border-[#FF4655]/30 bg-[#FF4655]/10 text-[#FF4655]",
+          "border-rose-500/20 bg-rose-500/10 text-rose-300 font-medium",
         defense:
-          "border-[#00F5D4]/30 bg-[#00F5D4]/10 text-[#00F5D4]",
+          "border-sky-500/20 bg-sky-500/10 text-sky-300 font-medium",
       },
     },
     defaultVariants: {
@@ -44,4 +44,5 @@ function Badge({ className, variant, ...props }: BadgeProps) {
 }
 
 export { Badge, badgeVariants };
+
 

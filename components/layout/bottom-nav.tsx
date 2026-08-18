@@ -60,7 +60,7 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#090D14]/95 backdrop-blur-lg border-t border-[#1f2c42] px-2 py-1.5 safe-bottom select-none shadow-2xl">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#090C10]/95 backdrop-blur-lg border-t border-[#1C2433] px-2 py-1.5 safe-bottom select-none shadow-xl">
       <div className="flex items-center justify-around max-w-md mx-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -72,10 +72,10 @@ export function BottomNav() {
                 href={item.href}
                 className="flex flex-col items-center justify-center -mt-4 group"
               >
-                <div className="w-11 h-11 rounded-full bg-[#FF4655] border-2 border-[#090D14] shadow-lg shadow-[#FF4655]/40 flex items-center justify-center text-white group-active:scale-95 transition-transform">
+                <div className="w-11 h-11 rounded-full bg-[#FF4655] border-2 border-[#090C10] shadow-md shadow-[#FF4655]/30 flex items-center justify-center text-white group-active:scale-95 transition-transform">
                   <Icon className="w-5 h-5" />
                 </div>
-                <span className="font-display text-[10px] font-bold text-[#FF4655] uppercase tracking-wider mt-0.5">
+                <span className="text-[10px] font-semibold text-[#FF4655] mt-0.5">
                   {item.label}
                 </span>
               </Link>
@@ -88,12 +88,12 @@ export function BottomNav() {
               href={item.href}
               className={`flex flex-col items-center justify-center py-1 px-3 rounded-lg transition-all ${
                 item.active
-                  ? "text-[#FF4655] font-display font-bold scale-105"
-                  : "text-[#8b9bb4] hover:text-white"
+                  ? "text-[#FF4655] font-semibold"
+                  : "text-[#94A3B8] hover:text-white"
               }`}
             >
               <Icon className={`w-5 h-5 ${item.active ? "text-[#FF4655]" : ""}`} />
-              <span className="font-display text-[10px] font-bold uppercase tracking-wider mt-0.5">
+              <span className="text-[10px] tracking-tight mt-0.5">
                 {item.label}
               </span>
             </Link>
