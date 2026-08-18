@@ -4,13 +4,14 @@ import { db, ensureDbInitialized } from "../db";
 import { matches, matchPlayerStats, players, Match, Player, MatchPlayerStat, MatchAttachment } from "../db/schema";
 import { eq, desc, asc } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { matchSchema, MatchInput } from "../validations/match";
+import { matchSchema, MatchInput, RoundItem } from "../validations/match";
 import { calculateKD, calculateOpeningDuelRatio, calculateMatchResult, DashboardSummary, MapAggregateStats } from "../utils/analytics";
 import { VALORANT_MAPS, ValorantMap } from "../data/valorant";
 
 export interface MatchWithStats extends Match {
   playerStats: Array<MatchPlayerStat & { player: Player }>;
   parsedAttachments?: MatchAttachment[];
+  parsedRoundTimeline?: RoundItem[];
 }
 
 export async function getDashboardSummary(): Promise<{
@@ -308,9 +309,19 @@ export async function getMatchById(id: string): Promise<MatchWithStats | null> {
     }
   }
 
+  let parsedRoundTimeline: RoundItem[] = [];
+  if (match.roundTimeline) {
+    try {
+      parsedRoundTimeline = JSON.parse(match.roundTimeline);
+    } catch (err) {
+      console.error("Failed to parse roundTimeline JSON:", err);
+    }
+  }
+
   return {
     ...match,
     parsedAttachments,
+    parsedRoundTimeline,
     playerStats: [...match.playerStats].sort((a, b) => b.acs - a.acs),
   };
 }
@@ -347,6 +358,9 @@ export async function createMatch(input: MatchInput) {
     notes: validated.notes || null,
     attachments: validated.attachments && validated.attachments.length > 0
       ? JSON.stringify(validated.attachments)
+      : null,
+    roundTimeline: validated.roundsTimeline && validated.roundsTimeline.length > 0
+      ? JSON.stringify(validated.roundsTimeline)
       : null,
   });
 
@@ -399,6 +413,9 @@ export async function updateMatch(id: string, input: MatchInput) {
       notes: validated.notes || null,
       attachments: validated.attachments && validated.attachments.length > 0
         ? JSON.stringify(validated.attachments)
+        : null,
+      roundTimeline: validated.roundsTimeline && validated.roundsTimeline.length > 0
+        ? JSON.stringify(validated.roundsTimeline)
         : null,
     })
     .where(eq(matches.id, id));

@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { PlusCircle, Check, AlertCircle, RefreshCw, Sparkles, HelpCircle, Calendar } from "lucide-react";
+import { PlusCircle, Check, AlertCircle, RefreshCw, Sparkles, HelpCircle, Calendar, Shield, Crosshair, Zap, RotateCcw, Swords, FileText, Image as ImageIcon, Trash2, UploadCloud, Eye, CheckCircle2 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import { Player, MatchAttachment } from "@/lib/db/schema";
 import { createMatch, updateMatch } from "@/lib/actions/matches";
 import { calculateKD, calculateMatchResult } from "@/lib/utils/analytics";
 import { compressImageToWebP, processAndCompressPdf, formatFileSize } from "@/lib/utils/file-compressor";
-import { FileText, Image as ImageIcon, Trash2, UploadCloud, Eye, CheckCircle2 } from "lucide-react";
+import { RoundItem } from "@/lib/validations/match";
 
 interface PlayerStatRow {
   playerId: string;
@@ -26,8 +26,6 @@ interface PlayerStatRow {
   adr: number | string;
   hsPercent: number | string;
   firstKills: number | string;
-  firstDeaths: number | string;
-  clutchesWon: number | string;
 }
 
 interface MatchEntryFormProps {
@@ -43,6 +41,7 @@ interface MatchEntryFormProps {
     vodUrl?: string | null;
     notes?: string | null;
     attachments?: MatchAttachment[] | null;
+    roundsTimeline?: RoundItem[] | null;
     stats: Array<{
       playerId: string;
       agent: string;
@@ -53,8 +52,8 @@ interface MatchEntryFormProps {
       adr: number;
       hsPercent?: number | null;
       firstKills: number;
-      firstDeaths: number;
-      clutchesWon: number;
+      firstDeaths?: number;
+      clutchesWon?: number;
     }>;
   };
 }
@@ -78,6 +77,128 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
   const [isCompressing, setIsCompressing] = useState(false);
   const [compressionFeedback, setCompressionFeedback] = useState<string | null>(null);
 
+  const generateDefaultTimeline = (teamScore: number, oppScore: number, side: "ATTACK" | "DEFENSE"): RoundItem[] => {
+    const total = teamScore + oppScore;
+    if (total <= 0) return [];
+
+    const items: RoundItem[] = [];
+    let remWins = teamScore;
+    let remLoss = oppScore;
+
+    for (let r = 1; r <= total; r++) {
+      let roundSide: "ATTACK" | "DEFENSE";
+      if (r <= 12) {
+        roundSide = side;
+      } else if (r <= 24) {
+        roundSide = side === "ATTACK" ? "DEFENSE" : "ATTACK";
+      } else {
+        const otCycle = Math.floor((r - 25) / 2);
+        roundSide = otCycle % 2 === 0 ? side : (side === "ATTACK" ? "DEFENSE" : "ATTACK");
+      }
+
+      let winner: "TEAM" | "OPPONENT" = "TEAM";
+      if (remWins > 0 && remLoss > 0) {
+        if (r % 2 === 1 && remWins > 0) {
+          winner = "TEAM";
+          remWins--;
+        } else if (remLoss > 0) {
+          winner = "OPPONENT";
+          remLoss--;
+        } else {
+          winner = "TEAM";
+          remWins--;
+        }
+      } else if (remWins > 0) {
+        winner = "TEAM";
+        remWins--;
+      } else {
+        winner = "OPPONENT";
+        remLoss--;
+      }
+
+      items.push({
+        round: r,
+        side: roundSide,
+        winner,
+      });
+    }
+    return items;
+  };
+
+  const [roundsTimeline, setRoundsTimeline] = useState<RoundItem[]>(() => {
+    if (initialData?.roundsTimeline && initialData.roundsTimeline.length > 0) {
+      return initialData.roundsTimeline;
+    }
+    return generateDefaultTimeline(Number(scoreTeam) || 0, Number(scoreOpponent) || 0, startSide);
+  });
+
+  useEffect(() => {
+    const total = (Number(scoreTeam) || 0) + (Number(scoreOpponent) || 0);
+    if (total <= 0) {
+      setRoundsTimeline([]);
+      return;
+    }
+
+    setRoundsTimeline((prev) => {
+      if (prev.length === total) {
+        return prev.map((item, idx) => {
+          const r = idx + 1;
+          let roundSide: "ATTACK" | "DEFENSE";
+          if (r <= 12) {
+            roundSide = startSide;
+          } else if (r <= 24) {
+            roundSide = startSide === "ATTACK" ? "DEFENSE" : "ATTACK";
+          } else {
+            const otCycle = Math.floor((r - 25) / 2);
+            roundSide = otCycle % 2 === 0 ? startSide : (startSide === "ATTACK" ? "DEFENSE" : "ATTACK");
+          }
+          return { ...item, round: r, side: roundSide };
+        });
+      }
+
+      const newItems: RoundItem[] = [];
+      for (let r = 1; r <= total; r++) {
+        let roundSide: "ATTACK" | "DEFENSE";
+        if (r <= 12) {
+          roundSide = startSide;
+        } else if (r <= 24) {
+          roundSide = startSide === "ATTACK" ? "DEFENSE" : "ATTACK";
+        } else {
+          const otCycle = Math.floor((r - 25) / 2);
+          roundSide = otCycle % 2 === 0 ? startSide : (startSide === "ATTACK" ? "DEFENSE" : "ATTACK");
+        }
+
+        const existing = prev[r - 1];
+        newItems.push({
+          round: r,
+          side: roundSide,
+          winner: existing ? existing.winner : "TEAM",
+        });
+      }
+      return newItems;
+    });
+  }, [scoreTeam, scoreOpponent, startSide]);
+
+  const handleToggleRoundWinner = (roundNum: number) => {
+    setRoundsTimeline((prev) =>
+      prev.map((item) =>
+        item.round === roundNum
+          ? { ...item, winner: item.winner === "TEAM" ? "OPPONENT" : "TEAM" }
+          : item
+      )
+    );
+  };
+
+  const handleAutoFillTimeline = () => {
+    const sTeam = Number(scoreTeam) || 0;
+    const sOpp = Number(scoreOpponent) || 0;
+    setRoundsTimeline(generateDefaultTimeline(sTeam, sOpp, startSide));
+  };
+
+  const handleSetAllRounds = (winner: "TEAM" | "OPPONENT") => {
+    setRoundsTimeline((prev) => prev.map((item) => ({ ...item, winner })));
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
@@ -100,21 +221,17 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
 
         if (!isImage && !isPdf) {
-          throw new Error(
-            `Berkas "${file.name}" tidak didukung. Hanya Gambar (PNG, JPG, WEBP) dan Dokumen PDF yang diperbolehkan.`
-          );
+          throw new Error(`File "${file.name}" tidak didukung. Mohon unggah berkas Gambar (PNG/JPEG) atau Dokumen PDF.`);
         }
 
         if (isImage) {
-          setCompressionFeedback(`Memproses gambar "${file.name}"...`);
           const res = await compressImageToWebP(file);
           newAttachments.push(res.attachment);
-          feedbackList.push(`Gambar "${res.attachment.name}" berhasil diunggah (${res.compressedSizeFormatted})`);
+          feedbackList.push(`${res.attachment.name}: ${res.originalSizeFormatted} ➔ ${res.compressedSizeFormatted} (WebP - Hemat ${res.savingsPercent}%)`);
         } else if (isPdf) {
-          setCompressionFeedback(`Memproses dokumen "${file.name}"...`);
           const res = await processAndCompressPdf(file);
           newAttachments.push(res.attachment);
-          feedbackList.push(`Dokumen "${res.attachment.name}" berhasil diunggah (${res.compressedSizeFormatted})`);
+          feedbackList.push(`${res.attachment.name}: ${res.compressedSizeFormatted} (PDF Optimal)`);
         }
       }
 
@@ -135,11 +252,11 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
   const activeStarters = availablePlayers.filter((p) => p.isActive).slice(0, 5);
 
   const defaultRows: PlayerStatRow[] = [
-    { playerId: activeStarters[0]?.id || availablePlayers[0]?.id || "", agent: "Jett", acs: 240, kills: 18, deaths: 12, assists: 4, adr: 155, hsPercent: 28, firstKills: 4, firstDeaths: 2, clutchesWon: 1 },
-    { playerId: activeStarters[1]?.id || availablePlayers[1]?.id || "", agent: "Raze", acs: 220, kills: 16, deaths: 14, assists: 5, adr: 145, hsPercent: 22, firstKills: 3, firstDeaths: 3, clutchesWon: 0 },
-    { playerId: activeStarters[2]?.id || availablePlayers[2]?.id || "", agent: "Omen", acs: 195, kills: 14, deaths: 11, assists: 9, adr: 128, hsPercent: 30, firstKills: 1, firstDeaths: 1, clutchesWon: 2 },
-    { playerId: activeStarters[3]?.id || availablePlayers[3]?.id || "", agent: "Sova", acs: 185, kills: 13, deaths: 12, assists: 11, adr: 120, hsPercent: 26, firstKills: 2, firstDeaths: 1, clutchesWon: 0 },
-    { playerId: activeStarters[4]?.id || availablePlayers[4]?.id || "", agent: "Cypher", acs: 160, kills: 11, deaths: 10, assists: 6, adr: 105, hsPercent: 24, firstKills: 0, firstDeaths: 1, clutchesWon: 1 },
+    { playerId: activeStarters[0]?.id || availablePlayers[0]?.id || "", agent: "Jett", acs: 240, kills: 18, deaths: 12, assists: 4, adr: 155, hsPercent: 28, firstKills: 4 },
+    { playerId: activeStarters[1]?.id || availablePlayers[1]?.id || "", agent: "Raze", acs: 220, kills: 16, deaths: 14, assists: 5, adr: 145, hsPercent: 22, firstKills: 3 },
+    { playerId: activeStarters[2]?.id || availablePlayers[2]?.id || "", agent: "Omen", acs: 195, kills: 14, deaths: 11, assists: 9, adr: 128, hsPercent: 30, firstKills: 1 },
+    { playerId: activeStarters[3]?.id || availablePlayers[3]?.id || "", agent: "Sova", acs: 185, kills: 13, deaths: 12, assists: 11, adr: 120, hsPercent: 26, firstKills: 2 },
+    { playerId: activeStarters[4]?.id || availablePlayers[4]?.id || "", agent: "Cypher", acs: 160, kills: 11, deaths: 10, assists: 6, adr: 105, hsPercent: 24, firstKills: 0 },
   ];
 
   const [playerRows, setPlayerRows] = useState<PlayerStatRow[]>(() => {
@@ -154,8 +271,6 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         adr: s.adr,
         hsPercent: s.hsPercent ?? "",
         firstKills: s.firstKills,
-        firstDeaths: s.firstDeaths,
-        clutchesWon: s.clutchesWon,
       }));
     }
     return defaultRows;
@@ -184,11 +299,11 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
 
     if (availablePlayers.length >= 5) {
       setPlayerRows([
-        { playerId: availablePlayers[0].id, agent: "Jett", acs: 285, kills: 22, deaths: 11, assists: 4, adr: 182, hsPercent: 32, firstKills: 5, firstDeaths: 2, clutchesWon: 1 },
-        { playerId: availablePlayers[1].id, agent: "Raze", acs: 245, kills: 18, deaths: 13, assists: 5, adr: 158, hsPercent: 24, firstKills: 4, firstDeaths: 3, clutchesWon: 0 },
-        { playerId: availablePlayers[2].id, agent: "Omen", acs: 210, kills: 15, deaths: 10, assists: 10, adr: 135, hsPercent: 29, firstKills: 1, firstDeaths: 1, clutchesWon: 2 },
-        { playerId: availablePlayers[3].id, agent: "Fade", acs: 190, kills: 13, deaths: 12, assists: 12, adr: 122, hsPercent: 26, firstKills: 2, firstDeaths: 1, clutchesWon: 0 },
-        { playerId: availablePlayers[4].id, agent: "Cypher", acs: 165, kills: 11, deaths: 9, assists: 7, adr: 108, hsPercent: 25, firstKills: 0, firstDeaths: 1, clutchesWon: 1 },
+        { playerId: availablePlayers[0].id, agent: "Jett", acs: 285, kills: 22, deaths: 11, assists: 4, adr: 182, hsPercent: 32, firstKills: 5 },
+        { playerId: availablePlayers[1].id, agent: "Raze", acs: 245, kills: 18, deaths: 13, assists: 5, adr: 158, hsPercent: 24, firstKills: 4 },
+        { playerId: availablePlayers[2].id, agent: "Omen", acs: 210, kills: 15, deaths: 10, assists: 10, adr: 135, hsPercent: 29, firstKills: 1 },
+        { playerId: availablePlayers[3].id, agent: "Fade", acs: 190, kills: 13, deaths: 12, assists: 12, adr: 122, hsPercent: 26, firstKills: 2 },
+        { playerId: availablePlayers[4].id, agent: "Cypher", acs: 165, kills: 11, deaths: 9, assists: 7, adr: 108, hsPercent: 25, firstKills: 0 },
       ]);
     }
   };
@@ -203,14 +318,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
       if (selectedIds.length !== 5) {
         throw new Error("Mohon pilih 5 pemain aktif untuk match ini.");
       }
-      if (new Set(selectedIds).size !== selectedIds.length) {
-        throw new Error("Terdapat pemain duplikat yang dipilih. Setiap baris harus pemain yang berbeda.");
-      }
-
-      if (!opponentName.trim()) {
-        throw new Error("Nama tim lawan wajib diisi.");
-      }
-
+      
       const formattedStats = playerRows.map((row) => ({
         playerId: row.playerId,
         agent: row.agent,
@@ -221,8 +329,8 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         adr: Number(row.adr) || 0,
         hsPercent: row.hsPercent !== "" ? Number(row.hsPercent) : null,
         firstKills: Number(row.firstKills) || 0,
-        firstDeaths: Number(row.firstDeaths) || 0,
-        clutchesWon: Number(row.clutchesWon) || 0,
+        firstDeaths: 0,
+        clutchesWon: 0,
       }));
 
       const payload = {
@@ -235,6 +343,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         vodUrl: vodUrl.trim() || undefined,
         notes: notes.trim() || undefined,
         attachments,
+        roundsTimeline,
         playerStats: formattedStats,
       };
 
@@ -422,11 +531,224 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         </CardContent>
       </Card>
 
-      {/* SECTION 2: 5 PLAYER STATS MATRIX */}
+      {/* SECTION 2: ROUND-BY-ROUND TIMELINE */}
+      <Card>
+        <CardHeader className="py-3.5 px-5 border-b border-[#1C2433]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Swords className="w-4 h-4 text-[#FF4655]" />
+                <span>2. Kronologi Ronde (Round-by-Round)</span>
+              </CardTitle>
+              <CardDescription className="text-xs text-[#94A3B8] mt-0.5">
+                Tandai hasil setiap ronde (W = Menang, L = Kalah). Klik kotak ronde untuk mengganti status.
+              </CardDescription>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAutoFillTimeline}
+                className="text-xs h-7 gap-1 text-[#94A3B8] hover:text-white"
+              >
+                <Sparkles className="w-3 h-3 text-amber-400" />
+                <span>Auto-Fill Skor</span>
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => handleSetAllRounds("TEAM")}
+                className="text-[11px] h-7 px-2 text-emerald-400 hover:bg-emerald-500/10"
+              >
+                Semua W
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => handleSetAllRounds("OPPONENT")}
+                className="text-[11px] h-7 px-2 text-rose-400 hover:bg-rose-500/10"
+              >
+                Semua L
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-5 space-y-4">
+          {roundsTimeline.length === 0 ? (
+            <div className="py-6 text-center text-xs text-[#64748B]">
+              Masukkan Skor Tim & Lawan di atas untuk mengaktifkan kronologi ronde.
+            </div>
+          ) : (
+            <>
+              {/* Tally / Sync Status Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg bg-[#090C10] border border-[#1C2433] text-xs">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                    <span className="text-emerald-400">Tim: {roundsTimeline.filter(r => r.winner === "TEAM").length} W</span>
+                    <span className="text-[#64748B]">/ {scoreTeam}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <span className="w-2 h-2 rounded-full bg-rose-400" />
+                    <span className="text-rose-400">Lawan: {roundsTimeline.filter(r => r.winner === "OPPONENT").length} L</span>
+                    <span className="text-[#64748B]">/ {scoreOpponent}</span>
+                  </div>
+                </div>
+
+                {roundsTimeline.filter(r => r.winner === "TEAM").length !== Number(scoreTeam) && (
+                  <span className="text-[11px] text-amber-400 font-medium flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    Jumlah W belum sesuai dengan skor tim ({scoreTeam})
+                  </span>
+                )}
+              </div>
+
+              {/* Babak 1 (R1 - R12) */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-white">Babak 1 (Ronde 1 - 12)</span>
+                    <Badge variant={startSide === "ATTACK" ? "attack" : "defense"} className="text-[10px] py-0 px-2">
+                      {startSide === "ATTACK" ? "Attack Side" : "Defense Side"}
+                    </Badge>
+                  </div>
+                  <span className="text-[11px] text-[#94A3B8]">
+                    Pistol Round: R1
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5">
+                  {roundsTimeline.slice(0, 12).map((item) => {
+                    const isWin = item.winner === "TEAM";
+                    const isPistol = item.round === 1;
+
+                    return (
+                      <button
+                        key={item.round}
+                        type="button"
+                        onClick={() => handleToggleRoundWinner(item.round)}
+                        className={`relative rounded-lg border p-2 flex flex-col items-center justify-between gap-1 transition-all cursor-pointer select-none hover:scale-105 active:scale-95 ${
+                          isWin
+                            ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/25"
+                            : "bg-rose-500/15 border-rose-500/40 text-rose-400 hover:bg-rose-500/25"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between w-full text-[10px] font-bold text-[#94A3B8]">
+                          <span>R{item.round}</span>
+                          {isPistol && (
+                            <span title="Pistol Round">
+                              <Crosshair className="w-2.5 h-2.5 text-amber-400" />
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-sm font-black tracking-wider">
+                          {isWin ? "W" : "L"}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Babak 2 (R13 - R24) */}
+              {roundsTimeline.length > 12 && (
+                <div className="space-y-2 pt-2 border-t border-[#1C2433]">
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-white">Babak 2 (Ronde 13 - 24)</span>
+                      <Badge variant={startSide === "ATTACK" ? "defense" : "attack"} className="text-[10px] py-0 px-2">
+                        {startSide === "ATTACK" ? "Defense Side" : "Attack Side"}
+                      </Badge>
+                    </div>
+                    <span className="text-[11px] text-[#94A3B8]">
+                      Pistol Round: R13
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5">
+                    {roundsTimeline.slice(12, 24).map((item) => {
+                      const isWin = item.winner === "TEAM";
+                      const isPistol = item.round === 13;
+
+                      return (
+                        <button
+                          key={item.round}
+                          type="button"
+                          onClick={() => handleToggleRoundWinner(item.round)}
+                          className={`relative rounded-lg border p-2 flex flex-col items-center justify-between gap-1 transition-all cursor-pointer select-none hover:scale-105 active:scale-95 ${
+                            isWin
+                              ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/25"
+                              : "bg-rose-500/15 border-rose-500/40 text-rose-400 hover:bg-rose-500/25"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between w-full text-[10px] font-bold text-[#94A3B8]">
+                            <span>R{item.round}</span>
+                            {isPistol && (
+                              <span title="Pistol Round">
+                                <Crosshair className="w-2.5 h-2.5 text-amber-400" />
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-sm font-black tracking-wider">
+                            {isWin ? "W" : "L"}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Overtime (R25+) */}
+              {roundsTimeline.length > 24 && (
+                <div className="space-y-2 pt-2 border-t border-[#1C2433]">
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-amber-400">Overtime (Ronde 25+)</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5">
+                    {roundsTimeline.slice(24).map((item) => {
+                      const isWin = item.winner === "TEAM";
+
+                      return (
+                        <button
+                          key={item.round}
+                          type="button"
+                          onClick={() => handleToggleRoundWinner(item.round)}
+                          className={`relative rounded-lg border p-2 flex flex-col items-center justify-between gap-1 transition-all cursor-pointer select-none hover:scale-105 active:scale-95 ${
+                            isWin
+                              ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/25"
+                              : "bg-rose-500/15 border-rose-500/40 text-rose-400 hover:bg-rose-500/25"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between w-full text-[10px] font-bold text-[#94A3B8]">
+                            <span>R{item.round}</span>
+                          </div>
+                          <span className="text-sm font-black tracking-wider">
+                            {isWin ? "W" : "L"}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* SECTION 3: 5 PLAYER STATS MATRIX */}
       <Card>
         <CardHeader className="py-3.5 px-5 border-b border-[#1C2433]">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold">2. Statistik 5 Pemain</CardTitle>
+            <CardTitle className="text-sm font-semibold">3. Statistik 5 Pemain</CardTitle>
             <span className="text-xs text-[#94A3B8]">
               5 Slot Pemain
             </span>
@@ -568,10 +890,10 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                     </div>
                   </div>
 
-                  {/* Secondary Combat Stats Grid (4 cols) */}
+                  {/* Secondary Combat Stats Grid (3 cols) */}
                   <div className="space-y-1 pt-1">
                     <div className="text-[10px] font-semibold text-[#94A3B8]">Duel & Efisiensi</div>
-                    <div className="grid grid-cols-4 gap-1.5 text-center">
+                    <div className="grid grid-cols-3 gap-1.5 text-center">
                       <div className="space-y-0.5">
                         <span className="text-[9px] text-[#94A3B8] font-medium">ADR *</span>
                         <Input
@@ -608,31 +930,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           className="h-8 text-center text-emerald-400 px-1 text-xs"
                         />
                       </div>
-                      <div className="space-y-0.5">
-                        <span className="text-[9px] text-rose-400 font-medium">FD</span>
-                        <Input
-                          type="number"
-                          min="0"
-                          placeholder="1"
-                          value={row.firstDeaths}
-                          onChange={(e) => handleRowChange(index, "firstDeaths", e.target.value)}
-                          className="h-8 text-center text-rose-400 px-1 text-xs"
-                        />
-                      </div>
                     </div>
-                  </div>
-
-                  {/* Clutch Input */}
-                  <div className="flex items-center justify-between pt-1 text-xs">
-                    <span className="text-[11px] text-[#94A3B8]">Clutch 1vX Menang:</span>
-                    <Input
-                      type="number"
-                      min="0"
-                      placeholder="0"
-                      value={row.clutchesWon}
-                      onChange={(e) => handleRowChange(index, "clutchesWon", e.target.value)}
-                      className="h-8 w-20 text-center text-amber-400 font-bold text-xs"
-                    />
                   </div>
                 </div>
               );
@@ -645,7 +943,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
               <thead>
                 <tr className="border-b border-[#1C2433] bg-[#090C10] text-[#94A3B8] font-semibold text-[11px]">
                   <th className="py-3 px-3.5 min-w-[140px]">Pemain *</th>
-                  <th className="py-3 px-3.5 min-w-[120px]">Agent *</th>
+                  <th className="py-3 px-3.5 min-w-[155px]">Agent *</th>
                   <th className="py-3 px-2 text-center w-20">ACS *</th>
                   <th className="py-3 px-2 text-center w-16">K *</th>
                   <th className="py-3 px-2 text-center w-16">D *</th>
@@ -653,8 +951,6 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                   <th className="py-3 px-2 text-center w-20">ADR *</th>
                   <th className="py-3 px-2 text-center w-16">HS %</th>
                   <th className="py-3 px-2 text-center w-16">FK</th>
-                  <th className="py-3 px-2 text-center w-16">FD</th>
-                  <th className="py-3 px-2 text-center w-16">Clutch</th>
                   <th className="py-3 px-3 text-center min-w-[85px]">Live K/D</th>
                 </tr>
               </thead>
@@ -804,30 +1100,6 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                         />
                       </td>
 
-                      {/* First Deaths */}
-                      <td className="p-1.5">
-                        <Input
-                          type="number"
-                          min="0"
-                          placeholder="1"
-                          value={row.firstDeaths}
-                          onChange={(e) => handleRowChange(index, "firstDeaths", e.target.value)}
-                          className="h-8 text-center text-rose-400 px-1"
-                        />
-                      </td>
-
-                      {/* Clutches */}
-                      <td className="p-1.5">
-                        <Input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          value={row.clutchesWon}
-                          onChange={(e) => handleRowChange(index, "clutchesWon", e.target.value)}
-                          className="h-8 text-center text-amber-400 font-bold px-1"
-                        />
-                      </td>
-
                       {/* Live K/D */}
                       <td className="p-2.5 text-center font-bold text-xs tabular-nums">
                         <span
@@ -851,11 +1123,10 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         </CardContent>
       </Card>
 
-      {/* SECTION 3: COACH EVALUATION & ATTACHMENTS */}
-      {/* SECTION 3: EVALUATION & ATTACHMENTS */}
+      {/* SECTION 4: EVALUATION & ATTACHMENTS */}
       <Card>
         <CardHeader className="py-3.5 px-5 border-b border-[#1C2433]">
-          <CardTitle className="text-sm font-semibold">3. Evaluasi & Catatan Taktis</CardTitle>
+          <CardTitle className="text-sm font-semibold">4. Evaluasi & Catatan Taktis</CardTitle>
         </CardHeader>
         <CardContent className="p-5 space-y-4">
           <Textarea

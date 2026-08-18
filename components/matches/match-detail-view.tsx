@@ -17,6 +17,8 @@ import {
   Eye,
   X,
   Image as ImageIcon,
+  Swords,
+  Crosshair,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -180,6 +182,168 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
         </div>
       </div>
 
+      {/* ROUND PROGRESSION TIMELINE (IF RECORDED) */}
+      {match.parsedRoundTimeline && match.parsedRoundTimeline.length > 0 && (
+        <Card>
+          <CardHeader className="py-3.5 px-5 border-b border-[#1C2433]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Swords className="w-4 h-4 text-[#FF4655]" />
+                <span>Kronologi Ronde (Round Progression)</span>
+              </CardTitle>
+
+              {/* Half Score Summaries */}
+              <div className="flex items-center gap-2 text-xs font-semibold">
+                {(() => {
+                  const h1 = match.parsedRoundTimeline.slice(0, 12);
+                  const h1Wins = h1.filter((r) => r.winner === "TEAM").length;
+                  const h1Loss = h1.filter((r) => r.winner === "OPPONENT").length;
+
+                  const h2 = match.parsedRoundTimeline.slice(12, 24);
+                  const h2Wins = h2.filter((r) => r.winner === "TEAM").length;
+                  const h2Loss = h2.filter((r) => r.winner === "OPPONENT").length;
+
+                  return (
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded bg-[#090C10] border border-[#1C2433] text-[#94A3B8]">
+                        Babak 1: <strong className="text-white">{h1Wins}-{h1Loss}</strong>
+                      </span>
+                      {h2.length > 0 && (
+                        <span className="px-2 py-0.5 rounded bg-[#090C10] border border-[#1C2433] text-[#94A3B8]">
+                          Babak 2: <strong className="text-white">{h2Wins}-{h2Loss}</strong>
+                        </span>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-5 space-y-4">
+            {/* Babak 1 */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-white">Babak 1 (R1 - R12)</span>
+                  <Badge variant={match.startSide === "ATTACK" ? "attack" : "defense"} className="text-[10px] py-0 px-2">
+                    {match.startSide === "ATTACK" ? "Attack" : "Defense"}
+                  </Badge>
+                </div>
+                <span className="text-[11px] text-[#94A3B8]">Pistol Round: R1</span>
+              </div>
+
+              <div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5">
+                {match.parsedRoundTimeline.slice(0, 12).map((item) => {
+                  const isWin = item.winner === "TEAM";
+                  const isPistol = item.round === 1;
+
+                  return (
+                    <div
+                      key={item.round}
+                      className={`rounded-lg border p-2 flex flex-col items-center justify-between gap-1 select-none ${
+                        isWin
+                          ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-400"
+                          : "bg-rose-500/15 border-rose-500/40 text-rose-400"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full text-[10px] font-bold text-[#94A3B8]">
+                        <span>R{item.round}</span>
+                        {isPistol && (
+                          <span title="Pistol Round">
+                            <Crosshair className="w-2.5 h-2.5 text-amber-400" />
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-sm font-black tracking-wider">
+                        {isWin ? "W" : "L"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Babak 2 */}
+            {match.parsedRoundTimeline.length > 12 && (
+              <div className="space-y-2 pt-2 border-t border-[#1C2433]">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-white">Babak 2 (R13 - R24)</span>
+                    <Badge variant={match.startSide === "ATTACK" ? "defense" : "attack"} className="text-[10px] py-0 px-2">
+                      {match.startSide === "ATTACK" ? "Defense" : "Attack"}
+                    </Badge>
+                  </div>
+                  <span className="text-[11px] text-[#94A3B8]">Pistol Round: R13</span>
+                </div>
+
+                <div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5">
+                  {match.parsedRoundTimeline.slice(12, 24).map((item) => {
+                    const isWin = item.winner === "TEAM";
+                    const isPistol = item.round === 13;
+
+                    return (
+                      <div
+                        key={item.round}
+                        className={`rounded-lg border p-2 flex flex-col items-center justify-between gap-1 select-none ${
+                          isWin
+                            ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-400"
+                            : "bg-rose-500/15 border-rose-500/40 text-rose-400"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between w-full text-[10px] font-bold text-[#94A3B8]">
+                          <span>R{item.round}</span>
+                          {isPistol && (
+                            <span title="Pistol Round">
+                              <Crosshair className="w-2.5 h-2.5 text-amber-400" />
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-sm font-black tracking-wider">
+                          {isWin ? "W" : "L"}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Overtime */}
+            {match.parsedRoundTimeline.length > 24 && (
+              <div className="space-y-2 pt-2 border-t border-[#1C2433]">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-amber-400">Overtime (R25+)</span>
+                </div>
+
+                <div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5">
+                  {match.parsedRoundTimeline.slice(24).map((item) => {
+                    const isWin = item.winner === "TEAM";
+
+                    return (
+                      <div
+                        key={item.round}
+                        className={`rounded-lg border p-2 flex flex-col items-center justify-between gap-1 select-none ${
+                          isWin
+                            ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-400"
+                            : "bg-rose-500/15 border-rose-500/40 text-rose-400"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between w-full text-[10px] font-bold text-[#94A3B8]">
+                          <span>R{item.round}</span>
+                        </div>
+                        <span className="text-sm font-black tracking-wider">
+                          {isWin ? "W" : "L"}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* MATCH PERFORMANCE SCOREBOARD */}
       <Card>
         <CardHeader className="py-4 px-5 border-b border-[#1C2433]">
@@ -246,7 +410,7 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
                     </div>
                   </div>
 
-                  {/* 4-Stat Grid: KDA, ADR, HS, Clutch */}
+                  {/* 4-Stat Grid: KDA, ADR, HS, First Blood */}
                   <div className="grid grid-cols-4 gap-1.5 text-center text-xs pt-1 border-t border-[#242e40]/50">
                     <div className="p-1 rounded-lg bg-[#0e131b] border border-[#242e40]/60">
                       <div className="text-[9px] text-slate-400">K/D/A</div>
@@ -272,9 +436,9 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
                     </div>
 
                     <div className="p-1 rounded-lg bg-[#0e131b] border border-[#242e40]/60">
-                      <div className="text-[9px] text-slate-400">Clutch / FK</div>
+                      <div className="text-[9px] text-slate-400">First Blood</div>
                       <div className="font-bold text-[11px] text-emerald-400 tabular-nums">
-                        {stat.clutchesWon > 0 ? `${stat.clutchesWon} W` : `${stat.firstKills} FK`}
+                        {stat.firstKills} FK
                       </div>
                     </div>
                   </div>
@@ -295,8 +459,7 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
                   <th className="py-3 px-4 text-center">K/D Ratio</th>
                   <th className="py-3 px-4 text-right">ADR</th>
                   <th className="py-3 px-4 text-right">HS %</th>
-                  <th className="py-3 px-4 text-center">First K/D</th>
-                  <th className="py-3 px-4 text-center">Clutches</th>
+                  <th className="py-3 px-4 text-center">First Bloods (FK)</th>
                   <th className="py-3 px-4 text-right">KAST %</th>
                 </tr>
               </thead>
@@ -361,14 +524,8 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
                         {stat.hsPercent != null ? `${stat.hsPercent}%` : "-"}
                       </td>
 
-                      <td className="py-3.5 px-4 text-center tabular-nums text-slate-200">
-                        <span className="text-emerald-400">{stat.firstKills}</span>
-                        <span className="text-slate-500 mx-1">/</span>
-                        <span className="text-rose-400">{stat.firstDeaths}</span>
-                      </td>
-
-                      <td className="py-3.5 px-4 text-center font-bold text-amber-400 tabular-nums">
-                        {stat.clutchesWon > 0 ? `${stat.clutchesWon} Menang` : "-"}
+                      <td className="py-3.5 px-4 text-center font-bold text-emerald-400 tabular-nums">
+                        {stat.firstKills} FK
                       </td>
 
                       <td className="py-3.5 px-4 text-right text-slate-400 tabular-nums">

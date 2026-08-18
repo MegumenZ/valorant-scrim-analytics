@@ -111,6 +111,11 @@ export async function ensureDbInitialized() {
         } catch {
           // Column already exists, safe to ignore
         }
+        try {
+          await client.execute("ALTER TABLE matches ADD COLUMN round_timeline TEXT;");
+        } catch {
+          // Column already exists, safe to ignore
+        }
 
         // Check if initial seeding has already been performed in the past
         const seedCheck = await client.execute("SELECT value FROM system_metadata WHERE key = 'seeded'");

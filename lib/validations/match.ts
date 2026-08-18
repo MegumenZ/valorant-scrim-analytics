@@ -27,6 +27,12 @@ export const attachmentSchema = z.object({
   uploadedAt: z.string(),
 });
 
+export const roundItemSchema = z.object({
+  round: z.number(),
+  side: z.enum(["ATTACK", "DEFENSE"]),
+  winner: z.enum(["TEAM", "OPPONENT"]),
+});
+
 export const matchSchema = z.object({
   matchDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal harus YYYY-MM-DD"),
   map: z.enum(VALORANT_MAPS),
@@ -37,6 +43,7 @@ export const matchSchema = z.object({
   vodUrl: z.string().url("URL VOD tidak valid").optional().or(z.literal("")),
   notes: z.string().max(2000).optional().or(z.literal("")),
   attachments: z.array(attachmentSchema).optional().default([]),
+  roundsTimeline: z.array(roundItemSchema).optional().default([]),
   playerStats: z
     .array(playerStatSchema)
     .min(1, "Minimal 1 pemain")
@@ -53,3 +60,4 @@ export const matchSchema = z.object({
 export type MatchInput = z.infer<typeof matchSchema>;
 export type PlayerStatInput = z.infer<typeof playerStatSchema>;
 export type AttachmentInput = z.infer<typeof attachmentSchema>;
+export type RoundItem = z.infer<typeof roundItemSchema>;

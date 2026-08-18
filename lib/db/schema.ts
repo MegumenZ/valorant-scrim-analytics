@@ -42,6 +42,7 @@ export const matches = sqliteTable("matches", {
   vodUrl: text("vod_url"),
   notes: text("notes"),
   attachments: text("attachments"), // JSON stringified array of MatchAttachment
+  roundTimeline: text("round_timeline"), // JSON stringified array of RoundItem
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 }, (table) => [
   index("match_date_idx").on(table.matchDate),
