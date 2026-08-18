@@ -47,11 +47,13 @@ export default async function MapsAnalyticsPage() {
               key={stat.map}
               className="bg-[#0F141C] border-[#1C2433] hover:border-[#2A364F] transition-all overflow-hidden flex flex-col justify-between"
             >
-              {/* Header with Map Splash Art Banner */}
+              {/* Header with Map Banner */}
               <div className="relative h-28 overflow-hidden border-b border-[#1C2433] flex items-end p-4">
                 <img
-                  src={meta.splash}
+                  src={meta.listViewIcon}
                   alt={stat.map}
+                  loading="lazy"
+                  decoding="async"
                   className="absolute inset-0 w-full h-full object-cover object-center brightness-75 hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0F141C] via-[#0F141C]/40 to-transparent" />

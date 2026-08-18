@@ -108,14 +108,16 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
         )}
       </div>
 
-      {/* MATCH HERO BANNER WITH MAP SPLASH ART */}
+      {/* MATCH HERO BANNER WITH MAP BANNER */}
       <div className="relative overflow-hidden rounded-xl border border-[#1C2433] bg-[#0F141C] p-6 sm:p-8 shadow-sm min-h-[160px] flex items-center">
-        {/* Background Map Splash */}
-        {mapMeta.splash && (
+        {/* Background Map Banner */}
+        {mapMeta.listViewIcon && (
           <img
-            src={mapMeta.splash}
+            src={mapMeta.listViewIcon}
             alt={match.map}
-            className="absolute inset-0 w-full h-full object-cover object-center opacity-20 mix-blend-luminosity scale-105 pointer-events-none"
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 w-full h-full object-cover object-center opacity-25 mix-blend-luminosity scale-105 pointer-events-none"
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-r from-[#0F141C] via-[#0F141C]/90 to-transparent pointer-events-none" />
