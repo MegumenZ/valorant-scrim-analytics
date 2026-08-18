@@ -4,6 +4,7 @@ import { getDashboardSummary } from "@/lib/actions/matches";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { MapWinrateChart } from "@/components/dashboard/map-winrate-chart";
 import { AcsTrendChart } from "@/components/dashboard/acs-trend-chart";
+import { TacticalWinBreakdownWidget } from "@/components/dashboard/tactical-win-breakdown";
 import { RecentMatchesTable } from "@/components/dashboard/recent-matches-table";
 import { RosterLeaderboard } from "@/components/dashboard/roster-leaderboard";
 
@@ -65,6 +66,9 @@ export default async function DashboardPage() {
           variant="amber"
         />
       </div>
+
+      {/* Tactical Win Conditions Breakdown */}
+      <TacticalWinBreakdownWidget data={summary.tacticalWins} />
 
       {/* Dual Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

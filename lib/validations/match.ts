@@ -27,10 +27,20 @@ export const attachmentSchema = z.object({
   uploadedAt: z.string(),
 });
 
+export const roundWinTypeSchema = z.enum([
+  "ELIMINATION", // Musuh Tereliminasi
+  "DEFUSE",      // Spike Di-defuse / Sukses Retake
+  "DETONATION",  // Spike Meledak / Post-Plant
+  "TIME",        // Waktu Habis
+]);
+
+export type RoundWinType = z.infer<typeof roundWinTypeSchema>;
+
 export const roundItemSchema = z.object({
   round: z.number(),
   side: z.enum(["ATTACK", "DEFENSE"]),
   winner: z.enum(["TEAM", "OPPONENT"]),
+  winType: roundWinTypeSchema.optional().nullable(),
 });
 
 export const matchSchema = z.object({

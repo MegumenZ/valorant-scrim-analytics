@@ -226,6 +226,54 @@ export async function getDashboardSummary(): Promise<{
     playerStats: [...m.playerStats].sort((a, b) => b.acs - a.acs),
   }));
 
+  // Tactical Win Conditions Calculation
+  let totalTeamRoundWins = 0;
+  let elimWins = 0;
+  let defuseWins = 0; // Retake & Spike Defused
+  let detonationWins = 0; // Post-Plant Spike Detonated
+  let timeWins = 0;
+
+  for (const m of allMatches) {
+    if (m.roundTimeline) {
+      try {
+        const rounds = JSON.parse(m.roundTimeline);
+        if (Array.isArray(rounds)) {
+          for (const r of rounds) {
+            if (r.winner === "TEAM") {
+              totalTeamRoundWins++;
+              if (r.winType === "DEFUSE") {
+                defuseWins++;
+              } else if (r.winType === "DETONATION") {
+                detonationWins++;
+              } else if (r.winType === "TIME") {
+                timeWins++;
+              } else {
+                elimWins++;
+              }
+            }
+          }
+        }
+      } catch (e) {
+        // fallback
+      }
+    } else {
+      totalTeamRoundWins += m.scoreTeam;
+      elimWins += m.scoreTeam;
+    }
+  }
+
+  const tacticalWins = {
+    totalWins: totalTeamRoundWins,
+    eliminations: elimWins,
+    eliminationRate: totalTeamRoundWins > 0 ? Math.round((elimWins / totalTeamRoundWins) * 100) : 0,
+    defuses: defuseWins,
+    defuseRate: totalTeamRoundWins > 0 ? Math.round((defuseWins / totalTeamRoundWins) * 100) : 0,
+    detonations: detonationWins,
+    detonationRate: totalTeamRoundWins > 0 ? Math.round((detonationWins / totalTeamRoundWins) * 100) : 0,
+    timeouts: timeWins,
+    timeoutRate: totalTeamRoundWins > 0 ? Math.round((timeWins / totalTeamRoundWins) * 100) : 0,
+  };
+
   return {
     summary: {
       totalMatches,
@@ -245,6 +293,7 @@ export async function getDashboardSummary(): Promise<{
         attackWinRate,
         defenseWinRate,
       },
+      tacticalWins,
       mapBreakdown,
       acsTrend,
     },

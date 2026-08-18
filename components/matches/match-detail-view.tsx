@@ -19,6 +19,10 @@ import {
   Image as ImageIcon,
   Swords,
   Crosshair,
+  Bomb,
+  ShieldCheck,
+  Timer,
+  Sparkles,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +33,14 @@ import { useUserRole } from "../layout/role-context";
 import { MatchAttachment } from "@/lib/db/schema";
 import { calculateKD } from "@/lib/utils/analytics";
 import { formatFileSize } from "@/lib/utils/file-compressor";
+import { RoundWinType } from "@/lib/validations/match";
+
+const WIN_TYPE_LABELS: Record<RoundWinType, { label: string; short: string; color: string; bg: string; border: string }> = {
+  ELIMINATION: { label: "Musuh Tereliminasi", short: "Eliminasi", color: "text-rose-400", bg: "bg-rose-500/15", border: "border-rose-500/30" },
+  DEFUSE: { label: "Spike Defused (Retake)", short: "Retake", color: "text-sky-400", bg: "bg-sky-500/15", border: "border-sky-500/30" },
+  DETONATION: { label: "Spike Meledak (Post-Plant)", short: "Post-Plant", color: "text-amber-400", bg: "bg-amber-500/15", border: "border-amber-500/30" },
+  TIME: { label: "Waktu Habis (Defense)", short: "Waktu Habis", color: "text-emerald-400", bg: "bg-emerald-500/15", border: "border-emerald-500/30" },
+};
 
 interface MatchDetailViewProps {
   match: MatchWithStats;
@@ -232,18 +244,20 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
                 <span className="text-[11px] text-[#94A3B8]">Pistol Round: R1</span>
               </div>
 
-              <div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5">
+              <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-1.5">
                 {match.parsedRoundTimeline.slice(0, 12).map((item) => {
                   const isWin = item.winner === "TEAM";
                   const isPistol = item.round === 1;
+                  const winType: RoundWinType = item.winType || "ELIMINATION";
+                  const winConfig = WIN_TYPE_LABELS[winType];
 
                   return (
                     <div
                       key={item.round}
-                      className={`rounded-lg border p-2 flex flex-col items-center justify-between gap-1 select-none ${
+                      className={`rounded-xl border p-1.5 flex flex-col items-center justify-between gap-1 select-none ${
                         isWin
-                          ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-400"
-                          : "bg-rose-500/15 border-rose-500/40 text-rose-400"
+                          ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
+                          : "bg-rose-500/10 border-rose-500/30 text-rose-400"
                       }`}
                     >
                       <div className="flex items-center justify-between w-full text-[10px] font-bold text-[#94A3B8]">
@@ -257,6 +271,13 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
                       <span className="text-sm font-black tracking-wider">
                         {isWin ? "W" : "L"}
                       </span>
+                      {isWin ? (
+                        <span className={`w-full py-0.5 px-0.5 rounded text-[8px] sm:text-[9px] font-bold border truncate text-center ${winConfig.bg} ${winConfig.border} ${winConfig.color}`}>
+                          {winConfig.short}
+                        </span>
+                      ) : (
+                        <span className="text-[9px] text-[#64748B] font-medium">-</span>
+                      )}
                     </div>
                   );
                 })}
@@ -276,18 +297,20 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
                   <span className="text-[11px] text-[#94A3B8]">Pistol Round: R13</span>
                 </div>
 
-                <div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5">
+                <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-1.5">
                   {match.parsedRoundTimeline.slice(12, 24).map((item) => {
                     const isWin = item.winner === "TEAM";
                     const isPistol = item.round === 13;
+                    const winType: RoundWinType = item.winType || "ELIMINATION";
+                    const winConfig = WIN_TYPE_LABELS[winType];
 
                     return (
                       <div
                         key={item.round}
-                        className={`rounded-lg border p-2 flex flex-col items-center justify-between gap-1 select-none ${
+                        className={`rounded-xl border p-1.5 flex flex-col items-center justify-between gap-1 select-none ${
                           isWin
-                            ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-400"
-                            : "bg-rose-500/15 border-rose-500/40 text-rose-400"
+                            ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
+                            : "bg-rose-500/10 border-rose-500/30 text-rose-400"
                         }`}
                       >
                         <div className="flex items-center justify-between w-full text-[10px] font-bold text-[#94A3B8]">
@@ -301,6 +324,13 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
                         <span className="text-sm font-black tracking-wider">
                           {isWin ? "W" : "L"}
                         </span>
+                        {isWin ? (
+                          <span className={`w-full py-0.5 px-0.5 rounded text-[8px] sm:text-[9px] font-bold border truncate text-center ${winConfig.bg} ${winConfig.border} ${winConfig.color}`}>
+                            {winConfig.short}
+                          </span>
+                        ) : (
+                          <span className="text-[9px] text-[#64748B] font-medium">-</span>
+                        )}
                       </div>
                     );
                   })}
@@ -315,17 +345,19 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
                   <span className="font-bold text-amber-400">Overtime (R25+)</span>
                 </div>
 
-                <div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5">
+                <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-1.5">
                   {match.parsedRoundTimeline.slice(24).map((item) => {
                     const isWin = item.winner === "TEAM";
+                    const winType: RoundWinType = item.winType || "ELIMINATION";
+                    const winConfig = WIN_TYPE_LABELS[winType];
 
                     return (
                       <div
                         key={item.round}
-                        className={`rounded-lg border p-2 flex flex-col items-center justify-between gap-1 select-none ${
+                        className={`rounded-xl border p-1.5 flex flex-col items-center justify-between gap-1 select-none ${
                           isWin
-                            ? "bg-emerald-500/15 border-emerald-500/40 text-emerald-400"
-                            : "bg-rose-500/15 border-rose-500/40 text-rose-400"
+                            ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
+                            : "bg-rose-500/10 border-rose-500/30 text-rose-400"
                         }`}
                       >
                         <div className="flex items-center justify-between w-full text-[10px] font-bold text-[#94A3B8]">
@@ -334,12 +366,99 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
                         <span className="text-sm font-black tracking-wider">
                           {isWin ? "W" : "L"}
                         </span>
+                        {isWin ? (
+                          <span className={`w-full py-0.5 px-0.5 rounded text-[8px] sm:text-[9px] font-bold border truncate text-center ${winConfig.bg} ${winConfig.border} ${winConfig.color}`}>
+                            {winConfig.short}
+                          </span>
+                        ) : (
+                          <span className="text-[9px] text-[#64748B] font-medium">-</span>
+                        )}
                       </div>
                     );
                   })}
                 </div>
               </div>
             )}
+
+            {/* TACTICAL WIN BREAKDOWN PANEL */}
+            {(() => {
+              const teamWins = match.parsedRoundTimeline.filter(r => r.winner === "TEAM");
+              const elimWins = teamWins.filter(r => !r.winType || r.winType === "ELIMINATION").length;
+              const defuseWins = teamWins.filter(r => r.winType === "DEFUSE").length;
+              const detonationWins = teamWins.filter(r => r.winType === "DETONATION").length;
+              const timeWins = teamWins.filter(r => r.winType === "TIME").length;
+
+              return (
+                <div className="p-3.5 rounded-xl bg-[#090C10] border border-[#1C2433] space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span className="text-xs font-bold text-white">Distribusi Cara Kemenangan Ronde (Tactical Breakdown)</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    {/* Retake & Defuse */}
+                    <div className="p-2.5 rounded-lg bg-[#0F141C] border border-sky-500/20 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-sky-400 flex items-center gap-1">
+                          <ShieldCheck className="w-3 h-3" />
+                          Retake & Defuse
+                        </span>
+                        <span className="text-[10px] text-[#94A3B8] font-mono">
+                          {teamWins.length > 0 ? Math.round((defuseWins / teamWins.length) * 100) : 0}%
+                        </span>
+                      </div>
+                      <div className="text-lg font-black text-white">{defuseWins} <span className="text-xs font-medium text-[#94A3B8]">Ronde</span></div>
+                      <p className="text-[10px] text-[#64748B]">Spike berhasil didefuse (Defender)</p>
+                    </div>
+
+                    {/* Post-Plant */}
+                    <div className="p-2.5 rounded-lg bg-[#0F141C] border border-amber-500/20 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-amber-400 flex items-center gap-1">
+                          <Bomb className="w-3 h-3" />
+                          Post-Plant
+                        </span>
+                        <span className="text-[10px] text-[#94A3B8] font-mono">
+                          {teamWins.length > 0 ? Math.round((detonationWins / teamWins.length) * 100) : 0}%
+                        </span>
+                      </div>
+                      <div className="text-lg font-black text-white">{detonationWins} <span className="text-xs font-medium text-[#94A3B8]">Ronde</span></div>
+                      <p className="text-[10px] text-[#64748B]">Spike meledak (Attacker)</p>
+                    </div>
+
+                    {/* Eliminasi */}
+                    <div className="p-2.5 rounded-lg bg-[#0F141C] border border-rose-500/20 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-rose-400 flex items-center gap-1">
+                          <Swords className="w-3 h-3" />
+                          Eliminasi
+                        </span>
+                        <span className="text-[10px] text-[#94A3B8] font-mono">
+                          {teamWins.length > 0 ? Math.round((elimWins / teamWins.length) * 100) : 0}%
+                        </span>
+                      </div>
+                      <div className="text-lg font-black text-white">{elimWins} <span className="text-xs font-medium text-[#94A3B8]">Ronde</span></div>
+                      <p className="text-[10px] text-[#64748B]">Semua musuh tereliminasi</p>
+                    </div>
+
+                    {/* Waktu Habis */}
+                    <div className="p-2.5 rounded-lg bg-[#0F141C] border border-emerald-500/20 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+                          <Timer className="w-3 h-3" />
+                          Waktu Habis
+                        </span>
+                        <span className="text-[10px] text-[#94A3B8] font-mono">
+                          {teamWins.length > 0 ? Math.round((timeWins / teamWins.length) * 100) : 0}%
+                        </span>
+                      </div>
+                      <div className="text-lg font-black text-white">{timeWins} <span className="text-xs font-medium text-[#94A3B8]">Ronde</span></div>
+                      <p className="text-[10px] text-[#64748B]">Site tertahan hingga 0:00</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
       )}

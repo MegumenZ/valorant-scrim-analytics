@@ -62,6 +62,18 @@ export interface MapAggregateStats {
   defenseStartWins: number;
 }
 
+export interface TacticalWinBreakdown {
+  totalWins: number;
+  eliminations: number;
+  eliminationRate: number;
+  defuses: number;       // Retake & Spike Defused
+  defuseRate: number;
+  detonations: number;   // Post-Plant Spike Detonated
+  detonationRate: number;
+  timeouts: number;      // Waktu Habis
+  timeoutRate: number;
+}
+
 export interface DashboardSummary {
   totalMatches: number;
   wins: number;
@@ -80,6 +92,7 @@ export interface DashboardSummary {
     attackWinRate: number;
     defenseWinRate: number;
   };
+  tacticalWins: TacticalWinBreakdown;
   mapBreakdown: Array<{
     map: ValorantMap;
     total: number;
