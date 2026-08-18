@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PlusCircle, LogOut, LogIn } from "lucide-react";
+import { LogOut, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUserRole } from "./role-context";
 
@@ -93,16 +93,6 @@ export function Header() {
             <Button variant="secondary" size="sm" className="gap-1.5 text-xs h-8">
               <LogIn className="w-3.5 h-3.5 text-[#5865F2]" />
               <span>Login</span>
-            </Button>
-          </Link>
-        )}
-
-        {/* Quick Record CTA for Admin (Desktop only, hidden when already on new/edit match page) */}
-        {isAdmin && !pathname.startsWith("/matches/new") && !pathname.includes("/edit") && (
-          <Link href="/matches/new" className="hidden md:inline-flex">
-            <Button size="sm" className="gap-1.5 font-semibold h-8 shadow-sm">
-              <PlusCircle className="w-3.5 h-3.5" />
-              <span>Catat Scrim</span>
             </Button>
           </Link>
         )}

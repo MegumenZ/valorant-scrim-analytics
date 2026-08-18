@@ -26,12 +26,6 @@ const navItems = [
     icon: Swords,
   },
   {
-    label: "Catat Scrim",
-    href: "/matches/new",
-    icon: PlusCircle,
-    adminOnly: true,
-  },
-  {
     label: "Roster Pemain",
     href: "/roster",
     icon: Users,
@@ -46,6 +40,8 @@ const navItems = [
 export function Sidebar({ className, onClose }: { className?: string; onClose?: () => void }) {
   const pathname = usePathname();
   const { isAdmin } = useUserRole();
+
+  const isNewMatchActive = pathname.startsWith("/matches/new") || pathname.includes("/edit");
 
   return (
     <aside
@@ -73,8 +69,27 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
         </div>
       </div>
 
+      {/* Primary Highlighted Action for Admin */}
+      {isAdmin && (
+        <div className="px-3 pt-3 pb-1">
+          <Link
+            href="/matches/new"
+            onClick={onClose}
+            className={cn(
+              "flex items-center justify-center gap-2 w-full py-2.5 px-3 rounded-lg text-xs font-semibold tracking-wide transition-all shadow-sm",
+              isNewMatchActive
+                ? "bg-[#FF4655] text-white shadow-md shadow-[#FF4655]/25 ring-2 ring-[#FF4655]/40"
+                : "bg-[#FF4655] hover:bg-[#E03A48] text-white shadow-sm shadow-[#FF4655]/20 active:scale-[0.98]"
+            )}
+          >
+            <PlusCircle className="w-4 h-4 shrink-0" />
+            <span>Catat Scrim</span>
+          </Link>
+        </div>
+      )}
+
       {/* Navigation Menu */}
-      <div className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <div className="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
         <div className="px-3 pb-2 text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
           Menu Utama
         </div>
@@ -85,13 +100,7 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
               ? pathname === "/"
               : item.href === "/matches"
               ? pathname === "/matches" || (pathname.startsWith("/matches/") && !pathname.startsWith("/matches/new") && !pathname.includes("/edit"))
-              : item.href === "/matches/new"
-              ? pathname.startsWith("/matches/new") || pathname.includes("/edit")
               : pathname.startsWith(item.href);
-
-          if (item.adminOnly && !isAdmin) {
-            return null;
-          }
 
           return (
             <Link
