@@ -487,11 +487,20 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
 
                     <div className="space-y-1">
                       <label className="text-[10px] font-semibold text-[#94A3B8]">Agent *</label>
-                      <div className="relative">
+                      <div className="flex items-center gap-2">
+                        <div className="w-9 h-9 rounded-lg bg-[#090C10] border border-[#1C2433] p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
+                          <img
+                            src={getAgentIcon(row.agent)}
+                            alt={row.agent}
+                            loading="lazy"
+                            decoding="async"
+                            className="w-full h-full object-cover rounded-full"
+                          />
+                        </div>
                         <Select
                           value={row.agent}
                           onChange={(e) => handleRowChange(index, "agent", e.target.value)}
-                          className="h-9 text-xs font-semibold pl-7"
+                          className="h-9 text-xs font-semibold flex-1"
                           required
                         >
                           {VALORANT_AGENTS.map((a) => (
@@ -500,11 +509,6 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                             </option>
                           ))}
                         </Select>
-                        <img
-                          src={getAgentIcon(row.agent)}
-                          alt={row.agent}
-                          className="w-4 h-4 rounded-full absolute left-2 top-2.5 pointer-events-none object-cover"
-                        />
                       </div>
                     </div>
                   </div>
@@ -683,19 +687,30 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                       </td>
 
                       {/* Agent */}
-                      <td className="p-2.5">
-                        <Select
-                          value={row.agent}
-                          onChange={(e) => handleRowChange(index, "agent", e.target.value)}
-                          className="h-8 text-xs font-semibold"
-                          required
-                        >
-                          {VALORANT_AGENTS.map((a) => (
-                            <option key={a.name} value={a.name} className="bg-[#090C10] text-[#F1F5F9]">
-                              {a.name} ({a.role})
-                            </option>
-                          ))}
-                        </Select>
+                      <td className="p-2.5 min-w-[155px]">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-lg bg-[#090C10] border border-[#1C2433] p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
+                            <img
+                              src={getAgentIcon(row.agent)}
+                              alt={row.agent}
+                              loading="lazy"
+                              decoding="async"
+                              className="w-full h-full object-cover rounded-full"
+                            />
+                          </div>
+                          <Select
+                            value={row.agent}
+                            onChange={(e) => handleRowChange(index, "agent", e.target.value)}
+                            className="h-8 text-xs font-semibold flex-1"
+                            required
+                          >
+                            {VALORANT_AGENTS.map((a) => (
+                              <option key={a.name} value={a.name} className="bg-[#090C10] text-[#F1F5F9]">
+                                {a.name} ({a.role})
+                              </option>
+                            ))}
+                          </Select>
+                        </div>
                       </td>
 
                       {/* ACS */}
