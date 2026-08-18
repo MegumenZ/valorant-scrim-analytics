@@ -56,7 +56,6 @@ export default async function DashboardPage() {
           title="Total Scrim Match"
           value={`${summary.totalMatches} Map`}
           subtitle={`${summary.wins} Menang - ${summary.losses} Kalah ${summary.draws > 0 ? `(${summary.draws} Seri)` : ""}`}
-          detail="Total game tanding"
           icon={Swords}
           variant="default"
         />
@@ -66,7 +65,6 @@ export default async function DashboardPage() {
           title="Win Rate Tim"
           value={`${summary.winRate}%`}
           subtitle={`Attack: ${summary.sideStats.attackWinRate}% | Def: ${summary.sideStats.defenseWinRate}%`}
-          detail="Berdasarkan sisi awal"
           icon={Trophy}
           variant={summary.winRate >= 50 ? "win" : "loss"}
         />
@@ -75,8 +73,7 @@ export default async function DashboardPage() {
         <KpiCard
           title="Rata-rata ACS"
           value={`${summary.teamAvgAcs} ACS`}
-          subtitle="Performa kolektif 5 pemain"
-          detail="Average Combat Score per match"
+          subtitle="Average Combat Score tim"
           icon={Zap}
           variant="highlight"
         />
@@ -86,7 +83,6 @@ export default async function DashboardPage() {
           title="Efisiensi Trade Tim"
           value={`${summary.tradingStats?.tradeEfficiency || 0}% Trade`}
           subtitle={`${summary.tradingStats?.tradedDeaths || 0} Di-trade / ${summary.tradingStats?.totalDeaths || 0} Deaths`}
-          detail="Disiplin spacing & refrag"
           icon={Swords}
           variant={(summary.tradingStats?.tradeEfficiency || 0) >= 60 ? "win" : (summary.tradingStats?.tradeEfficiency || 0) >= 45 ? "amber" : "loss"}
         />

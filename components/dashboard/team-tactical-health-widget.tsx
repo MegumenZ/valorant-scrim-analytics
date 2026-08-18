@@ -95,7 +95,7 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
               {overview.strongestMap ? overview.strongestMap.map : "-"}
             </div>
             <p className="text-[10px] text-emerald-400 font-medium">
-              {overview.strongestMap ? `${overview.strongestMap.winrate}% Winrate Scrim` : "Belum ada data"}
+              {overview.strongestMap ? `${overview.strongestMap.winrate}% Win Rate Scrim` : "Belum ada data"}
             </p>
           </div>
 
@@ -114,7 +114,7 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
               {overview.weakestMap ? overview.weakestMap.map : "-"}
             </div>
             <p className="text-[10px] text-rose-400 font-medium">
-              {overview.weakestMap ? `${overview.weakestMap.winrate}% Winrate Scrim` : "Belum ada data"}
+              {overview.weakestMap ? `${overview.weakestMap.winrate}% Win Rate Scrim` : "Belum ada data"}
             </p>
           </div>
 
