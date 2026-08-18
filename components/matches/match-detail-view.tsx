@@ -410,34 +410,20 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
                     </div>
                   </div>
 
-                  {/* 4-Stat Grid: KDA, ADR, HS, First Blood */}
-                  <div className="grid grid-cols-4 gap-1.5 text-center text-xs pt-1 border-t border-[#242e40]/50">
-                    <div className="p-1 rounded-lg bg-[#0e131b] border border-[#242e40]/60">
+                  {/* 2-Stat Grid: KDA & First Blood */}
+                  <div className="grid grid-cols-2 gap-2 text-center text-xs pt-1 border-t border-[#242e40]/50">
+                    <div className="p-1.5 rounded-lg bg-[#0e131b] border border-[#242e40]/60">
                       <div className="text-[9px] text-slate-400">K/D/A</div>
-                      <div className="font-bold text-[11px] tabular-nums">
+                      <div className="font-bold text-[12px] tabular-nums">
                         <span className="text-emerald-400">{stat.kills}</span>/
                         <span className="text-rose-400">{stat.deaths}</span>/
                         <span className="text-sky-400">{stat.assists}</span>
                       </div>
                     </div>
 
-                    <div className="p-1 rounded-lg bg-[#0e131b] border border-[#242e40]/60">
-                      <div className="text-[9px] text-slate-400">ADR</div>
-                      <div className="font-bold text-[11px] text-slate-200 tabular-nums">
-                        {stat.adr.toFixed(0)}
-                      </div>
-                    </div>
-
-                    <div className="p-1 rounded-lg bg-[#0e131b] border border-[#242e40]/60">
-                      <div className="text-[9px] text-slate-400">HS %</div>
-                      <div className="font-bold text-[11px] text-amber-400 tabular-nums">
-                        {stat.hsPercent != null ? `${stat.hsPercent}%` : "-"}
-                      </div>
-                    </div>
-
-                    <div className="p-1 rounded-lg bg-[#0e131b] border border-[#242e40]/60">
+                    <div className="p-1.5 rounded-lg bg-[#0e131b] border border-[#242e40]/60">
                       <div className="text-[9px] text-slate-400">First Blood</div>
-                      <div className="font-bold text-[11px] text-emerald-400 tabular-nums">
+                      <div className="font-bold text-[12px] text-emerald-400 tabular-nums">
                         {stat.firstKills} FK
                       </div>
                     </div>
@@ -457,10 +443,7 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
                   <th className="py-3 px-4 text-right">ACS</th>
                   <th className="py-3 px-4 text-center">K / D / A</th>
                   <th className="py-3 px-4 text-center">K/D Ratio</th>
-                  <th className="py-3 px-4 text-right">ADR</th>
-                  <th className="py-3 px-4 text-right">HS %</th>
                   <th className="py-3 px-4 text-center">First Bloods (FK)</th>
-                  <th className="py-3 px-4 text-right">KAST %</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#242e40]/70">
@@ -516,20 +499,8 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
                         </span>
                       </td>
 
-                      <td className="py-3.5 px-4 text-right text-slate-200 tabular-nums font-semibold">
-                        {stat.adr.toFixed(1)}
-                      </td>
-
-                      <td className="py-3.5 px-4 text-right text-slate-300 tabular-nums">
-                        {stat.hsPercent != null ? `${stat.hsPercent}%` : "-"}
-                      </td>
-
                       <td className="py-3.5 px-4 text-center font-bold text-emerald-400 tabular-nums">
                         {stat.firstKills} FK
-                      </td>
-
-                      <td className="py-3.5 px-4 text-right text-slate-400 tabular-nums">
-                        {stat.kastPercent != null ? `${stat.kastPercent}%` : "-"}
                       </td>
                     </tr>
                   );

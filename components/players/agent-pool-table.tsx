@@ -25,14 +25,13 @@ export function AgentPoolTable({ agentPool }: AgentPoolTableProps) {
               <th className="py-3 px-4 text-center">Rekor (W-L)</th>
               <th className="py-3 px-4 text-right">Win Rate</th>
               <th className="py-3 px-4 text-right">Avg ACS</th>
-              <th className="py-3 px-4 text-right">Avg ADR</th>
               <th className="py-3 px-4 text-right">K/D Ratio</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#1C2433] font-medium">
             {agentPool.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-8 text-center text-[#64748B]">
+                <td colSpan={6} className="py-8 text-center text-[#64748B]">
                   Belum ada data pertandingan untuk pemain ini.
                 </td>
               </tr>
@@ -74,9 +73,6 @@ export function AgentPoolTable({ agentPool }: AgentPoolTableProps) {
                     </td>
                     <td className="py-3.5 px-4 text-right font-bold text-sky-400 tabular-nums">
                       {stat.avgAcs}
-                    </td>
-                    <td className="py-3.5 px-4 text-right text-slate-200 tabular-nums">
-                      {stat.avgAdr}
                     </td>
                     <td className="py-3.5 px-4 text-right font-bold tabular-nums">
                       <span

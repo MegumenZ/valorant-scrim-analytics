@@ -118,9 +118,9 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
                       </div>
                     </div>
                     <div className="p-2 rounded-lg bg-[#090C10] border border-[#1C2433]">
-                      <div className="text-[10px] text-[#94A3B8] font-medium">Headshot</div>
-                      <div className="font-bold text-sm text-amber-400 tabular-nums">
-                        {item.hsPercent}%
+                      <div className="text-[10px] text-[#94A3B8] font-medium">First Bloods</div>
+                      <div className="font-bold text-sm text-emerald-400 tabular-nums">
+                        {item.firstKills} FK
                       </div>
                     </div>
                   </div>
@@ -140,18 +140,15 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
                 <th className="py-3 px-4">Role</th>
                 <th className="py-3 px-4 text-center">Match</th>
                 <th className="py-3 px-4 text-right">Avg ACS</th>
-                <th className="py-3 px-4 text-right">Avg ADR</th>
-                <th className="py-3 px-4 text-right">K/D</th>
-                <th className="py-3 px-4 text-right">HS %</th>
-                <th className="py-3 px-4 text-center">FK / FD</th>
-                <th className="py-3 px-4 text-center">Clutch</th>
+                <th className="py-3 px-4 text-right">K/D Ratio</th>
+                <th className="py-3 px-4 text-center">First Bloods (FK)</th>
                 <th className="py-3 px-4 text-right"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#1C2433] font-medium">
               {leaderboard.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="py-8 text-center text-[#64748B]">
+                  <td colSpan={8} className="py-8 text-center text-[#64748B]">
                     Belum ada data pemain.
                   </td>
                 </tr>
@@ -211,9 +208,6 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
                       <td className="py-3.5 px-4 text-right font-bold text-sky-400 tabular-nums text-sm">
                         {item.avgAcs}
                       </td>
-                      <td className="py-3.5 px-4 text-right text-[#F1F5F9] tabular-nums">
-                        {item.avgAdr}
-                      </td>
                       <td className="py-3.5 px-4 text-right font-bold tabular-nums">
                         <span
                           className={
@@ -227,16 +221,8 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
                           {item.kdRatio.toFixed(2)}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-right text-[#F1F5F9] tabular-nums">
-                        {item.hsPercent}%
-                      </td>
-                      <td className="py-3.5 px-4 text-center text-[#F1F5F9] tabular-nums">
-                        <span className="text-emerald-400 font-semibold">{item.firstKills}</span>
-                        <span className="text-[#64748B] mx-1">/</span>
-                        <span className="text-rose-400 font-semibold">{item.firstDeaths}</span>
-                      </td>
-                      <td className="py-3.5 px-4 text-center font-bold text-amber-400 tabular-nums">
-                        {item.clutchesWon}
+                      <td className="py-3.5 px-4 text-center text-emerald-400 font-semibold tabular-nums">
+                        {item.firstKills} FK
                       </td>
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
                         <Link href={`/players/${item.player.id}`}>

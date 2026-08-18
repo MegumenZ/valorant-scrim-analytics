@@ -23,8 +23,6 @@ interface PlayerStatRow {
   kills: number | string;
   deaths: number | string;
   assists: number | string;
-  adr: number | string;
-  hsPercent: number | string;
   firstKills: number | string;
 }
 
@@ -49,7 +47,7 @@ interface MatchEntryFormProps {
       kills: number;
       deaths: number;
       assists: number;
-      adr: number;
+      adr?: number;
       hsPercent?: number | null;
       firstKills: number;
       firstDeaths?: number;
@@ -252,11 +250,11 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
   const activeStarters = availablePlayers.filter((p) => p.isActive).slice(0, 5);
 
   const defaultRows: PlayerStatRow[] = [
-    { playerId: activeStarters[0]?.id || availablePlayers[0]?.id || "", agent: "Jett", acs: 240, kills: 18, deaths: 12, assists: 4, adr: 155, hsPercent: 28, firstKills: 4 },
-    { playerId: activeStarters[1]?.id || availablePlayers[1]?.id || "", agent: "Raze", acs: 220, kills: 16, deaths: 14, assists: 5, adr: 145, hsPercent: 22, firstKills: 3 },
-    { playerId: activeStarters[2]?.id || availablePlayers[2]?.id || "", agent: "Omen", acs: 195, kills: 14, deaths: 11, assists: 9, adr: 128, hsPercent: 30, firstKills: 1 },
-    { playerId: activeStarters[3]?.id || availablePlayers[3]?.id || "", agent: "Sova", acs: 185, kills: 13, deaths: 12, assists: 11, adr: 120, hsPercent: 26, firstKills: 2 },
-    { playerId: activeStarters[4]?.id || availablePlayers[4]?.id || "", agent: "Cypher", acs: 160, kills: 11, deaths: 10, assists: 6, adr: 105, hsPercent: 24, firstKills: 0 },
+    { playerId: activeStarters[0]?.id || availablePlayers[0]?.id || "", agent: "Jett", acs: 240, kills: 18, deaths: 12, assists: 4, firstKills: 4 },
+    { playerId: activeStarters[1]?.id || availablePlayers[1]?.id || "", agent: "Raze", acs: 220, kills: 16, deaths: 14, assists: 5, firstKills: 3 },
+    { playerId: activeStarters[2]?.id || availablePlayers[2]?.id || "", agent: "Omen", acs: 195, kills: 14, deaths: 11, assists: 9, firstKills: 1 },
+    { playerId: activeStarters[3]?.id || availablePlayers[3]?.id || "", agent: "Sova", acs: 185, kills: 13, deaths: 12, assists: 11, firstKills: 2 },
+    { playerId: activeStarters[4]?.id || availablePlayers[4]?.id || "", agent: "Cypher", acs: 160, kills: 11, deaths: 10, assists: 6, firstKills: 0 },
   ];
 
   const [playerRows, setPlayerRows] = useState<PlayerStatRow[]>(() => {
@@ -268,8 +266,6 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         kills: s.kills,
         deaths: s.deaths,
         assists: s.assists,
-        adr: s.adr,
-        hsPercent: s.hsPercent ?? "",
         firstKills: s.firstKills,
       }));
     }
@@ -299,11 +295,11 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
 
     if (availablePlayers.length >= 5) {
       setPlayerRows([
-        { playerId: availablePlayers[0].id, agent: "Jett", acs: 285, kills: 22, deaths: 11, assists: 4, adr: 182, hsPercent: 32, firstKills: 5 },
-        { playerId: availablePlayers[1].id, agent: "Raze", acs: 245, kills: 18, deaths: 13, assists: 5, adr: 158, hsPercent: 24, firstKills: 4 },
-        { playerId: availablePlayers[2].id, agent: "Omen", acs: 210, kills: 15, deaths: 10, assists: 10, adr: 135, hsPercent: 29, firstKills: 1 },
-        { playerId: availablePlayers[3].id, agent: "Fade", acs: 190, kills: 13, deaths: 12, assists: 12, adr: 122, hsPercent: 26, firstKills: 2 },
-        { playerId: availablePlayers[4].id, agent: "Cypher", acs: 165, kills: 11, deaths: 9, assists: 7, adr: 108, hsPercent: 25, firstKills: 0 },
+        { playerId: availablePlayers[0].id, agent: "Jett", acs: 285, kills: 22, deaths: 11, assists: 4, firstKills: 5 },
+        { playerId: availablePlayers[1].id, agent: "Raze", acs: 245, kills: 18, deaths: 13, assists: 5, firstKills: 4 },
+        { playerId: availablePlayers[2].id, agent: "Omen", acs: 210, kills: 15, deaths: 10, assists: 10, firstKills: 1 },
+        { playerId: availablePlayers[3].id, agent: "Fade", acs: 190, kills: 13, deaths: 12, assists: 12, firstKills: 2 },
+        { playerId: availablePlayers[4].id, agent: "Cypher", acs: 165, kills: 11, deaths: 9, assists: 7, firstKills: 0 },
       ]);
     }
   };
@@ -326,11 +322,12 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         kills: Number(row.kills) || 0,
         deaths: Number(row.deaths) || 0,
         assists: Number(row.assists) || 0,
-        adr: Number(row.adr) || 0,
-        hsPercent: row.hsPercent !== "" ? Number(row.hsPercent) : null,
+        adr: 0,
+        hsPercent: null,
         firstKills: Number(row.firstKills) || 0,
         firstDeaths: 0,
         clutchesWon: 0,
+        kastPercent: null,
       }));
 
       const payload = {
@@ -835,10 +832,10 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                     </div>
                   </div>
 
-                  {/* Primary Combat Stats Grid (4 cols) */}
+                  {/* Primary Combat Stats Grid (5 cols) */}
                   <div className="space-y-1 pt-1">
-                    <div className="text-[10px] font-semibold text-[#94A3B8]">Statistik Utama</div>
-                    <div className="grid grid-cols-4 gap-1.5 text-center">
+                    <div className="text-[10px] font-semibold text-[#94A3B8]">Statistik Pertandingan</div>
+                    <div className="grid grid-cols-5 gap-1.5 text-center">
                       <div className="space-y-0.5">
                         <span className="text-[9px] text-sky-400 font-bold">ACS *</span>
                         <Input
@@ -887,38 +884,6 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           className="h-8 text-center font-bold text-[#F1F5F9] px-1 text-xs"
                         />
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Secondary Combat Stats Grid (3 cols) */}
-                  <div className="space-y-1 pt-1">
-                    <div className="text-[10px] font-semibold text-[#94A3B8]">Duel & Efisiensi</div>
-                    <div className="grid grid-cols-3 gap-1.5 text-center">
-                      <div className="space-y-0.5">
-                        <span className="text-[9px] text-[#94A3B8] font-medium">ADR *</span>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.1"
-                          placeholder="150"
-                          value={row.adr}
-                          onChange={(e) => handleRowChange(index, "adr", e.target.value)}
-                          required
-                          className="h-8 text-center font-semibold text-[#F1F5F9] px-1 text-xs"
-                        />
-                      </div>
-                      <div className="space-y-0.5">
-                        <span className="text-[9px] text-amber-400 font-medium">HS %</span>
-                        <Input
-                          type="number"
-                          min="0"
-                          max="100"
-                          placeholder="25"
-                          value={row.hsPercent}
-                          onChange={(e) => handleRowChange(index, "hsPercent", e.target.value)}
-                          className="h-8 text-center text-amber-400 px-1 text-xs"
-                        />
-                      </div>
                       <div className="space-y-0.5">
                         <span className="text-[9px] text-emerald-400 font-medium">FK</span>
                         <Input
@@ -942,16 +907,14 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-[#1C2433] bg-[#090C10] text-[#94A3B8] font-semibold text-[11px]">
-                  <th className="py-3 px-3.5 min-w-[140px]">Pemain *</th>
-                  <th className="py-3 px-3.5 min-w-[155px]">Agent *</th>
-                  <th className="py-3 px-2 text-center w-20">ACS *</th>
-                  <th className="py-3 px-2 text-center w-16">K *</th>
-                  <th className="py-3 px-2 text-center w-16">D *</th>
-                  <th className="py-3 px-2 text-center w-16">A *</th>
-                  <th className="py-3 px-2 text-center w-20">ADR *</th>
-                  <th className="py-3 px-2 text-center w-16">HS %</th>
-                  <th className="py-3 px-2 text-center w-16">FK</th>
-                  <th className="py-3 px-3 text-center min-w-[85px]">Live K/D</th>
+                  <th className="py-3 px-3.5 min-w-[150px]">Pemain *</th>
+                  <th className="py-3 px-3.5 min-w-[165px]">Agent *</th>
+                  <th className="py-3 px-2 text-center w-24">ACS *</th>
+                  <th className="py-3 px-2 text-center w-20">K *</th>
+                  <th className="py-3 px-2 text-center w-20">D *</th>
+                  <th className="py-3 px-2 text-center w-20">A *</th>
+                  <th className="py-3 px-2 text-center w-24">First Bloods (FK)</th>
+                  <th className="py-3 px-3 text-center min-w-[95px]">Live K/D</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#1C2433]">
@@ -983,7 +946,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                       </td>
 
                       {/* Agent */}
-                      <td className="p-2.5 min-w-[155px]">
+                      <td className="p-2.5 min-w-[165px]">
                         <div className="flex items-center gap-2">
                           <div className="w-8 h-8 rounded-lg bg-[#090C10] border border-[#1C2433] p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
                             <img
@@ -1058,33 +1021,6 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           onChange={(e) => handleRowChange(index, "assists", e.target.value)}
                           required
                           className="h-8 text-center text-slate-200 px-1"
-                        />
-                      </td>
-
-                      {/* ADR */}
-                      <td className="p-1.5">
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.1"
-                          placeholder="150.5"
-                          value={row.adr}
-                          onChange={(e) => handleRowChange(index, "adr", e.target.value)}
-                          required
-                          className="h-8 text-center font-semibold text-slate-200 px-1"
-                        />
-                      </td>
-
-                      {/* HS % */}
-                      <td className="p-1.5">
-                        <Input
-                          type="number"
-                          min="0"
-                          max="100"
-                          placeholder="25"
-                          value={row.hsPercent}
-                          onChange={(e) => handleRowChange(index, "hsPercent", e.target.value)}
-                          className="h-8 text-center text-amber-400 px-1"
                         />
                       </td>
 

@@ -8,6 +8,7 @@ import {
   Flame,
   Zap,
   Target,
+  Trophy,
 } from "lucide-react";
 import { getPlayerProfile } from "@/lib/actions/players";
 import { KpiCard } from "@/components/dashboard/kpi-card";
@@ -36,46 +37,45 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
     AGENT_ROLE_COLORS[player.primaryRole as ValorantRole] ||
     AGENT_ROLE_COLORS.Flex;
 
+  const wins = recentMatches.filter((m) => m.result === "WIN").length;
+  const losses = recentMatches.filter((m) => m.result === "LOSS").length;
+  const winRate = stats.matchesPlayed > 0 ? Math.round((wins / stats.matchesPlayed) * 100) : 0;
+
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-12 select-none">
-      {/* Navigation Back */}
-      <div>
+    <div className="space-y-6 max-w-6xl mx-auto pb-12">
+      {/* HEADER & BACK BUTTON */}
+      <div className="flex flex-col gap-4">
         <Link href="/roster">
-          <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-slate-400 hover:text-white">
+          <Button variant="ghost" size="sm" className="gap-2 text-[#94A3B8] hover:text-white pl-0">
             <ArrowLeft className="w-4 h-4" />
-            <span>Kembali ke Roster Tim</span>
+            <span>Kembali ke Roster</span>
           </Button>
         </Link>
-      </div>
 
-      {/* PLAYER HERO HEADER */}
-      <div className="rounded-xl border border-[#1C2433] bg-[#0F141C] p-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl bg-[#0F141C] border border-[#1C2433]">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-lg bg-[#161D28] border border-[#2A364F] flex items-center justify-center text-white font-bold text-lg shadow-sm">
+            <div className="w-16 h-16 rounded-2xl bg-[#161D28] border border-[#2A364F] flex items-center justify-center text-2xl font-black text-[#FF4655] shadow-inner">
               {player.name.substring(0, 2).toUpperCase()}
             </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+
+            <div className="space-y-1">
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-2xl font-bold tracking-tight text-white">
                   {player.name}
                 </h1>
-                <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${roleColor.badge}`}>
+                <Badge variant={player.isActive ? "default" : "secondary"}>
+                  {player.isActive ? "Active Roster" : "Inactive"}
+                </Badge>
+              </div>
+
+              <div className="flex items-center gap-3 text-xs text-[#94A3B8]">
+                {player.riotId && (
+                  <span className="font-mono text-[#F1F5F9]">{player.riotId}</span>
+                )}
+                {player.riotId && <span>•</span>}
+                <span className={`px-2 py-0.5 rounded-full font-semibold border ${roleColor.badge}`}>
                   {player.primaryRole}
                 </span>
-                <span
-                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
-                    player.isActive
-                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                      : "bg-[#161D28] text-[#94A3B8] border border-[#1C2433]"
-                  }`}
-                >
-                  {player.isActive ? "Starter Aktif" : "Cadangan"}
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center gap-3 text-xs text-[#94A3B8] mt-1.5">
-                {player.riotId && <span>Riot ID: <strong className="text-[#F1F5F9] font-medium">{player.riotId}</strong></span>}
-                {player.discordId && <span>Discord: <strong className="text-[#F1F5F9] font-medium">{player.discordId}</strong></span>}
               </div>
             </div>
           </div>
@@ -86,8 +86,8 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* K/D Ratio */}
         <KpiCard
-          title="K/D Ratio & Match"
-          value={`${stats.kdRatio.toFixed(2)} KD`}
+          title="K/D Ratio"
+          value={`${stats.kdRatio.toFixed(2)}`}
           subtitle={`${stats.totalKills} Kills / ${stats.totalDeaths} Deaths`}
           detail={`Total ${stats.matchesPlayed} Game Scrim`}
           icon={Crosshair}
@@ -98,30 +98,30 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
         <KpiCard
           title="Rata-rata Combat Score"
           value={`${stats.avgAcs} ACS`}
-          subtitle={`Avg ADR: ${stats.avgAdr}`}
-          detail="Damage output rata-rata per round"
+          subtitle={`${stats.totalKills} Total Kills`}
+          detail="Efektivitas tempur per match"
           icon={Zap}
           variant="highlight"
         />
 
-        {/* Accuracy & Consistency */}
+        {/* Win Rate */}
         <KpiCard
-          title="Headshot & KAST"
-          value={`${stats.avgHsPercent}% HS`}
-          subtitle={`KAST: ${stats.avgKastPercent > 0 ? `${stats.avgKastPercent}%` : "-"}`}
-          detail="Presisi tembakan & kontribusi ronde"
-          icon={Target}
-          variant="amber"
+          title="Win Rate Scrim"
+          value={`${winRate}%`}
+          subtitle={`${wins} Menang - ${losses} Kalah`}
+          detail={`Dari total ${stats.matchesPlayed} match`}
+          icon={Trophy}
+          variant={winRate >= 50 ? "win" : "loss"}
         />
 
-        {/* Opening Duels & Clutches */}
+        {/* First Bloods */}
         <KpiCard
-          title="Opening Duel (FK/FD)"
-          value={`${stats.odr.toFixed(2)} Ratio`}
-          subtitle={`${stats.firstKills} FK / ${stats.firstDeaths} FD`}
-          detail={`${stats.clutchesWon} Kali Clutch 1vX Menang`}
+          title="First Bloods (FK)"
+          value={`${stats.firstKills} FK`}
+          subtitle={`Rata-rata ${(stats.firstKills / (stats.matchesPlayed || 1)).toFixed(1)} FK/Match`}
+          detail="Inisiasi opening duel tim"
           icon={Flame}
-          variant="default"
+          variant="amber"
         />
       </div>
 
@@ -150,17 +150,15 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
                 <th className="py-3 px-4">Agent</th>
                 <th className="py-3 px-4 text-right">ACS</th>
                 <th className="py-3 px-4 text-center">K / D / A</th>
-                <th className="py-3 px-4 text-right">K/D</th>
-                <th className="py-3 px-4 text-right">ADR</th>
-                <th className="py-3 px-4 text-right">HS %</th>
-                <th className="py-3 px-4 text-center">FK / FD</th>
+                <th className="py-3 px-4 text-right">K/D Ratio</th>
+                <th className="py-3 px-4 text-center">First Bloods (FK)</th>
                 <th className="py-3 px-4 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#242e40]/70 font-medium">
               {recentMatches.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="py-8 text-center text-slate-500">
+                  <td colSpan={10} className="py-8 text-center text-slate-500">
                     Pemain ini belum memiliki catatan pertandingan.
                   </td>
                 </tr>
@@ -226,16 +224,8 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
                           {m.kdRatio.toFixed(2)}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-right text-slate-200 tabular-nums">
-                        {m.adr}
-                      </td>
-                      <td className="py-3.5 px-4 text-right text-slate-300 tabular-nums">
-                        {m.hsPercent != null ? `${m.hsPercent}%` : "-"}
-                      </td>
-                      <td className="py-3.5 px-4 text-center tabular-nums text-slate-200">
-                        <span className="text-emerald-400">{m.firstKills}</span>
-                        <span className="text-slate-500 mx-1">/</span>
-                        <span className="text-rose-400">{m.firstDeaths}</span>
+                      <td className="py-3.5 px-4 text-center text-emerald-400 font-bold tabular-nums">
+                        {m.firstKills} FK
                       </td>
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
                         <Link href={`/matches/${m.matchId}`}>
