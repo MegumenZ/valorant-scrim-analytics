@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
+import { BottomNav } from "@/components/layout/bottom-nav";
 import { RoleProvider } from "@/components/layout/role-context";
 
 export const metadata: Metadata = {
@@ -33,11 +34,14 @@ export default function RootLayout({
             {/* Main Application Container */}
             <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
               <Header />
-              <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+              <main className="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-8 pb-24 lg:pb-8">
                 <div className="max-w-7xl mx-auto">{children}</div>
               </main>
             </div>
           </div>
+
+          {/* Mobile Ergonomic Bottom Navigation Bar */}
+          <BottomNav />
         </RoleProvider>
       </body>
     </html>

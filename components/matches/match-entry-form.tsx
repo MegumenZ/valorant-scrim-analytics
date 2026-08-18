@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { VALORANT_MAPS, VALORANT_AGENTS, ValorantMap } from "@/lib/data/valorant";
+import { VALORANT_MAPS, VALORANT_AGENTS, ValorantMap, getAgentIcon } from "@/lib/data/valorant";
 import { Player, MatchAttachment } from "@/lib/db/schema";
 import { createMatch, updateMatch } from "@/lib/actions/matches";
 import { calculateKD, calculateMatchResult } from "@/lib/utils/analytics";
@@ -441,41 +441,48 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
             </span>
           </div>
         </CardHeader>
-        <CardContent className="p-0 overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-[#242e40] bg-[#0e131b] text-slate-400 font-semibold text-[11px]">
-                <th className="py-3 px-3.5 min-w-[140px]">Pemain *</th>
-                <th className="py-3 px-3.5 min-w-[120px]">Agent *</th>
-                <th className="py-3 px-2 text-center w-20">ACS *</th>
-                <th className="py-3 px-2 text-center w-16">K *</th>
-                <th className="py-3 px-2 text-center w-16">D *</th>
-                <th className="py-3 px-2 text-center w-16">A *</th>
-                <th className="py-3 px-2 text-center w-20">ADR *</th>
-                <th className="py-3 px-2 text-center w-16">HS %</th>
-                <th className="py-3 px-2 text-center w-16">FK</th>
-                <th className="py-3 px-2 text-center w-16">FD</th>
-                <th className="py-3 px-2 text-center w-16">Clutch</th>
-                <th className="py-3 px-3 text-center min-w-[85px]">Live K/D</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#242e40]/60">
-              {playerRows.map((row, index) => {
-                const k = Number(row.kills) || 0;
-                const d = Number(row.deaths) || 0;
-                const liveKD = calculateKD(k, d);
+        <CardContent className="p-0">
+          {/* MOBILE VIEW: Player Stat Input Cards (md:hidden) */}
+          <div className="md:hidden divide-y divide-[#242e40]/70 p-3 space-y-4">
+            {playerRows.map((row, index) => {
+              const k = Number(row.kills) || 0;
+              const d = Number(row.deaths) || 0;
+              const liveKD = calculateKD(k, d);
 
-                return (
-                  <tr
-                    key={index}
-                    className="hover:bg-[#1c2432]/50 transition-colors"
-                  >
-                    {/* Pemain */}
-                    <td className="p-2.5">
+              return (
+                <div
+                  key={index}
+                  className="rounded-xl bg-[#0e131b] border border-[#242e40] p-3.5 space-y-3"
+                >
+                  {/* Card Header: Slot Number & Live KD */}
+                  <div className="flex items-center justify-between pb-2 border-b border-[#242e40]/60">
+                    <div className="flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-rose-500/20 text-rose-400 font-black text-xs flex items-center justify-center">
+                        {index + 1}
+                      </span>
+                      <span className="text-xs font-bold text-slate-200">
+                        Slot Pemain #{index + 1}
+                      </span>
+                    </div>
+
+                    <Badge
+                      variant={
+                        liveKD >= 1.2 ? "win" : liveKD >= 1.0 ? "draw" : "loss"
+                      }
+                      className="text-[10px] px-2 py-0.5 font-bold"
+                    >
+                      {liveKD.toFixed(2)} KD
+                    </Badge>
+                  </div>
+
+                  {/* Player & Agent Dropdowns */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400">Pemain *</label>
                       <Select
                         value={row.playerId}
                         onChange={(e) => handleRowChange(index, "playerId", e.target.value)}
-                        className="h-8 text-xs font-semibold"
+                        className="h-9 text-xs font-semibold"
                         required
                       >
                         <option value="" disabled>Pilih Pemain</option>
@@ -485,158 +492,356 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           </option>
                         ))}
                       </Select>
-                    </td>
+                    </div>
 
-                    {/* Agent */}
-                    <td className="p-2.5">
-                      <Select
-                        value={row.agent}
-                        onChange={(e) => handleRowChange(index, "agent", e.target.value)}
-                        className="h-8 text-xs font-semibold"
-                        required
-                      >
-                        {VALORANT_AGENTS.map((a) => (
-                          <option key={a.name} value={a.name} className="bg-[#141a24] text-slate-100">
-                            {a.name} ({a.role})
-                          </option>
-                        ))}
-                      </Select>
-                    </td>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400">Agent *</label>
+                      <div className="relative">
+                        <Select
+                          value={row.agent}
+                          onChange={(e) => handleRowChange(index, "agent", e.target.value)}
+                          className="h-9 text-xs font-semibold pl-7"
+                          required
+                        >
+                          {VALORANT_AGENTS.map((a) => (
+                            <option key={a.name} value={a.name} className="bg-[#141a24] text-slate-100">
+                              {a.name} ({a.role})
+                            </option>
+                          ))}
+                        </Select>
+                        <img
+                          src={getAgentIcon(row.agent)}
+                          alt={row.agent}
+                          className="w-4 h-4 rounded-full absolute left-2 top-2.5 pointer-events-none object-cover"
+                        />
+                      </div>
+                    </div>
+                  </div>
 
-                    {/* ACS */}
-                    <td className="p-1.5">
-                      <Input
-                        type="number"
-                        min="0"
-                        placeholder="240"
-                        value={row.acs}
-                        onChange={(e) => handleRowChange(index, "acs", e.target.value)}
-                        required
-                        className="h-8 text-center font-bold text-sky-400 px-1"
-                      />
-                    </td>
+                  {/* Primary Combat Stats Grid (4 cols) */}
+                  <div className="space-y-1 pt-1">
+                    <div className="text-[10px] font-semibold text-slate-400">Statistik Utama</div>
+                    <div className="grid grid-cols-4 gap-1.5 text-center">
+                      <div className="space-y-0.5">
+                        <span className="text-[9px] text-sky-400 font-bold">ACS *</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="240"
+                          value={row.acs}
+                          onChange={(e) => handleRowChange(index, "acs", e.target.value)}
+                          required
+                          className="h-8 text-center font-bold text-sky-400 px-1 text-xs"
+                        />
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-[9px] text-emerald-400 font-bold">Kills *</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="18"
+                          value={row.kills}
+                          onChange={(e) => handleRowChange(index, "kills", e.target.value)}
+                          required
+                          className="h-8 text-center font-bold text-emerald-400 px-1 text-xs"
+                        />
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-[9px] text-rose-400 font-bold">Deaths *</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="12"
+                          value={row.deaths}
+                          onChange={(e) => handleRowChange(index, "deaths", e.target.value)}
+                          required
+                          className="h-8 text-center font-bold text-rose-400 px-1 text-xs"
+                        />
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-[9px] text-slate-400 font-bold">Assists *</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="5"
+                          value={row.assists}
+                          onChange={(e) => handleRowChange(index, "assists", e.target.value)}
+                          required
+                          className="h-8 text-center font-bold text-slate-200 px-1 text-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
 
-                    {/* Kills */}
-                    <td className="p-1.5">
-                      <Input
-                        type="number"
-                        min="0"
-                        placeholder="18"
-                        value={row.kills}
-                        onChange={(e) => handleRowChange(index, "kills", e.target.value)}
-                        required
-                        className="h-8 text-center font-bold text-emerald-400 px-1"
-                      />
-                    </td>
+                  {/* Secondary Combat Stats Grid (4 cols) */}
+                  <div className="space-y-1 pt-1">
+                    <div className="text-[10px] font-semibold text-slate-400">Duel & Efisiensi</div>
+                    <div className="grid grid-cols-4 gap-1.5 text-center">
+                      <div className="space-y-0.5">
+                        <span className="text-[9px] text-slate-400 font-medium">ADR *</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          placeholder="150"
+                          value={row.adr}
+                          onChange={(e) => handleRowChange(index, "adr", e.target.value)}
+                          required
+                          className="h-8 text-center font-semibold text-slate-200 px-1 text-xs"
+                        />
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-[9px] text-amber-400 font-medium">HS %</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          placeholder="25"
+                          value={row.hsPercent}
+                          onChange={(e) => handleRowChange(index, "hsPercent", e.target.value)}
+                          className="h-8 text-center text-amber-400 px-1 text-xs"
+                        />
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-[9px] text-emerald-400 font-medium">FK</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="2"
+                          value={row.firstKills}
+                          onChange={(e) => handleRowChange(index, "firstKills", e.target.value)}
+                          className="h-8 text-center text-emerald-400 px-1 text-xs"
+                        />
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-[9px] text-rose-400 font-medium">FD</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="1"
+                          value={row.firstDeaths}
+                          onChange={(e) => handleRowChange(index, "firstDeaths", e.target.value)}
+                          className="h-8 text-center text-rose-400 px-1 text-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
 
-                    {/* Deaths */}
-                    <td className="p-1.5">
-                      <Input
-                        type="number"
-                        min="0"
-                        placeholder="12"
-                        value={row.deaths}
-                        onChange={(e) => handleRowChange(index, "deaths", e.target.value)}
-                        required
-                        className="h-8 text-center font-bold text-rose-400 px-1"
-                      />
-                    </td>
+                  {/* Clutch Input */}
+                  <div className="flex items-center justify-between pt-1 text-xs">
+                    <span className="text-[11px] text-slate-400">Clutch 1vX Menang:</span>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={row.clutchesWon}
+                      onChange={(e) => handleRowChange(index, "clutchesWon", e.target.value)}
+                      className="h-8 w-20 text-center text-amber-400 font-bold text-xs"
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
-                    {/* Assists */}
-                    <td className="p-1.5">
-                      <Input
-                        type="number"
-                        min="0"
-                        placeholder="5"
-                        value={row.assists}
-                        onChange={(e) => handleRowChange(index, "assists", e.target.value)}
-                        required
-                        className="h-8 text-center font-bold text-slate-200 px-1"
-                      />
-                    </td>
+          {/* DESKTOP VIEW: Full Data Table (hidden md:block) */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-[#242e40] bg-[#0e131b] text-slate-400 font-semibold text-[11px]">
+                  <th className="py-3 px-3.5 min-w-[140px]">Pemain *</th>
+                  <th className="py-3 px-3.5 min-w-[120px]">Agent *</th>
+                  <th className="py-3 px-2 text-center w-20">ACS *</th>
+                  <th className="py-3 px-2 text-center w-16">K *</th>
+                  <th className="py-3 px-2 text-center w-16">D *</th>
+                  <th className="py-3 px-2 text-center w-16">A *</th>
+                  <th className="py-3 px-2 text-center w-20">ADR *</th>
+                  <th className="py-3 px-2 text-center w-16">HS %</th>
+                  <th className="py-3 px-2 text-center w-16">FK</th>
+                  <th className="py-3 px-2 text-center w-16">FD</th>
+                  <th className="py-3 px-2 text-center w-16">Clutch</th>
+                  <th className="py-3 px-3 text-center min-w-[85px]">Live K/D</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#242e40]/60">
+                {playerRows.map((row, index) => {
+                  const k = Number(row.kills) || 0;
+                  const d = Number(row.deaths) || 0;
+                  const liveKD = calculateKD(k, d);
 
-                    {/* ADR */}
-                    <td className="p-1.5">
-                      <Input
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        placeholder="145"
-                        value={row.adr}
-                        onChange={(e) => handleRowChange(index, "adr", e.target.value)}
-                        required
-                        className="h-8 text-center text-slate-200 px-1"
-                      />
-                    </td>
+                  return (
+                    <tr
+                      key={index}
+                      className="hover:bg-[#1c2432]/50 transition-colors"
+                    >
+                      {/* Pemain */}
+                      <td className="p-2.5">
+                        <Select
+                          value={row.playerId}
+                          onChange={(e) => handleRowChange(index, "playerId", e.target.value)}
+                          className="h-8 text-xs font-semibold"
+                          required
+                        >
+                          <option value="" disabled>Pilih Pemain</option>
+                          {availablePlayers.map((p) => (
+                            <option key={p.id} value={p.id} className="bg-[#141a24] text-slate-100">
+                              {p.name} ({p.primaryRole})
+                            </option>
+                          ))}
+                        </Select>
+                      </td>
 
-                    {/* HS % */}
-                    <td className="p-1.5">
-                      <Input
-                        type="number"
-                        min="0"
-                        max="100"
-                        placeholder="28"
-                        value={row.hsPercent}
-                        onChange={(e) => handleRowChange(index, "hsPercent", e.target.value)}
-                        className="h-8 text-center text-slate-300 px-1"
-                      />
-                    </td>
+                      {/* Agent */}
+                      <td className="p-2.5">
+                        <Select
+                          value={row.agent}
+                          onChange={(e) => handleRowChange(index, "agent", e.target.value)}
+                          className="h-8 text-xs font-semibold"
+                          required
+                        >
+                          {VALORANT_AGENTS.map((a) => (
+                            <option key={a.name} value={a.name} className="bg-[#141a24] text-slate-100">
+                              {a.name} ({a.role})
+                            </option>
+                          ))}
+                        </Select>
+                      </td>
 
-                    {/* First Kills */}
-                    <td className="p-1.5">
-                      <Input
-                        type="number"
-                        min="0"
-                        placeholder="2"
-                        value={row.firstKills}
-                        onChange={(e) => handleRowChange(index, "firstKills", e.target.value)}
-                        className="h-8 text-center text-emerald-400 px-1"
-                      />
-                    </td>
+                      {/* ACS */}
+                      <td className="p-1.5">
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="240"
+                          value={row.acs}
+                          onChange={(e) => handleRowChange(index, "acs", e.target.value)}
+                          required
+                          className="h-8 text-center font-bold text-sky-400 px-1"
+                        />
+                      </td>
 
-                    {/* First Deaths */}
-                    <td className="p-1.5">
-                      <Input
-                        type="number"
-                        min="0"
-                        placeholder="1"
-                        value={row.firstDeaths}
-                        onChange={(e) => handleRowChange(index, "firstDeaths", e.target.value)}
-                        className="h-8 text-center text-rose-400 px-1"
-                      />
-                    </td>
+                      {/* Kills */}
+                      <td className="p-1.5">
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="18"
+                          value={row.kills}
+                          onChange={(e) => handleRowChange(index, "kills", e.target.value)}
+                          required
+                          className="h-8 text-center font-bold text-emerald-400 px-1"
+                        />
+                      </td>
 
-                    {/* Clutches */}
-                    <td className="p-1.5">
-                      <Input
-                        type="number"
-                        min="0"
-                        placeholder="0"
-                        value={row.clutchesWon}
-                        onChange={(e) => handleRowChange(index, "clutchesWon", e.target.value)}
-                        className="h-8 text-center text-amber-400 font-bold px-1"
-                      />
-                    </td>
+                      {/* Deaths */}
+                      <td className="p-1.5">
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="12"
+                          value={row.deaths}
+                          onChange={(e) => handleRowChange(index, "deaths", e.target.value)}
+                          required
+                          className="h-8 text-center font-bold text-rose-400 px-1"
+                        />
+                      </td>
 
-                    {/* Live K/D */}
-                    <td className="p-2.5 text-center font-bold text-xs tabular-nums">
-                      <span
-                        className={
-                          liveKD >= 1.2
-                            ? "text-emerald-400 font-extrabold"
-                            : liveKD >= 1.0
-                            ? "text-slate-200"
-                            : "text-rose-400"
-                        }
-                      >
-                        {liveKD.toFixed(2)} KD
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      {/* Assists */}
+                      <td className="p-1.5">
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="5"
+                          value={row.assists}
+                          onChange={(e) => handleRowChange(index, "assists", e.target.value)}
+                          required
+                          className="h-8 text-center text-slate-200 px-1"
+                        />
+                      </td>
+
+                      {/* ADR */}
+                      <td className="p-1.5">
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          placeholder="150.5"
+                          value={row.adr}
+                          onChange={(e) => handleRowChange(index, "adr", e.target.value)}
+                          required
+                          className="h-8 text-center font-semibold text-slate-200 px-1"
+                        />
+                      </td>
+
+                      {/* HS % */}
+                      <td className="p-1.5">
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          placeholder="25"
+                          value={row.hsPercent}
+                          onChange={(e) => handleRowChange(index, "hsPercent", e.target.value)}
+                          className="h-8 text-center text-amber-400 px-1"
+                        />
+                      </td>
+
+                      {/* First Kills */}
+                      <td className="p-1.5">
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="2"
+                          value={row.firstKills}
+                          onChange={(e) => handleRowChange(index, "firstKills", e.target.value)}
+                          className="h-8 text-center text-emerald-400 px-1"
+                        />
+                      </td>
+
+                      {/* First Deaths */}
+                      <td className="p-1.5">
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="1"
+                          value={row.firstDeaths}
+                          onChange={(e) => handleRowChange(index, "firstDeaths", e.target.value)}
+                          className="h-8 text-center text-rose-400 px-1"
+                        />
+                      </td>
+
+                      {/* Clutches */}
+                      <td className="p-1.5">
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={row.clutchesWon}
+                          onChange={(e) => handleRowChange(index, "clutchesWon", e.target.value)}
+                          className="h-8 text-center text-amber-400 font-bold px-1"
+                        />
+                      </td>
+
+                      {/* Live K/D */}
+                      <td className="p-2.5 text-center font-bold text-xs tabular-nums">
+                        <span
+                          className={
+                            liveKD >= 1.2
+                              ? "text-emerald-400 font-extrabold"
+                              : liveKD >= 1.0
+                              ? "text-slate-200"
+                              : "text-rose-400"
+                          }
+                        >
+                          {liveKD.toFixed(2)} KD
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </CardContent>
       </Card>
 

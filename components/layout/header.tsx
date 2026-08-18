@@ -28,9 +28,9 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-[#242e40] bg-[#0b0e14]/90 backdrop-blur-md px-4 lg:px-6 select-none">
+      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-[#242e40] bg-[#0b0e14]/90 backdrop-blur-md px-3 sm:px-4 lg:px-6 select-none">
         {/* Left Section: Mobile Menu Toggle & Team Info */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={() => setMobileMenuOpen(true)}
             className="lg:hidden p-2 rounded-lg border border-[#242e40] bg-[#141a24] text-slate-200 hover:bg-[#1c2432]"
@@ -40,17 +40,17 @@ export function Header() {
           </button>
 
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#141a24] border border-[#242e40]">
+            <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-[#141a24] border border-[#242e40]">
               <img
                 src="/team-sc-logo.png"
                 alt="Team SC"
-                className="w-4 h-4 object-contain"
+                className="w-4 h-4 object-contain shrink-0"
               />
               <span className="text-xs font-bold text-slate-100 tracking-wide">
                 Team SC
               </span>
               <span className="text-slate-600 font-normal">/</span>
-              <span className="text-xs text-rose-400 font-semibold">{getPageTitle()}</span>
+              <span className="text-xs text-rose-400 font-semibold truncate max-w-[120px] sm:max-w-none">{getPageTitle()}</span>
             </div>
           </div>
         </div>

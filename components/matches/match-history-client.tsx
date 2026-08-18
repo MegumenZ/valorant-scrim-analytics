@@ -81,7 +81,132 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
           </span>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* MOBILE VIEW: Match History Cards (md:hidden) */}
+        <div className="md:hidden divide-y divide-[#242e40]/70">
+          {filteredMatches.length === 0 ? (
+            <div className="py-12 text-center text-slate-500 text-xs">
+              Tidak ada match yang sesuai dengan filter.
+            </div>
+          ) : (
+            filteredMatches.map((m) => {
+              const topFragger = m.playerStats[0];
+
+              return (
+                <div
+                  key={m.id}
+                  className="p-3.5 hover:bg-[#1c2432]/60 transition-colors space-y-2.5"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    {/* Map & Date */}
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={getMapListViewIcon(m.map)}
+                        alt={m.map}
+                        className="w-8 h-8 rounded-md object-cover border border-[#242e40] bg-[#0e131b] shrink-0"
+                      />
+                      <div>
+                        <div className="text-xs font-bold text-slate-100">{m.map}</div>
+                        <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-slate-500" />
+                          <span>{m.matchDate}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Result & Score */}
+                    <div className="flex items-center gap-1.5">
+                      <div className="text-sm font-black tabular-nums tracking-wide">
+                        <span className={m.result === "WIN" ? "text-emerald-400" : m.result === "LOSS" ? "text-rose-400" : "text-amber-400"}>
+                          {m.scoreTeam}
+                        </span>
+                        <span className="text-slate-500 mx-1">-</span>
+                        <span className="text-slate-400">{m.scoreOpponent}</span>
+                      </div>
+                      <Badge
+                        variant={
+                          m.result === "WIN"
+                            ? "win"
+                            : m.result === "LOSS"
+                            ? "loss"
+                            : "draw"
+                        }
+                        className="text-[10px] px-1.5 py-0.5 font-bold"
+                      >
+                        {m.result}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Opponent & Side */}
+                  <div className="flex items-center justify-between text-xs py-0.5">
+                    <span className="font-bold text-slate-200 truncate">
+                      vs {m.opponentName}
+                    </span>
+                    <Badge variant={m.startSide === "ATTACK" ? "attack" : "defense"} className="text-[10px] px-1.5 py-0.2">
+                      {m.startSide === "ATTACK" ? "Attack" : "Defense"}
+                    </Badge>
+                  </div>
+
+                  {/* 5-Agent Comp Stack & Actions */}
+                  <div className="flex items-center justify-between pt-2 border-t border-[#242e40]/50 text-xs">
+                    <div className="flex items-center -space-x-1.5 shrink-0">
+                      {m.playerStats.slice(0, 5).map((stat) => (
+                        <img
+                          key={stat.id}
+                          src={getAgentIcon(stat.agent)}
+                          alt={stat.agent}
+                          title={`${stat.player?.name || "Player"} (${stat.agent})`}
+                          className="w-5 h-5 rounded-full border border-[#141a24] bg-[#0e131b] object-cover"
+                        />
+                      ))}
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <Link href={`/matches/${m.id}`}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2.5 text-xs gap-1 hover:text-rose-400 hover:bg-rose-500/10 font-bold"
+                        >
+                          <span>Detail</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </Button>
+                      </Link>
+
+                      {isAdmin && (
+                        <>
+                          <Link href={`/matches/${m.id}/edit`}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-slate-400 hover:text-slate-200"
+                              title="Edit Match"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </Button>
+                          </Link>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => handleDelete(m.id, e)}
+                            disabled={isDeleting === m.id}
+                            className="h-7 w-7 p-0 text-rose-400 hover:text-rose-300"
+                            title="Hapus Match"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* DESKTOP VIEW: Full Data Table (hidden md:block) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-[#242e40] bg-[#0e131b] text-slate-400 font-semibold text-[11px]">

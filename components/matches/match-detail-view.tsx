@@ -192,101 +192,193 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
           </div>
         </CardHeader>
 
-        <CardContent className="p-0 overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-[#242e40] bg-[#0e131b] text-slate-400 font-semibold uppercase text-[11px]">
-                <th className="py-3 px-4">Pemain</th>
-                <th className="py-3 px-4">Agent</th>
-                <th className="py-3 px-4 text-right">ACS</th>
-                <th className="py-3 px-4 text-center">K / D / A</th>
-                <th className="py-3 px-4 text-center">K/D Ratio</th>
-                <th className="py-3 px-4 text-right">ADR</th>
-                <th className="py-3 px-4 text-right">HS %</th>
-                <th className="py-3 px-4 text-center">First K/D</th>
-                <th className="py-3 px-4 text-center">Clutches</th>
-                <th className="py-3 px-4 text-right">KAST %</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#242e40]/70">
-              {match.playerStats.map((stat, idx) => {
-                const kd = calculateKD(stat.kills, stat.deaths);
-                const isMVP = idx === 0;
+        <CardContent className="p-0">
+          {/* MOBILE VIEW: Scoreboard Player Cards (md:hidden) */}
+          <div className="md:hidden divide-y divide-[#242e40]/70">
+            {match.playerStats.map((stat, idx) => {
+              const kd = calculateKD(stat.kills, stat.deaths);
+              const isMVP = idx === 0;
 
-                return (
-                  <tr
-                    key={stat.id}
-                    className={`hover:bg-[#1c2432]/50 transition-colors ${
-                      isMVP ? "bg-amber-500/5 font-medium" : ""
-                    }`}
-                  >
-                    <td className="py-3.5 px-4 font-bold text-slate-100">
-                      <div className="flex items-center gap-2">
-                        {isMVP && <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
-                        <Link
-                          href={`/players/${stat.playerId}`}
-                          className="hover:text-rose-400 transition-colors"
-                        >
-                          {stat.player.name}
-                        </Link>
+              return (
+                <div
+                  key={stat.id}
+                  className={`p-3.5 space-y-2.5 ${
+                    isMVP ? "bg-amber-500/5" : ""
+                  }`}
+                >
+                  {/* Top Bar: Agent, Player, MVP, ACS, KD Badge */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={getAgentIcon(stat.agent)}
+                        alt={stat.agent}
+                        className="w-8 h-8 rounded-full bg-[#141a24] border border-[#242e40] shrink-0 object-cover"
+                      />
+                      <div>
+                        <div className="flex items-center gap-1.5 font-bold text-slate-100 text-xs">
+                          {isMVP && <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
+                          <Link
+                            href={`/players/${stat.playerId}`}
+                            className="hover:text-rose-400 transition-colors"
+                          >
+                            {stat.player.name}
+                          </Link>
+                        </div>
+                        <span className="text-[10px] text-slate-400 font-normal">{stat.agent}</span>
                       </div>
-                    </td>
+                    </div>
 
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-2">
-                        <img
-                          src={getAgentIcon(stat.agent)}
-                          alt={stat.agent}
-                          className="w-7 h-7 rounded-full bg-[#141a24] border border-[#242e40] shrink-0 object-cover"
-                        />
-                        <span className="font-semibold text-slate-200">{stat.agent}</span>
+                    <div className="flex items-center gap-2">
+                      <div className="text-right">
+                        <div className="text-xs font-black text-rose-400 tabular-nums">
+                          {stat.acs} ACS
+                        </div>
                       </div>
-                    </td>
+                      <Badge
+                        variant={
+                          kd >= 1.2 ? "win" : kd >= 1.0 ? "draw" : "loss"
+                        }
+                        className="text-[10px] px-1.5 py-0.2 font-bold"
+                      >
+                        {kd.toFixed(2)} KD
+                      </Badge>
+                    </div>
+                  </div>
 
-                    <td className="py-3.5 px-4 text-right font-black text-rose-400 text-sm tabular-nums">
-                      {stat.acs}
-                    </td>
+                  {/* 4-Stat Grid: KDA, ADR, HS, Clutch */}
+                  <div className="grid grid-cols-4 gap-1.5 text-center text-xs pt-1 border-t border-[#242e40]/50">
+                    <div className="p-1 rounded-lg bg-[#0e131b] border border-[#242e40]/60">
+                      <div className="text-[9px] text-slate-400">K/D/A</div>
+                      <div className="font-bold text-[11px] tabular-nums">
+                        <span className="text-emerald-400">{stat.kills}</span>/
+                        <span className="text-rose-400">{stat.deaths}</span>/
+                        <span className="text-sky-400">{stat.assists}</span>
+                      </div>
+                    </div>
 
-                    <td className="py-3.5 px-4 text-center font-bold text-slate-200 tabular-nums">
-                      <span className="text-emerald-400">{stat.kills}</span>
-                      <span className="text-slate-500 mx-1">/</span>
-                      <span className="text-rose-400">{stat.deaths}</span>
-                      <span className="text-slate-500 mx-1">/</span>
-                      <span className="text-sky-400">{stat.assists}</span>
-                    </td>
+                    <div className="p-1 rounded-lg bg-[#0e131b] border border-[#242e40]/60">
+                      <div className="text-[9px] text-slate-400">ADR</div>
+                      <div className="font-bold text-[11px] text-slate-200 tabular-nums">
+                        {stat.adr.toFixed(0)}
+                      </div>
+                    </div>
 
-                    <td className="py-3.5 px-4 text-center font-bold tabular-nums">
-                      <span className={kd >= 1.2 ? "text-emerald-400" : kd >= 1.0 ? "text-slate-200" : "text-rose-400"}>
-                        {kd.toFixed(2)}
-                      </span>
-                    </td>
+                    <div className="p-1 rounded-lg bg-[#0e131b] border border-[#242e40]/60">
+                      <div className="text-[9px] text-slate-400">HS %</div>
+                      <div className="font-bold text-[11px] text-amber-400 tabular-nums">
+                        {stat.hsPercent != null ? `${stat.hsPercent}%` : "-"}
+                      </div>
+                    </div>
 
-                    <td className="py-3.5 px-4 text-right text-slate-200 tabular-nums font-semibold">
-                      {stat.adr.toFixed(1)}
-                    </td>
+                    <div className="p-1 rounded-lg bg-[#0e131b] border border-[#242e40]/60">
+                      <div className="text-[9px] text-slate-400">Clutch / FK</div>
+                      <div className="font-bold text-[11px] text-emerald-400 tabular-nums">
+                        {stat.clutchesWon > 0 ? `${stat.clutchesWon} W` : `${stat.firstKills} FK`}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
-                    <td className="py-3.5 px-4 text-right text-slate-300 tabular-nums">
-                      {stat.hsPercent != null ? `${stat.hsPercent}%` : "-"}
-                    </td>
+          {/* DESKTOP VIEW: Full Data Table (hidden md:block) */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-[#242e40] bg-[#0e131b] text-slate-400 font-semibold uppercase text-[11px]">
+                  <th className="py-3 px-4">Pemain</th>
+                  <th className="py-3 px-4">Agent</th>
+                  <th className="py-3 px-4 text-right">ACS</th>
+                  <th className="py-3 px-4 text-center">K / D / A</th>
+                  <th className="py-3 px-4 text-center">K/D Ratio</th>
+                  <th className="py-3 px-4 text-right">ADR</th>
+                  <th className="py-3 px-4 text-right">HS %</th>
+                  <th className="py-3 px-4 text-center">First K/D</th>
+                  <th className="py-3 px-4 text-center">Clutches</th>
+                  <th className="py-3 px-4 text-right">KAST %</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#242e40]/70">
+                {match.playerStats.map((stat, idx) => {
+                  const kd = calculateKD(stat.kills, stat.deaths);
+                  const isMVP = idx === 0;
 
-                    <td className="py-3.5 px-4 text-center tabular-nums text-slate-200">
-                      <span className="text-emerald-400">{stat.firstKills}</span>
-                      <span className="text-slate-500 mx-1">/</span>
-                      <span className="text-rose-400">{stat.firstDeaths}</span>
-                    </td>
+                  return (
+                    <tr
+                      key={stat.id}
+                      className={`hover:bg-[#1c2432]/50 transition-colors ${
+                        isMVP ? "bg-amber-500/5 font-medium" : ""
+                      }`}
+                    >
+                      <td className="py-3.5 px-4 font-bold text-slate-100">
+                        <div className="flex items-center gap-2">
+                          {isMVP && <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
+                          <Link
+                            href={`/players/${stat.playerId}`}
+                            className="hover:text-rose-400 transition-colors"
+                          >
+                            {stat.player.name}
+                          </Link>
+                        </div>
+                      </td>
 
-                    <td className="py-3.5 px-4 text-center font-bold text-amber-400 tabular-nums">
-                      {stat.clutchesWon > 0 ? `${stat.clutchesWon} Menang` : "-"}
-                    </td>
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={getAgentIcon(stat.agent)}
+                            alt={stat.agent}
+                            className="w-7 h-7 rounded-full bg-[#141a24] border border-[#242e40] shrink-0 object-cover"
+                          />
+                          <span className="font-semibold text-slate-200">{stat.agent}</span>
+                        </div>
+                      </td>
 
-                    <td className="py-3.5 px-4 text-right text-slate-400 tabular-nums">
-                      {stat.kastPercent != null ? `${stat.kastPercent}%` : "-"}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      <td className="py-3.5 px-4 text-right font-black text-rose-400 text-sm tabular-nums">
+                        {stat.acs}
+                      </td>
+
+                      <td className="py-3.5 px-4 text-center font-bold text-slate-200 tabular-nums">
+                        <span className="text-emerald-400">{stat.kills}</span>
+                        <span className="text-slate-500 mx-1">/</span>
+                        <span className="text-rose-400">{stat.deaths}</span>
+                        <span className="text-slate-500 mx-1">/</span>
+                        <span className="text-sky-400">{stat.assists}</span>
+                      </td>
+
+                      <td className="py-3.5 px-4 text-center font-bold tabular-nums">
+                        <span className={kd >= 1.2 ? "text-emerald-400" : kd >= 1.0 ? "text-slate-200" : "text-rose-400"}>
+                          {kd.toFixed(2)}
+                        </span>
+                      </td>
+
+                      <td className="py-3.5 px-4 text-right text-slate-200 tabular-nums font-semibold">
+                        {stat.adr.toFixed(1)}
+                      </td>
+
+                      <td className="py-3.5 px-4 text-right text-slate-300 tabular-nums">
+                        {stat.hsPercent != null ? `${stat.hsPercent}%` : "-"}
+                      </td>
+
+                      <td className="py-3.5 px-4 text-center tabular-nums text-slate-200">
+                        <span className="text-emerald-400">{stat.firstKills}</span>
+                        <span className="text-slate-500 mx-1">/</span>
+                        <span className="text-rose-400">{stat.firstDeaths}</span>
+                      </td>
+
+                      <td className="py-3.5 px-4 text-center font-bold text-amber-400 tabular-nums">
+                        {stat.clutchesWon > 0 ? `${stat.clutchesWon} Menang` : "-"}
+                      </td>
+
+                      <td className="py-3.5 px-4 text-right text-slate-400 tabular-nums">
+                        {stat.kastPercent != null ? `${stat.kastPercent}%` : "-"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </CardContent>
       </Card>
 
