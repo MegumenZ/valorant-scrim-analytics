@@ -244,6 +244,27 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
     );
   };
 
+  const handleRoundDurationChange = (roundNum: number, value: string | number) => {
+    if (value === "") {
+      setRoundsTimeline((prev) =>
+        prev.map((item) => (item.round === roundNum ? { ...item, durationSeconds: undefined } : item))
+      );
+      return;
+    }
+    const parsed = typeof value === "number" ? value : parseInt(value, 10);
+    setRoundsTimeline((prev) =>
+      prev.map((item) => {
+        if (item.round === roundNum) {
+          return {
+            ...item,
+            durationSeconds: isNaN(parsed) ? undefined : Math.max(1, Math.min(300, parsed)),
+          };
+        }
+        return item;
+      })
+    );
+  };
+
   const handleCycleRoundDuration = (roundNum: number, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     const presets = [30, 45, 55, 75, 90, 110];
@@ -766,7 +787,6 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                     const isPistol = item.round === 1;
                     const winType: RoundWinType = item.winType || "ELIMINATION";
                     const winConfig = WIN_TYPE_LABELS[winType];
-                    const roundDur = item.durationSeconds || (isWin ? 52 : 38);
 
                     return (
                       <div
@@ -808,16 +828,21 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           <span className="text-[9px] text-[#64748B] font-medium">-</span>
                         )}
 
-                        {/* Per-Round Duration Button */}
-                        <button
-                          type="button"
-                          onClick={(e) => handleCycleRoundDuration(item.round, e)}
-                          title={`Durasi R${item.round}: ${roundDur} detik (${formatRoundDuration(roundDur)}). Klik untuk ganti preset waktu (30s ➔ 45s ➔ 55s ➔ 75s ➔ 90s ➔ 110s)`}
-                          className="w-full py-0.5 px-0.5 rounded text-[8px] font-mono font-bold bg-[#090C10] border border-[#1C2433] hover:border-sky-500/50 text-slate-300 hover:text-white transition-all flex items-center justify-center gap-0.5"
-                        >
-                          <Timer className="w-2 h-2 text-sky-400 shrink-0" />
-                          <span>{roundDur}s</span>
-                        </button>
+                        {/* Per-Round Direct Duration Typing Input */}
+                        <div className="w-full flex items-center justify-center gap-0.5 bg-[#090C10] border border-[#1C2433] focus-within:border-sky-500/80 rounded px-1 py-0.5 transition-colors">
+                          <Timer className="w-2.5 h-2.5 text-sky-400 shrink-0 opacity-80" />
+                          <input
+                            type="number"
+                            min="5"
+                            max="240"
+                            value={item.durationSeconds ?? ""}
+                            onChange={(e) => handleRoundDurationChange(item.round, e.target.value)}
+                            placeholder={isWin ? "52" : "38"}
+                            title={`Ketik durasi Ronde R${item.round} dalam detik (e.g. 45).`}
+                            className="w-full text-center bg-transparent text-[9px] sm:text-[10px] font-mono font-bold text-slate-200 focus:text-white focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0"
+                          />
+                          <span className="text-[8px] text-[#64748B] font-mono select-none">s</span>
+                        </div>
                       </div>
                     );
                   })}
@@ -845,7 +870,6 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                       const isPistol = item.round === 13;
                       const winType: RoundWinType = item.winType || "ELIMINATION";
                       const winConfig = WIN_TYPE_LABELS[winType];
-                      const roundDur = item.durationSeconds || (isWin ? 52 : 38);
 
                       return (
                         <div
@@ -887,16 +911,21 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                             <span className="text-[9px] text-[#64748B] font-medium">-</span>
                           )}
 
-                          {/* Per-Round Duration Button */}
-                          <button
-                            type="button"
-                            onClick={(e) => handleCycleRoundDuration(item.round, e)}
-                            title={`Durasi R${item.round}: ${roundDur} detik (${formatRoundDuration(roundDur)}). Klik untuk ganti preset waktu (30s ➔ 45s ➔ 55s ➔ 75s ➔ 90s ➔ 110s)`}
-                            className="w-full py-0.5 px-0.5 rounded text-[8px] font-mono font-bold bg-[#090C10] border border-[#1C2433] hover:border-sky-500/50 text-slate-300 hover:text-white transition-all flex items-center justify-center gap-0.5"
-                          >
-                            <Timer className="w-2 h-2 text-sky-400 shrink-0" />
-                            <span>{roundDur}s</span>
-                          </button>
+                          {/* Per-Round Direct Duration Typing Input */}
+                          <div className="w-full flex items-center justify-center gap-0.5 bg-[#090C10] border border-[#1C2433] focus-within:border-sky-500/80 rounded px-1 py-0.5 transition-colors">
+                            <Timer className="w-2.5 h-2.5 text-sky-400 shrink-0 opacity-80" />
+                            <input
+                              type="number"
+                              min="5"
+                              max="240"
+                              value={item.durationSeconds ?? ""}
+                              onChange={(e) => handleRoundDurationChange(item.round, e.target.value)}
+                              placeholder={isWin ? "52" : "38"}
+                              title={`Ketik durasi Ronde R${item.round} dalam detik (e.g. 45).`}
+                              className="w-full text-center bg-transparent text-[9px] sm:text-[10px] font-mono font-bold text-slate-200 focus:text-white focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0"
+                            />
+                            <span className="text-[8px] text-[#64748B] font-mono select-none">s</span>
+                          </div>
                         </div>
                       );
                     })}
@@ -918,7 +947,6 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                       const isWin = item.winner === "TEAM";
                       const winType: RoundWinType = item.winType || "ELIMINATION";
                       const winConfig = WIN_TYPE_LABELS[winType];
-                      const roundDur = item.durationSeconds || (isWin ? 52 : 38);
 
                       return (
                         <div
@@ -955,16 +983,21 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                             <span className="text-[9px] text-[#64748B] font-medium">-</span>
                           )}
 
-                          {/* Per-Round Duration Button */}
-                          <button
-                            type="button"
-                            onClick={(e) => handleCycleRoundDuration(item.round, e)}
-                            title={`Durasi R${item.round}: ${roundDur} detik (${formatRoundDuration(roundDur)}). Klik untuk ganti preset waktu (30s ➔ 45s ➔ 55s ➔ 75s ➔ 90s ➔ 110s)`}
-                            className="w-full py-0.5 px-0.5 rounded text-[8px] font-mono font-bold bg-[#090C10] border border-[#1C2433] hover:border-sky-500/50 text-slate-300 hover:text-white transition-all flex items-center justify-center gap-0.5"
-                          >
-                            <Timer className="w-2 h-2 text-sky-400 shrink-0" />
-                            <span>{roundDur}s</span>
-                          </button>
+                          {/* Per-Round Direct Duration Typing Input */}
+                          <div className="w-full flex items-center justify-center gap-0.5 bg-[#090C10] border border-[#1C2433] focus-within:border-sky-500/80 rounded px-1 py-0.5 transition-colors">
+                            <Timer className="w-2.5 h-2.5 text-sky-400 shrink-0 opacity-80" />
+                            <input
+                              type="number"
+                              min="5"
+                              max="240"
+                              value={item.durationSeconds ?? ""}
+                              onChange={(e) => handleRoundDurationChange(item.round, e.target.value)}
+                              placeholder={isWin ? "52" : "38"}
+                              title={`Ketik durasi Ronde R${item.round} dalam detik (e.g. 45).`}
+                              className="w-full text-center bg-transparent text-[9px] sm:text-[10px] font-mono font-bold text-slate-200 focus:text-white focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0"
+                            />
+                            <span className="text-[8px] text-[#64748B] font-mono select-none">s</span>
+                          </div>
                         </div>
                       );
                     })}
