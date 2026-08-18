@@ -8,37 +8,41 @@ import {
   PlusCircle,
   Users,
   Map as MapIcon,
-  Crosshair,
-  Shield,
   ChevronRight,
+  Radio,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useUserRole } from "./role-context";
 
 const navItems = [
   {
+    idx: "01",
     label: "Dashboard",
     href: "/",
     icon: LayoutDashboard,
   },
   {
-    label: "Riwayat Match",
+    idx: "02",
+    label: "Riwayat Scrim",
     href: "/matches",
     icon: Swords,
   },
   {
-    label: "Catat Match Baru",
+    idx: "03",
+    label: "Catat Match",
     href: "/matches/new",
     icon: PlusCircle,
-    badge: "Quick",
+    badge: "ACT",
     adminOnly: true,
   },
   {
-    label: "Roster Tim",
+    idx: "04",
+    label: "Roster Skuad",
     href: "/roster",
     icon: Users,
   },
   {
+    idx: "05",
     label: "Analitik Map",
     href: "/maps",
     icon: MapIcon,
@@ -52,36 +56,42 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
   return (
     <aside
       className={cn(
-        "flex flex-col h-full bg-[#0e131b] border-r border-[#242e40] w-64 select-none",
+        "flex flex-col h-full bg-[#090D14] border-r border-[#1f2c42] w-64 select-none relative",
         className
       )}
     >
+      {/* Tactical Grid Overlay */}
+      <div className="absolute inset-0 bg-tactical-grid opacity-40 pointer-events-none" />
+
       {/* Brand Header */}
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-[#242e40]/70">
-        <div className="w-10 h-10 rounded-xl bg-[#141a24] border border-[#242e40] flex items-center justify-center p-1 shadow-md shrink-0 overflow-hidden">
+      <div className="relative flex items-center gap-3 px-5 py-4 border-b border-[#1f2c42] bg-[#0c111a]/80">
+        <div className="w-10 h-10 rounded-md bg-[#121824] border border-[#2b3d5c] flex items-center justify-center p-1.5 shadow-md shrink-0 relative group">
           <img
             src="/team-sc-logo.png"
             alt="Team SC Logo"
             className="w-full h-full object-contain"
           />
         </div>
-        <div>
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <span className="font-extrabold text-sm tracking-tight text-slate-100">
-              TEAM <span className="text-rose-500">SC</span>
+            <span className="font-display font-black text-sm tracking-wider text-white">
+              TEAM <span className="text-[#FF4655]">SC</span>
             </span>
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/30">
-              PRO
+            <span className="font-display text-[9px] font-black px-1.5 py-0.2 rounded-[2px] bg-[#FF4655]/20 text-[#FF4655] border border-[#FF4655]/40">
+              VCT
             </span>
           </div>
-          <p className="text-[11px] text-slate-400">Valorant Scrim Hub</p>
+          <p className="text-[10px] font-mono-stat text-[#8b9bb4] tracking-tight truncate">
+            // TACTICAL.SCRIM.HUB
+          </p>
         </div>
       </div>
 
       {/* Navigation List */}
-      <div className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        <div className="px-3 pb-2 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-          Menu Utama
+      <div className="relative flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
+        <div className="flex items-center justify-between px-3 pb-2 text-[10px] font-mono-stat text-[#54657e] uppercase tracking-widest">
+          <span>// NAVIGATION</span>
+          <span>SYS.01</span>
         </div>
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -100,34 +110,49 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
               href={item.href}
               onClick={onClose}
               className={cn(
-                "flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-medium transition-all group",
+                "flex items-center justify-between px-3 py-2 rounded-md text-xs font-display uppercase tracking-wider transition-all group relative",
                 isActive
-                  ? "bg-rose-500/15 text-rose-400 font-semibold border border-rose-500/30 shadow-sm"
-                  : "text-slate-400 hover:text-slate-100 hover:bg-[#151b26] border border-transparent"
+                  ? "bg-[#FF4655]/15 text-white font-bold border-l-2 border-[#FF4655] shadow-sm shadow-[#FF4655]/10"
+                  : "text-[#8b9bb4] hover:text-white hover:bg-[#121824] border-l-2 border-transparent"
               )}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
+                <span className="font-mono-stat text-[10px] text-[#54657e] group-hover:text-[#8b9bb4]">
+                  {item.idx}
+                </span>
                 <Icon
                   className={cn(
                     "w-4 h-4 transition-colors",
-                    isActive ? "text-rose-400" : "text-slate-400 group-hover:text-slate-200"
+                    isActive ? "text-[#FF4655]" : "text-[#8b9bb4] group-hover:text-white"
                   )}
                 />
-                <span>{item.label}</span>
+                <span className="tracking-wide">{item.label}</span>
               </div>
 
               <div className="flex items-center gap-1.5">
                 {item.badge && (
-                  <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-full bg-rose-500 text-white">
+                  <span className="px-1.5 py-0.2 text-[9px] font-mono-stat font-bold rounded-[2px] bg-[#FF4655] text-white">
                     {item.badge}
                   </span>
                 )}
-                {isActive && <ChevronRight className="w-3.5 h-3.5 text-rose-400" />}
+                {isActive && <ChevronRight className="w-3.5 h-3.5 text-[#FF4655]" />}
               </div>
             </Link>
           );
         })}
       </div>
+
+      {/* Tactical Status Telemetry Footer */}
+      <div className="relative p-3.5 border-t border-[#1f2c42] bg-[#0c111a]/80">
+        <div className="p-2 rounded border border-[#1f2c42] bg-[#080B10] flex items-center justify-between text-[10px] font-mono-stat">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-[#10E7B2] animate-pulse" />
+            <span className="text-[#10E7B2] font-bold">GRID_ONLINE</span>
+          </div>
+          <span className="text-[#54657e]">V2.4.0</span>
+        </div>
+      </div>
     </aside>
   );
 }
+

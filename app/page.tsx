@@ -23,27 +23,28 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6 pb-12 select-none">
       {/* Top Banner / Welcome */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#242e40] pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1f2c42] pb-5">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-100">
-              Dashboard Analitik Tim
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-display font-black uppercase tracking-wider text-white">
+              Dashboard Analitik Skuad
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-              Musim Berjalan
+            <span className="px-2 py-0.5 rounded-[3px] font-mono-stat text-[10px] font-bold bg-[#10E7B2]/15 text-[#10E7B2] border border-[#10E7B2]/40 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#10E7B2] animate-pulse" />
+              <span>LIVE_SEASON</span>
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Rekapitulasi performa scrimmage tim, efisiensi map, dan tren combat score.
+          <p className="text-xs font-mono-stat text-[#8b9bb4] mt-1">
+            // TELEMETRY REKAPITULASI SCRIMMAGE // EFISIENSI MAP // COMBAT PERFORMANCE
           </p>
         </div>
 
         {isAdmin && (
           <div className="flex items-center gap-2.5">
             <Link href="/matches/new">
-              <Button size="sm" className="gap-1.5 font-bold shadow-md shadow-rose-950/40">
+              <Button size="sm" className="gap-1.5 font-display font-black shadow-md shadow-[#FF4655]/30">
                 <PlusCircle className="w-4 h-4" />
-                <span>+ Catat Match Baru</span>
+                <span>+ Catat Scrim Baru</span>
               </Button>
             </Link>
           </div>

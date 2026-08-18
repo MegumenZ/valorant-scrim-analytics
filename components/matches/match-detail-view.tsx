@@ -109,25 +109,25 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
       </div>
 
       {/* MATCH HERO BANNER WITH MAP SPLASH ART */}
-      <div className="relative overflow-hidden rounded-2xl border border-[#242e40] bg-[#0e131b] p-6 sm:p-8 shadow-2xl min-h-[160px] flex items-center">
+      <div className="relative overflow-hidden rounded-lg border border-[#1f2c42] bg-[#0c111a] p-6 sm:p-8 shadow-2xl min-h-[160px] flex items-center">
         {/* Background Map Splash */}
         {mapMeta.splash && (
           <img
             src={mapMeta.splash}
             alt={match.map}
-            className="absolute inset-0 w-full h-full object-cover object-center opacity-30 mix-blend-luminosity scale-105 pointer-events-none"
+            className="absolute inset-0 w-full h-full object-cover object-center opacity-25 mix-blend-luminosity scale-105 pointer-events-none"
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0e131b] via-[#0e131b]/85 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0c111a] via-[#0c111a]/85 to-transparent pointer-events-none" />
 
         <div className="relative z-10 w-full flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span className="px-3 py-1 rounded-lg bg-black/60 border border-white/10 text-xs font-bold text-slate-100 backdrop-blur-sm">
+              <span className="px-2.5 py-0.5 rounded-[3px] bg-[#121824] border border-[#2b3d5c] text-xs font-display font-black text-white uppercase tracking-wider">
                 {match.map}
               </span>
-              <span className="text-xs text-slate-300 flex items-center gap-1.5 font-medium">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+              <span className="text-xs font-mono-stat text-[#8b9bb4] flex items-center gap-1.5 font-medium">
+                <Calendar className="w-3.5 h-3.5 text-[#54657e]" />
                 {match.matchDate}
               </span>
               <Badge variant={match.startSide === "ATTACK" ? "attack" : "defense"}>
@@ -135,32 +135,32 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
               </Badge>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white">
-              Team SC <span className="text-slate-400 font-normal">vs</span> <span className="text-rose-400">{match.opponentName}</span>
+            <h1 className="text-2xl sm:text-3xl font-display font-black uppercase tracking-wider text-white">
+              TEAM SC <span className="text-[#54657e] font-mono-stat">//</span> <span className="text-[#FF4655]">{match.opponentName}</span>
             </h1>
-            <p className="text-xs text-slate-300 mt-1">
-              Lokasi: {mapMeta.location}
+            <p className="text-[11px] font-mono-stat text-[#8b9bb4] mt-1">
+              // LOKASI: {mapMeta.location}
             </p>
           </div>
 
-          {/* Big Score Box */}
-          <div className="flex items-center gap-4 bg-black/70 backdrop-blur-md px-6 py-4 rounded-xl border border-white/10 shrink-0">
+          {/* Big Broadcast Score Box */}
+          <div className="flex items-center gap-4 bg-[#080B10]/90 backdrop-blur-md px-6 py-4 rounded-lg border border-[#1f2c42] shrink-0 shadow-xl">
             <div className="text-center">
-              <div className="text-xs text-slate-400 font-semibold uppercase">TEAM SC</div>
-              <div className={`text-4xl font-black tabular-nums ${
-                match.result === "WIN" ? "text-emerald-400" : match.result === "LOSS" ? "text-rose-400" : "text-amber-400"
+              <div className="text-[10px] font-mono-stat text-[#8b9bb4] font-bold uppercase tracking-widest">TEAM SC</div>
+              <div className={`font-display text-4xl sm:text-5xl font-black tabular-nums ${
+                match.result === "WIN" ? "text-[#10E7B2]" : match.result === "LOSS" ? "text-[#FF4655]" : "text-[#FFD166]"
               }`}>
                 {match.scoreTeam}
               </div>
             </div>
-            <div className="text-2xl font-bold text-slate-500">:</div>
+            <div className="text-2xl font-display font-black text-[#54657e]">:</div>
             <div className="text-center">
-              <div className="text-xs text-slate-400 font-semibold uppercase">LAWAN</div>
-              <div className="text-4xl font-black text-slate-200 tabular-nums">
+              <div className="text-[10px] font-mono-stat text-[#8b9bb4] font-bold uppercase tracking-widest">LAWAN</div>
+              <div className="font-display text-4xl sm:text-5xl font-black text-[#ece8e1] tabular-nums">
                 {match.scoreOpponent}
               </div>
             </div>
-            <div className="ml-2 pl-4 border-l border-slate-700/80">
+            <div className="ml-2 pl-4 border-l border-[#1f2c42]">
               <Badge
                 variant={
                   match.result === "WIN"
@@ -169,7 +169,7 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
                     ? "loss"
                     : "draw"
                 }
-                className="text-xs px-3 py-1"
+                className="text-xs px-3 py-1 font-display font-black"
               >
                 {match.result}
               </Badge>

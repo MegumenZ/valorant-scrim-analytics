@@ -1,9 +1,24 @@
 import type { Metadata } from "next";
+import { Rajdhani, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { RoleProvider } from "@/components/layout/role-context";
+
+const rajdhani = Rajdhani({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-rajdhani",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-mono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Team SC | Valorant Scrim Analytics",
@@ -22,8 +37,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" className="dark">
-      <body className="bg-[#090D16] text-slate-100 antialiased min-h-screen">
+    <html lang="id" className={`dark ${rajdhani.variable} ${jetbrainsMono.variable}`}>
+      <body className="bg-[#080B10] text-[#ECE8E1] antialiased min-h-screen font-sans selection:bg-[#FF4655] selection:text-white">
         <RoleProvider>
           <div className="flex h-screen overflow-hidden">
             {/* Desktop Tactical Sidebar */}
