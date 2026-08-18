@@ -1,41 +1,25 @@
 import React from "react";
 import Link from "next/link";
-import { PlusCircle } from "lucide-react";
 import { getMapAnalyticsData } from "@/lib/actions/matches";
 import { MAP_METADATA, ValorantMap } from "@/lib/data/valorant";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { getCurrentUser } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
 export default async function MapsAnalyticsPage() {
-  const [mapData, user] = await Promise.all([
-    getMapAnalyticsData(),
-    getCurrentUser(),
-  ]);
-
-  const isAdmin = user ? (user.role === "ADMIN" || user.role === "COACH") : false;
+  const mapData = await getMapAnalyticsData();
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12 select-none">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1C2433] pb-5">
+      <div className="flex items-center justify-between border-b border-[#1C2433] pb-5">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
             Statistik Map
           </h1>
         </div>
-
-        {isAdmin && (
-          <Link href="/matches/new">
-            <Button size="sm" className="gap-1.5 font-semibold shadow-sm">
-              <PlusCircle className="w-4 h-4" />
-              <span>Catat Match</span>
-            </Button>
-          </Link>
-        )}
       </div>
 
       {/* MAPS GRID */}

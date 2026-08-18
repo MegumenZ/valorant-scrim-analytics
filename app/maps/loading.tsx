@@ -8,7 +8,6 @@ export default function MapsLoading() {
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[#1C2433] pb-5">
         <Skeleton className="h-7 w-36" />
-        <Skeleton className="h-9 w-32 hidden sm:block" />
       </div>
 
       {/* Maps Grid Skeleton */}

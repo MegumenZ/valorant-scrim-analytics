@@ -8,7 +8,6 @@ export default function MatchesLoading() {
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[#1C2433] pb-5">
         <Skeleton className="h-7 w-40" />
-        <Skeleton className="h-9 w-36 hidden sm:block" />
       </div>
 
       {/* Filter Bar Skeleton */}
