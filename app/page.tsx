@@ -59,14 +59,14 @@ export default async function DashboardPage() {
           variant="highlight"
         />
 
-        {/* Strongest Map */}
+        {/* Team Trade Efficiency */}
         <KpiCard
-          title="Map Terkuat"
-          value={summary.totalMatches > 0 ? summary.strongestMap.map : "Belum Ada Data"}
-          subtitle={summary.totalMatches > 0 ? `${summary.strongestMap.winRate}% Win Rate` : "Catat match pertama"}
-          detail={summary.totalMatches > 0 ? `${summary.strongestMap.wins} Menang - ${summary.strongestMap.losses} Kalah` : "Belum ada scrim"}
-          icon={Target}
-          variant="amber"
+          title="Efisiensi Trade Tim"
+          value={`${summary.tradingStats?.tradeEfficiency || 0}% Trade`}
+          subtitle={`${summary.tradingStats?.tradedDeaths || 0} Di-trade / ${summary.tradingStats?.totalDeaths || 0} Deaths`}
+          detail="Disiplin spacing & refrag"
+          icon={Swords}
+          variant={(summary.tradingStats?.tradeEfficiency || 0) >= 60 ? "win" : (summary.tradingStats?.tradeEfficiency || 0) >= 45 ? "amber" : "loss"}
         />
       </div>
 

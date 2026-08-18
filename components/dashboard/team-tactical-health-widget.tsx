@@ -32,21 +32,21 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
             <div>
               <div className="flex items-center gap-2">
                 <CardTitle className="text-sm font-bold text-white">
-                  Kesehatan Taktis Tim (Team Tactical Health)
+                  Kesehatan Taktis Tim
                 </CardTitle>
-                <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-500/30 bg-emerald-500/10">
+                <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-500/30 bg-emerald-500/10 font-bold">
                   <Zap className="w-2.5 h-2.5 mr-1" />
-                  Real-Time Overview
+                  Analisis Kolektif Real-Time
                 </Badge>
               </div>
               <p className="text-[11px] text-[#94A3B8]">
-                Akumulasi analisis performa dari {overview.totalMatchesAnalyzed} pertandingan scrim
+                Akumulasi evaluasi performa dari {overview.totalMatchesAnalyzed} pertandingan scrim
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2.5">
-            <span className="text-xs text-[#94A3B8]">Nilai Kolektif:</span>
+            <span className="text-xs text-[#94A3B8] font-medium">Nilai Kolektif:</span>
             <Badge
               variant={
                 overview.overallGrade === "S" || overview.overallGrade === "A+" || overview.overallGrade === "A"
@@ -67,9 +67,9 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
         {/* 4 Summary Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {/* Trade Rate Trend */}
-          <div className="p-3 rounded-xl bg-[#090C10] border border-[#1C2433] space-y-1">
+          <div className="p-3.5 rounded-xl bg-[#090C10] border border-[#1C2433] space-y-1">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-[#94A3B8] font-medium flex items-center gap-1">
+              <span className="text-[#94A3B8] font-semibold flex items-center gap-1">
                 <Swords className="w-3.5 h-3.5 text-emerald-400" />
                 Tren Spacing Tim
               </span>
@@ -79,15 +79,15 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
               </span>
             </div>
             <div className="text-xl font-black text-white font-mono">
-              {overview.tradeRateTrend.current}% <span className="text-xs font-normal text-[#64748B]">Trade Rate</span>
+              {overview.tradeRateTrend.current}% <span className="text-xs font-normal text-[#94A3B8]">Trade Rate</span>
             </div>
-            <p className="text-[10px] text-[#64748B]">Baseline: {overview.tradeRateTrend.baseline}%</p>
+            <p className="text-[10px] text-[#94A3B8]">Baseline: {overview.tradeRateTrend.baseline}%</p>
           </div>
 
           {/* Strongest Map */}
-          <div className="p-3 rounded-xl bg-[#090C10] border border-emerald-500/20 space-y-1">
+          <div className="p-3.5 rounded-xl bg-[#090C10] border border-emerald-500/20 space-y-1">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-emerald-400 font-medium flex items-center gap-1">
+              <span className="text-emerald-400 font-semibold flex items-center gap-1">
                 <MapPin className="w-3.5 h-3.5" />
                 Map Terkuat
               </span>
@@ -104,9 +104,9 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
           </div>
 
           {/* Weakest Map */}
-          <div className="p-3 rounded-xl bg-[#090C10] border border-rose-500/20 space-y-1">
+          <div className="p-3.5 rounded-xl bg-[#090C10] border border-rose-500/20 space-y-1">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-rose-400 font-medium flex items-center gap-1">
+              <span className="text-rose-400 font-semibold flex items-center gap-1">
                 <MapPin className="w-3.5 h-3.5" />
                 Fokus Evaluasi Map
               </span>
@@ -123,17 +123,17 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
           </div>
 
           {/* Collective Health Score */}
-          <div className="p-3 rounded-xl bg-[#090C10] border border-[#1C2433] space-y-1">
+          <div className="p-3.5 rounded-xl bg-[#090C10] border border-[#1C2433] space-y-1">
             <div className="flex items-center justify-between text-xs">
-              <span className="text-[#94A3B8] font-medium flex items-center gap-1">
+              <span className="text-[#94A3B8] font-semibold flex items-center gap-1">
                 <Target className="w-3.5 h-3.5 text-sky-400" />
                 Rata-rata Skor Taktis
               </span>
             </div>
             <div className="text-xl font-black text-sky-400 font-mono">
-              {overview.averageScore} <span className="text-xs font-normal text-[#64748B]">/ 100</span>
+              {overview.averageScore} <span className="text-xs font-normal text-[#94A3B8]">/ 100</span>
             </div>
-            <p className="text-[10px] text-[#64748B]">Skala Fundamental Tim</p>
+            <p className="text-[10px] text-[#94A3B8]">Fundamental Kolektif</p>
           </div>
         </div>
 
@@ -141,7 +141,7 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
         <div className="p-4 rounded-xl bg-[#090C10] border border-[#1C2433] space-y-3">
           <div className="flex items-center gap-2 text-xs font-bold text-white border-b border-[#1C2433] pb-2">
             <Sparkles className="w-4 h-4 text-amber-400" />
-            <span>Fokus Evaluasi Tim Minggu Ini (Coach Priority)</span>
+            <span>Fokus Evaluasi Tim Minggu Ini (Prioritas Coach)</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -152,7 +152,7 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
                     <Target className="w-3.5 h-3.5 text-emerald-400" />
                     {item.title}
                   </span>
-                  <Badge variant={item.urgency === "HIGH" ? "loss" : "outline"} className="text-[9px] py-0 px-1.5">
+                  <Badge variant={item.urgency === "HIGH" ? "loss" : "outline"} className="text-[9px] py-0 px-1.5 font-bold">
                     {item.urgency === "HIGH" ? "Prioritas Tinggi" : "Pengembangan"}
                   </Badge>
                 </div>

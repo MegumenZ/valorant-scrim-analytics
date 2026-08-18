@@ -197,363 +197,11 @@ export function MatchDetailView({ match, pastMatches = [] }: MatchDetailViewProp
         return <TacticalExpertCard report={tacticalReport} />;
       })()}
 
-      {/* ROUND PROGRESSION TIMELINE (IF RECORDED) */}
-      {match.parsedRoundTimeline && match.parsedRoundTimeline.length > 0 && (
-        <Card>
-          <CardHeader className="py-3.5 px-5 border-b border-[#1C2433]">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Swords className="w-4 h-4 text-[#FF4655]" />
-                <span>Kronologi Ronde (Round Progression)</span>
-              </CardTitle>
-
-              {/* Half Score Summaries */}
-              <div className="flex items-center gap-2 text-xs font-semibold">
-                {(() => {
-                  const h1 = match.parsedRoundTimeline.slice(0, 12);
-                  const h1Wins = h1.filter((r) => r.winner === "TEAM").length;
-                  const h1Loss = h1.filter((r) => r.winner === "OPPONENT").length;
-
-                  const h2 = match.parsedRoundTimeline.slice(12, 24);
-                  const h2Wins = h2.filter((r) => r.winner === "TEAM").length;
-                  const h2Loss = h2.filter((r) => r.winner === "OPPONENT").length;
-
-                  return (
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded bg-[#090C10] border border-[#1C2433] text-[#94A3B8]">
-                        Babak 1: <strong className="text-white">{h1Wins}-{h1Loss}</strong>
-                      </span>
-                      {h2.length > 0 && (
-                        <span className="px-2 py-0.5 rounded bg-[#090C10] border border-[#1C2433] text-[#94A3B8]">
-                          Babak 2: <strong className="text-white">{h2Wins}-{h2Loss}</strong>
-                        </span>
-                      )}
-                    </div>
-                  );
-                })()}
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-4 sm:p-5 space-y-4">
-            {/* Babak 1 */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-white">Babak 1 (R1 - R12)</span>
-                  <Badge variant={match.startSide === "ATTACK" ? "attack" : "defense"} className="text-[10px] py-0 px-2">
-                    {match.startSide === "ATTACK" ? "Attack" : "Defense"}
-                  </Badge>
-                </div>
-                <span className="text-[11px] text-[#94A3B8]">Pistol Round: R1</span>
-              </div>
-
-              <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-1.5">
-                {match.parsedRoundTimeline.slice(0, 12).map((item) => {
-                  const isWin = item.winner === "TEAM";
-                  const isPistol = item.round === 1;
-                  const outcomeConfig = getOutcomeConfig(item.side, item.winner, item.outcomeType || item.winType);
-
-                  return (
-                    <div
-                      key={item.round}
-                      className={`rounded-xl border p-1.5 flex flex-col items-center justify-between gap-1 select-none ${
-                        isWin
-                          ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
-                          : "bg-rose-500/10 border-rose-500/30 text-rose-400"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between w-full text-[10px] font-bold text-[#94A3B8]">
-                        <span>R{item.round}</span>
-                        {isPistol && (
-                          <span title="Pistol Round">
-                            <Crosshair className="w-2.5 h-2.5 text-amber-400" />
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-base font-black tracking-wider py-0.5">
-                        {isWin ? "W" : "L"}
-                      </span>
-                      <span
-                        title={`${isWin ? "Cara Menang" : "Cara Kalah"}: ${outcomeConfig.label}`}
-                        className={`w-full py-0.5 px-0.5 rounded text-[8px] sm:text-[9px] font-bold border truncate text-center ${outcomeConfig.bg} ${outcomeConfig.border} ${outcomeConfig.color}`}
-                      >
-                        {outcomeConfig.short}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Babak 2 */}
-            {match.parsedRoundTimeline.length > 12 && (
-              <div className="space-y-2 pt-2 border-t border-[#1C2433]">
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-white">Babak 2 (R13 - R24)</span>
-                    <Badge variant={match.startSide === "ATTACK" ? "defense" : "attack"} className="text-[10px] py-0 px-2">
-                      {match.startSide === "ATTACK" ? "Defense" : "Attack"}
-                    </Badge>
-                  </div>
-                  <span className="text-[11px] text-[#94A3B8]">Pistol Round: R13</span>
-                </div>
-
-                <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-1.5">
-                  {match.parsedRoundTimeline.slice(12, 24).map((item) => {
-                    const isWin = item.winner === "TEAM";
-                    const isPistol = item.round === 13;
-                    const outcomeConfig = getOutcomeConfig(item.side, item.winner, item.outcomeType || item.winType);
-
-                    return (
-                      <div
-                        key={item.round}
-                        className={`rounded-xl border p-1.5 flex flex-col items-center justify-between gap-1 select-none ${
-                          isWin
-                            ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
-                            : "bg-rose-500/10 border-rose-500/30 text-rose-400"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between w-full text-[10px] font-bold text-[#94A3B8]">
-                          <span>R{item.round}</span>
-                          {isPistol && (
-                            <span title="Pistol Round">
-                              <Crosshair className="w-2.5 h-2.5 text-amber-400" />
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-base font-black tracking-wider py-0.5">
-                          {isWin ? "W" : "L"}
-                        </span>
-                        <span
-                          title={`${isWin ? "Cara Menang" : "Cara Kalah"}: ${outcomeConfig.label}`}
-                          className={`w-full py-0.5 px-0.5 rounded text-[8px] sm:text-[9px] font-bold border truncate text-center ${outcomeConfig.bg} ${outcomeConfig.border} ${outcomeConfig.color}`}
-                        >
-                          {outcomeConfig.short}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Overtime */}
-            {match.parsedRoundTimeline.length > 24 && (
-              <div className="space-y-2 pt-2 border-t border-[#1C2433]">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-amber-400">Overtime (R25+)</span>
-                </div>
-
-                <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-1.5">
-                  {match.parsedRoundTimeline.slice(24).map((item) => {
-                    const isWin = item.winner === "TEAM";
-                    const outcomeConfig = getOutcomeConfig(item.side, item.winner, item.outcomeType || item.winType);
-
-                    return (
-                      <div
-                        key={item.round}
-                        className={`rounded-xl border p-1.5 flex flex-col items-center justify-between gap-1 select-none ${
-                          isWin
-                            ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
-                            : "bg-rose-500/10 border-rose-500/30 text-rose-400"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between w-full text-[10px] font-bold text-[#94A3B8]">
-                          <span>R{item.round}</span>
-                        </div>
-                        <span className="text-base font-black tracking-wider py-0.5">
-                          {isWin ? "W" : "L"}
-                        </span>
-                        <span
-                          title={`${isWin ? "Cara Menang" : "Cara Kalah"}: ${outcomeConfig.label}`}
-                          className={`w-full py-0.5 px-0.5 rounded text-[8px] sm:text-[9px] font-bold border truncate text-center ${outcomeConfig.bg} ${outcomeConfig.border} ${outcomeConfig.color}`}
-                        >
-                          {outcomeConfig.short}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* TACTICAL BREAKDOWN PANEL */}
-            {(() => {
-              const teamWins = match.parsedRoundTimeline.filter(r => r.winner === "TEAM");
-              const teamLosses = match.parsedRoundTimeline.filter(r => r.winner === "OPPONENT");
-
-              const defuseWins = teamWins.filter(r => (r.outcomeType || r.winType) === "DEFUSE").length;
-              const detonationWins = teamWins.filter(r => (r.outcomeType || r.winType) === "DETONATION").length;
-              const timeWins = teamWins.filter(r => (r.outcomeType || r.winType) === "TIME").length;
-              const elimWins = teamWins.filter(r => !(r.outcomeType || r.winType) || (r.outcomeType || r.winType) === "ELIMINATION").length;
-
-              const defusedLosses = teamLosses.filter(r => (r.outcomeType || r.winType) === "DEFUSE").length;
-              const detonationLosses = teamLosses.filter(r => (r.outcomeType || r.winType) === "DETONATION").length;
-              const timeoutLosses = teamLosses.filter(r => (r.outcomeType || r.winType) === "TIME").length;
-              const elimLosses = teamLosses.filter(r => !(r.outcomeType || r.winType) || (r.outcomeType || r.winType) === "ELIMINATION").length;
-
-              return (
-                <div className="space-y-3 pt-2">
-                  {/* Cara Menang */}
-                  <div className="p-3.5 rounded-xl bg-[#090C10] border border-[#1C2433] space-y-2.5">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-emerald-400" />
-                      <span className="text-xs font-bold text-white">Distribusi Cara Menang Tim ({teamWins.length} W)</span>
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
-                      <div className="p-2.5 rounded-lg bg-[#0F141C] border border-sky-500/20 space-y-1">
-                        <span className="text-[10px] font-bold text-sky-400 block">Retake / Defuse</span>
-                        <div className="text-lg font-black text-white">{defuseWins}</div>
-                        <p className="text-[9px] text-[#64748B]">Defender Defuse</p>
-                      </div>
-
-                      <div className="p-2.5 rounded-lg bg-[#0F141C] border border-amber-500/20 space-y-1">
-                        <span className="text-[10px] font-bold text-amber-400 block">Post-Plant (Boom)</span>
-                        <div className="text-lg font-black text-white">{detonationWins}</div>
-                        <p className="text-[9px] text-[#64748B]">Spike Meledak</p>
-                      </div>
-
-                      <div className="p-2.5 rounded-lg bg-[#0F141C] border border-rose-500/20 space-y-1">
-                        <span className="text-[10px] font-bold text-rose-400 block">Eliminasi</span>
-                        <div className="text-lg font-black text-white">{elimWins}</div>
-                        <p className="text-[9px] text-[#64748B]">Duel Bersih</p>
-                      </div>
-
-                      <div className="p-2.5 rounded-lg bg-[#0F141C] border border-emerald-500/20 space-y-1">
-                        <span className="text-[10px] font-bold text-emerald-400 block">Waktu Habis</span>
-                        <div className="text-lg font-black text-white">{timeWins}</div>
-                        <p className="text-[9px] text-[#64748B]">Defender Stall</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Cara Kalah */}
-                  {teamLosses.length > 0 && (
-                    <div className="p-3.5 rounded-xl bg-[#090C10] border border-[#1C2433] space-y-2.5">
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-rose-400" />
-                        <span className="text-xs font-bold text-white">Distribusi Cara Kalah Tim ({teamLosses.length} L)</span>
-                      </div>
-
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
-                        <div className="p-2.5 rounded-lg bg-[#0F141C] border border-sky-500/20 space-y-1">
-                          <span className="text-[10px] font-bold text-sky-400 block">Musuh Retake</span>
-                          <div className="text-lg font-black text-white">{defusedLosses}</div>
-                          <p className="text-[9px] text-[#64748B]">Saat Attack</p>
-                        </div>
-
-                        <div className="p-2.5 rounded-lg bg-[#0F141C] border border-amber-500/20 space-y-1">
-                          <span className="text-[10px] font-bold text-amber-400 block">Spike Meledak</span>
-                          <div className="text-lg font-black text-white">{detonationLosses}</div>
-                          <p className="text-[9px] text-[#64748B]">Saat Defense</p>
-                        </div>
-
-                        <div className="p-2.5 rounded-lg bg-[#0F141C] border border-rose-500/20 space-y-1">
-                          <span className="text-[10px] font-bold text-rose-400 block">Tereliminasi</span>
-                          <div className="text-lg font-black text-white">{elimLosses}</div>
-                          <p className="text-[9px] text-[#64748B]">Wiped Out</p>
-                        </div>
-
-                        <div className="p-2.5 rounded-lg bg-[#0F141C] border border-emerald-500/20 space-y-1">
-                          <span className="text-[10px] font-bold text-emerald-400 block">Gagal Plant (0:00)</span>
-                          <div className="text-lg font-black text-white">{timeoutLosses}</div>
-                          <p className="text-[9px] text-[#64748B]">Saat Attack</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* TRADING KILLS ANALYSIS CARD */}
-      {(() => {
-        const totalDeaths = match.playerStats.reduce((acc, s) => acc + s.deaths, 0);
-        let tradedDeaths = 0;
-        let tradesWon = 0;
-
-        if (match.parsedRoundTimeline && match.parsedRoundTimeline.length > 0) {
-          for (const r of match.parsedRoundTimeline) {
-            if (r.tradedDeaths) tradedDeaths += r.tradedDeaths;
-            if (r.tradesWon) tradesWon += r.tradesWon;
-          }
-        }
-
-        if (tradedDeaths === 0 && totalDeaths > 0) {
-          tradedDeaths = Math.round(totalDeaths * 0.52);
-          tradesWon = tradedDeaths;
-        }
-
-        const tradeEff = totalDeaths > 0 ? Math.min(100, Math.round((tradedDeaths / totalDeaths) * 100)) : 0;
-        const untraded = Math.max(0, totalDeaths - tradedDeaths);
-
-        return (
-          <Card className="bg-[#0F141C] border-[#1C2433]">
-            <CardHeader className="py-3.5 px-5 border-b border-[#1C2433]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Swords className="w-4 h-4 text-rose-400" />
-                  <CardTitle className="text-sm font-semibold text-white">
-                    Analisis Trading Kills & Crosshair Spacing
-                  </CardTitle>
-                </div>
-                <Badge
-                  variant={tradeEff >= 60 ? "win" : tradeEff >= 45 ? "draw" : "loss"}
-                  className="text-xs font-bold"
-                >
-                  {tradeEff}% Trade Efficiency
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="p-5 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
-                <div className="p-3 rounded-xl bg-[#090C10] border border-[#1C2433]">
-                  <span className="text-xs font-semibold text-[#94A3B8] block">Total Kematian Tim</span>
-                  <span className="text-2xl font-black text-rose-400">{totalDeaths}</span>
-                  <span className="text-[10px] text-[#64748B] block mt-0.5">Akumulasi semua pemain</span>
-                </div>
-                <div className="p-3 rounded-xl bg-[#090C10] border border-emerald-500/20">
-                  <span className="text-xs font-semibold text-emerald-400 block">Kematian Di-Trade</span>
-                  <span className="text-2xl font-black text-emerald-400">{tradedDeaths}</span>
-                  <span className="text-[10px] text-[#64748B] block mt-0.5">Berhasil di-refrag</span>
-                </div>
-                <div className="p-3 rounded-xl bg-[#090C10] border border-amber-500/20">
-                  <span className="text-xs font-semibold text-amber-400 block">Dry Deaths (Terisolasi)</span>
-                  <span className="text-2xl font-black text-amber-400">{untraded}</span>
-                  <span className="text-[10px] text-[#64748B] block mt-0.5">Mati tanpa balasan</span>
-                </div>
-              </div>
-
-              <div className="w-full bg-[#161D28] h-2 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${
-                    tradeEff >= 60 ? "bg-emerald-400" : tradeEff >= 45 ? "bg-amber-400" : "bg-rose-400"
-                  }`}
-                  style={{ width: `${tradeEff}%` }}
-                />
-              </div>
-
-              <p className="text-xs text-[#94A3B8] leading-relaxed p-3 rounded-lg bg-[#090C10] border border-[#1C2433]">
-                {tradeEff >= 60
-                  ? "🔥 Spacing tim sangat rapat. Hampir semua kematian berhasil dibalas (refrag) cepat."
-                  : tradeEff >= 45
-                  ? `⚡ Trade standar. Terdapat ${untraded} kematian tanpa balasan karena rotasi atau isolasi posisi.`
-                  : `⚠️ Trade kurang bagus. Terlalu banyak kematian terisolasi (${untraded} dry deaths). Perbaiki crosshair spacing.`}
-              </p>
-            </CardContent>
-          </Card>
-        );
-      })()}
-
       {/* MATCH PERFORMANCE SCOREBOARD */}
-      <Card>
+      <Card className="bg-[#0F141C] border-[#1C2433]">
         <CardHeader className="py-4 px-5 border-b border-[#1C2433]">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">
+            <CardTitle className="text-base font-bold text-white">
               Scoreboard Performa Pemain
             </CardTitle>
             <span className="text-xs text-[#94A3B8]">
@@ -727,6 +375,280 @@ export function MatchDetailView({ match, pastMatches = [] }: MatchDetailViewProp
           </div>
         </CardContent>
       </Card>
+
+      {/* ROUND PROGRESSION TIMELINE (IF RECORDED) */}
+      {match.parsedRoundTimeline && match.parsedRoundTimeline.length > 0 && (
+        <Card className="bg-[#0F141C] border-[#1C2433]">
+          <CardHeader className="py-3.5 px-5 border-b border-[#1C2433]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2 text-white">
+                <Swords className="w-4 h-4 text-[#FF4655]" />
+                <span>Kronologi Ronde (Round Progression)</span>
+              </CardTitle>
+
+              {/* Half Score Summaries */}
+              <div className="flex items-center gap-2 text-xs font-semibold">
+                {(() => {
+                  const h1 = match.parsedRoundTimeline.slice(0, 12);
+                  const h1Wins = h1.filter((r) => r.winner === "TEAM").length;
+                  const h1Loss = h1.filter((r) => r.winner === "OPPONENT").length;
+
+                  const h2 = match.parsedRoundTimeline.slice(12, 24);
+                  const h2Wins = h2.filter((r) => r.winner === "TEAM").length;
+                  const h2Loss = h2.filter((r) => r.winner === "OPPONENT").length;
+
+                  return (
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded bg-[#090C10] border border-[#1C2433] text-[#94A3B8]">
+                        Babak 1: <strong className="text-white">{h1Wins}-{h1Loss}</strong>
+                      </span>
+                      {h2.length > 0 && (
+                        <span className="px-2 py-0.5 rounded bg-[#090C10] border border-[#1C2433] text-[#94A3B8]">
+                          Babak 2: <strong className="text-white">{h2Wins}-{h2Loss}</strong>
+                        </span>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-5 space-y-4">
+            {/* Babak 1 */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-white">Babak 1 (R1 - R12)</span>
+                  <Badge variant={match.startSide === "ATTACK" ? "attack" : "defense"} className="text-[10px] py-0 px-2">
+                    {match.startSide === "ATTACK" ? "Attack" : "Defense"}
+                  </Badge>
+                </div>
+                <span className="text-[11px] text-[#94A3B8]">Pistol Round: R1</span>
+              </div>
+
+              <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-1.5">
+                {match.parsedRoundTimeline.slice(0, 12).map((item) => {
+                  const isWin = item.winner === "TEAM";
+                  const isPistol = item.round === 1;
+                  const outcomeConfig = getOutcomeConfig(item.side, item.winner, item.outcomeType || item.winType);
+
+                  return (
+                    <div
+                      key={item.round}
+                      className={`rounded-xl border p-1.5 flex flex-col items-center justify-between gap-1 select-none ${
+                        isWin
+                          ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
+                          : "bg-rose-500/10 border-rose-500/30 text-rose-400"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full text-[10px] font-bold text-[#94A3B8]">
+                        <span>R{item.round}</span>
+                        {isPistol && (
+                          <span title="Pistol Round">
+                            <Crosshair className="w-2.5 h-2.5 text-amber-400" />
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-base font-black tracking-wider py-0.5">
+                        {isWin ? "W" : "L"}
+                      </span>
+                      <span
+                        title={`${isWin ? "Cara Menang" : "Cara Kalah"}: ${outcomeConfig.label}`}
+                        className={`w-full py-0.5 px-0.5 rounded text-[8px] sm:text-[9px] font-bold border truncate text-center ${outcomeConfig.bg} ${outcomeConfig.border} ${outcomeConfig.color}`}
+                      >
+                        {outcomeConfig.short}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Babak 2 */}
+            {match.parsedRoundTimeline.length > 12 && (
+              <div className="space-y-2 pt-2 border-t border-[#1C2433]">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-white">Babak 2 (R13 - R24)</span>
+                    <Badge variant={match.startSide === "ATTACK" ? "defense" : "attack"} className="text-[10px] py-0 px-2">
+                      {match.startSide === "ATTACK" ? "Defense" : "Attack"}
+                    </Badge>
+                  </div>
+                  <span className="text-[11px] text-[#94A3B8]">Pistol Round: R13</span>
+                </div>
+
+                <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-1.5">
+                  {match.parsedRoundTimeline.slice(12, 24).map((item) => {
+                    const isWin = item.winner === "TEAM";
+                    const isPistol = item.round === 13;
+                    const outcomeConfig = getOutcomeConfig(item.side, item.winner, item.outcomeType || item.winType);
+
+                    return (
+                      <div
+                        key={item.round}
+                        className={`rounded-xl border p-1.5 flex flex-col items-center justify-between gap-1 select-none ${
+                          isWin
+                            ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
+                            : "bg-rose-500/10 border-rose-500/30 text-rose-400"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between w-full text-[10px] font-bold text-[#94A3B8]">
+                          <span>R{item.round}</span>
+                          {isPistol && (
+                            <span title="Pistol Round">
+                              <Crosshair className="w-2.5 h-2.5 text-amber-400" />
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-base font-black tracking-wider py-0.5">
+                          {isWin ? "W" : "L"}
+                        </span>
+                        <span
+                          title={`${isWin ? "Cara Menang" : "Cara Kalah"}: ${outcomeConfig.label}`}
+                          className={`w-full py-0.5 px-0.5 rounded text-[8px] sm:text-[9px] font-bold border truncate text-center ${outcomeConfig.bg} ${outcomeConfig.border} ${outcomeConfig.color}`}
+                        >
+                          {outcomeConfig.short}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Babak Overtime */}
+            {match.parsedRoundTimeline.length > 24 && (
+              <div className="space-y-2 pt-2 border-t border-[#1C2433]">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-amber-400">Babak Overtime (OT)</span>
+                  <span className="text-[11px] text-[#94A3B8]">{match.parsedRoundTimeline.length - 24} Ronde Tambahan</span>
+                </div>
+
+                <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-1.5">
+                  {match.parsedRoundTimeline.slice(24).map((item) => {
+                    const isWin = item.winner === "TEAM";
+                    const outcomeConfig = getOutcomeConfig(item.side, item.winner, item.outcomeType || item.winType);
+
+                    return (
+                      <div
+                        key={item.round}
+                        className={`rounded-xl border p-1.5 flex flex-col items-center justify-between gap-1 select-none ${
+                          isWin
+                            ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
+                            : "bg-rose-500/10 border-rose-500/30 text-rose-400"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between w-full text-[10px] font-bold text-[#94A3B8]">
+                          <span>R{item.round}</span>
+                        </div>
+                        <span className="text-base font-black tracking-wider py-0.5">
+                          {isWin ? "W" : "L"}
+                        </span>
+                        <span
+                          title={`${isWin ? "Cara Menang" : "Cara Kalah"}: ${outcomeConfig.label}`}
+                          className={`w-full py-0.5 px-0.5 rounded text-[8px] sm:text-[9px] font-bold border truncate text-center ${outcomeConfig.bg} ${outcomeConfig.border} ${outcomeConfig.color}`}
+                        >
+                          {outcomeConfig.short}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* TACTICAL BREAKDOWN PANEL */}
+            {(() => {
+              const teamWins = match.parsedRoundTimeline.filter(r => r.winner === "TEAM");
+              const teamLosses = match.parsedRoundTimeline.filter(r => r.winner === "OPPONENT");
+
+              const defuseWins = teamWins.filter(r => (r.outcomeType || r.winType) === "DEFUSE").length;
+              const detonationWins = teamWins.filter(r => (r.outcomeType || r.winType) === "DETONATION").length;
+              const timeWins = teamWins.filter(r => (r.outcomeType || r.winType) === "TIME").length;
+              const elimWins = teamWins.filter(r => !(r.outcomeType || r.winType) || (r.outcomeType || r.winType) === "ELIMINATION").length;
+
+              const defusedLosses = teamLosses.filter(r => (r.outcomeType || r.winType) === "DEFUSE").length;
+              const detonationLosses = teamLosses.filter(r => (r.outcomeType || r.winType) === "DETONATION").length;
+              const timeoutLosses = teamLosses.filter(r => (r.outcomeType || r.winType) === "TIME").length;
+              const elimLosses = teamLosses.filter(r => !(r.outcomeType || r.winType) || (r.outcomeType || r.winType) === "ELIMINATION").length;
+
+              return (
+                <div className="space-y-3 pt-2">
+                  {/* Cara Menang */}
+                  <div className="p-3.5 rounded-xl bg-[#090C10] border border-[#1C2433] space-y-2.5">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-emerald-400" />
+                      <span className="text-xs font-bold text-white">Distribusi Cara Menang Tim ({teamWins.length} Ronde)</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
+                      <div className="p-2.5 rounded-lg bg-[#0F141C] border border-sky-500/20 space-y-1">
+                        <span className="text-[10px] font-bold text-sky-400 block">Retake / Defuse</span>
+                        <div className="text-lg font-black text-white">{defuseWins}</div>
+                        <p className="text-[9px] text-[#94A3B8]">Defender Defuse</p>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-[#0F141C] border border-amber-500/20 space-y-1">
+                        <span className="text-[10px] font-bold text-amber-400 block">Post-Plant (Boom)</span>
+                        <div className="text-lg font-black text-white">{detonationWins}</div>
+                        <p className="text-[9px] text-[#94A3B8]">Spike Meledak</p>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-[#0F141C] border border-rose-500/20 space-y-1">
+                        <span className="text-[10px] font-bold text-rose-400 block">Eliminasi</span>
+                        <div className="text-lg font-black text-white">{elimWins}</div>
+                        <p className="text-[9px] text-[#94A3B8]">Duel Bersih</p>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-[#0F141C] border border-emerald-500/20 space-y-1">
+                        <span className="text-[10px] font-bold text-emerald-400 block">Waktu Habis</span>
+                        <div className="text-lg font-black text-white">{timeWins}</div>
+                        <p className="text-[9px] text-[#94A3B8]">Defender Stall</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Cara Kalah */}
+                  {teamLosses.length > 0 && (
+                    <div className="p-3.5 rounded-xl bg-[#090C10] border border-[#1C2433] space-y-2.5">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-rose-400" />
+                        <span className="text-xs font-bold text-white">Distribusi Cara Kalah Tim ({teamLosses.length} Ronde)</span>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
+                        <div className="p-2.5 rounded-lg bg-[#0F141C] border border-sky-500/20 space-y-1">
+                          <span className="text-[10px] font-bold text-sky-400 block">Musuh Retake</span>
+                          <div className="text-lg font-black text-white">{defusedLosses}</div>
+                          <p className="text-[9px] text-[#94A3B8]">Saat Attack</p>
+                        </div>
+
+                        <div className="p-2.5 rounded-lg bg-[#0F141C] border border-amber-500/20 space-y-1">
+                          <span className="text-[10px] font-bold text-amber-400 block">Spike Meledak</span>
+                          <div className="text-lg font-black text-white">{detonationLosses}</div>
+                          <p className="text-[9px] text-[#94A3B8]">Saat Defense</p>
+                        </div>
+
+                        <div className="p-2.5 rounded-lg bg-[#0F141C] border border-rose-500/20 space-y-1">
+                          <span className="text-[10px] font-bold text-rose-400 block">Tereliminasi</span>
+                          <div className="text-lg font-black text-white">{elimLosses}</div>
+                          <p className="text-[9px] text-[#94A3B8]">Wiped Out</p>
+                        </div>
+
+                        <div className="p-2.5 rounded-lg bg-[#0F141C] border border-emerald-500/20 space-y-1">
+                          <span className="text-[10px] font-bold text-emerald-400 block">Gagal Plant (0:00)</span>
+                          <div className="text-lg font-black text-white">{timeoutLosses}</div>
+                          <p className="text-[9px] text-[#94A3B8]">Saat Attack</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </CardContent>
+        </Card>
+      )}
 
       {/* TACTICAL EVALUATION, ATTACHMENTS & VOD GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

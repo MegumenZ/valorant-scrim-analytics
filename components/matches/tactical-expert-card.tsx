@@ -2,7 +2,6 @@
 
 import React from "react";
 import {
-  Shield,
   ShieldCheck,
   Swords,
   Crosshair,
@@ -63,13 +62,13 @@ export function TacticalExpertCard({ report }: TacticalExpertCardProps) {
                 <CardTitle className="text-sm font-bold text-white flex items-center gap-1.5">
                   Rapor Taktis & Evaluasi Coach
                 </CardTitle>
-                <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-500/30 bg-emerald-500/10">
+                <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-500/30 bg-emerald-500/10 font-bold">
                   <Zap className="w-2.5 h-2.5 mr-1" />
-                  Real-Time Engine
+                  Analisis Real-Time
                 </Badge>
               </div>
               <p className="text-[11px] text-[#94A3B8]">
-                Diagnosis performa otomatis & sinkronisasi tren historis
+                Diagnosis taktis otomatis & komparasi tren riwayat tim
               </p>
             </div>
           </div>
@@ -93,7 +92,7 @@ export function TacticalExpertCard({ report }: TacticalExpertCardProps) {
 
       <CardContent className="p-5 space-y-5">
         {/* Executive Summary */}
-        <div className="p-3.5 rounded-xl bg-[#090C10] border border-[#1C2433] text-xs text-slate-300 leading-relaxed flex items-start gap-3">
+        <div className="p-3.5 rounded-xl bg-[#090C10] border border-[#1C2433] text-xs text-slate-200 leading-relaxed flex items-start gap-3">
           <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
           <div>
             <span className="font-bold text-white block mb-0.5">Ringkasan Evaluasi Taktis:</span>
@@ -103,28 +102,28 @@ export function TacticalExpertCard({ report }: TacticalExpertCardProps) {
 
         {/* 5 Tactical Pillars Gauge */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center text-xs">
-          <div className="p-2 rounded-lg bg-[#090C10] border border-[#1C2433]">
-            <span className="text-[10px] text-[#94A3B8] block">Round Winrate</span>
+          <div className="p-2.5 rounded-xl bg-[#090C10] border border-[#1C2433]">
+            <span className="text-[10px] text-[#94A3B8] font-semibold block">Winrate Ronde</span>
             <span className="text-sm font-black text-white font-mono">{report.pillars.roundWinRate}%</span>
           </div>
-          <div className="p-2 rounded-lg bg-[#090C10] border border-[#1C2433]">
-            <span className="text-[10px] text-[#94A3B8] block">Trade Efficiency</span>
+          <div className="p-2.5 rounded-xl bg-[#090C10] border border-[#1C2433]">
+            <span className="text-[10px] text-[#94A3B8] font-semibold block">Efisiensi Trade</span>
             <span className={`text-sm font-black font-mono ${report.pillars.tradeRate >= 55 ? "text-emerald-400" : "text-amber-400"}`}>
               {report.pillars.tradeRate}%
             </span>
           </div>
-          <div className="p-2 rounded-lg bg-[#090C10] border border-[#1C2433]">
-            <span className="text-[10px] text-[#94A3B8] block">Pistol Control</span>
+          <div className="p-2.5 rounded-xl bg-[#090C10] border border-[#1C2433]">
+            <span className="text-[10px] text-[#94A3B8] font-semibold block">Ronde Pistol</span>
             <span className={`text-sm font-black font-mono ${report.pillars.pistolConversionRate >= 50 ? "text-emerald-400" : "text-rose-400"}`}>
               {report.pillars.pistolConversionRate}%
             </span>
           </div>
-          <div className="p-2 rounded-lg bg-[#090C10] border border-[#1C2433]">
-            <span className="text-[10px] text-[#94A3B8] block">Side Balance</span>
+          <div className="p-2.5 rounded-xl bg-[#090C10] border border-[#1C2433]">
+            <span className="text-[10px] text-[#94A3B8] font-semibold block">Keseimbangan Sisi</span>
             <span className="text-sm font-black text-sky-400 font-mono">{report.pillars.sideBalanceScore}%</span>
           </div>
-          <div className="p-2 rounded-lg bg-[#090C10] border border-[#1C2433] col-span-2 sm:col-span-1">
-            <span className="text-[10px] text-[#94A3B8] block">Retake / Post-Plant</span>
+          <div className="p-2.5 rounded-xl bg-[#090C10] border border-[#1C2433] col-span-2 sm:col-span-1">
+            <span className="text-[10px] text-[#94A3B8] font-semibold block">Retake & Post-Plant</span>
             <span className="text-sm font-black text-amber-400 font-mono">{report.pillars.postPlantRetakeScore}%</span>
           </div>
         </div>
@@ -135,9 +134,9 @@ export function TacticalExpertCard({ report }: TacticalExpertCardProps) {
           <div className="p-4 rounded-xl bg-[#090C10] border border-emerald-500/20 space-y-3">
             <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 border-b border-emerald-500/20 pb-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>Kekuatan Taktis (What Went Well)</span>
+              <span>Kekuatan Taktis Tim</span>
             </div>
-            <div className="space-y-2.5">
+            <div className="space-y-3">
               {report.strengths.map((item, idx) => (
                 <div key={idx} className="space-y-1">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-white">
@@ -156,9 +155,9 @@ export function TacticalExpertCard({ report }: TacticalExpertCardProps) {
           <div className="p-4 rounded-xl bg-[#090C10] border border-rose-500/20 space-y-3">
             <div className="flex items-center gap-2 text-xs font-bold text-rose-400 border-b border-rose-500/20 pb-2">
               <AlertTriangle className="w-4 h-4 text-rose-400" />
-              <span>Area Evaluasi (Critical Flaws)</span>
+              <span>Celah & Evaluasi Kritis</span>
             </div>
-            <div className="space-y-2.5">
+            <div className="space-y-3">
               {report.weaknesses.map((item, idx) => (
                 <div key={idx} className="space-y-1">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-white">
@@ -177,9 +176,9 @@ export function TacticalExpertCard({ report }: TacticalExpertCardProps) {
           <div className="p-4 rounded-xl bg-[#090C10] border border-sky-500/20 space-y-3">
             <div className="flex items-center gap-2 text-xs font-bold text-sky-400 border-b border-sky-500/20 pb-2">
               <Target className="w-4 h-4 text-sky-400" />
-              <span>Pekerjaan Rumah Coach (Drills)</span>
+              <span>Menu Latihan Taktis (Drill)</span>
             </div>
-            <div className="space-y-2.5">
+            <div className="space-y-3">
               {report.drills.map((item, idx) => (
                 <div key={idx} className="space-y-1">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-white">
