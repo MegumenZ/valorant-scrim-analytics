@@ -166,6 +166,7 @@ export const VALORANT_AGENTS: AgentInfo[] = [
   { name: "Tejo", role: "Initiator", color: "#F59E0B", icon: "https://media.valorant-api.com/agents/b444168c-4e35-8076-db47-ef9bf368f384/displayicon.png" },
   { name: "Viper", role: "Controller", color: "#10B981", icon: "https://media.valorant-api.com/agents/707eab51-4836-f488-046a-cda6bf494859/displayicon.png" },
   { name: "Vyse", role: "Sentinel", color: "#C084FC", icon: "https://media.valorant-api.com/agents/efba5359-4016-a1e5-7626-b1ae76895940/displayicon.png" },
+  { name: "Waylay", role: "Duelist", color: "#FACC15", icon: "https://media.valorant-api.com/agents/df1cb487-4902-002e-5c17-d28e83e78588/displayicon.png" },
   { name: "Yoru", role: "Duelist", color: "#60A5FA", icon: "https://media.valorant-api.com/agents/7f94d92c-4234-0a36-9646-3a87eb8b5c89/displayicon.png" },
 ];
 
