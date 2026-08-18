@@ -50,15 +50,12 @@ export function TacticalWinBreakdownWidget({ winData, lossData, tradingStats }: 
     <Card className="bg-[#0F141C] border-[#1C2433]">
       <CardHeader className="py-4 px-5 border-b border-[#1C2433]">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-amber-400" />
-            <CardTitle className="text-sm font-semibold text-white">
-              Analisis Taktikal Ronde (Cara Menang, Cara Kalah & Trading Kills)
-            </CardTitle>
-          </div>
+          <CardTitle className="text-sm font-bold text-white">
+            Analisis Taktikal Ronde (Cara Menang, Cara Kalah & Trading Kills)
+          </CardTitle>
           <div className="flex items-center gap-2 text-xs">
             <span className="text-emerald-400 font-bold">{wins.totalWins} W</span>
-            <span className="text-[#64748B]">•</span>
+            <span className="text-[#94A3B8]">•</span>
             <span className="text-rose-400 font-bold">{losses.totalLosses} L</span>
           </div>
         </div>
@@ -311,17 +308,17 @@ export function TacticalWinBreakdownWidget({ winData, lossData, tradingStats }: 
                 <div className="p-3 rounded-lg bg-[#0F141C] border border-emerald-500/20">
                   <span className="text-[10px] text-emerald-400 font-semibold block">Kematian Di-Trade</span>
                   <span className="text-xl font-black text-emerald-400">{trade.tradedDeaths}</span>
-                  <span className="text-[10px] text-[#64748B] block">Kematian berhasil dibalas rekan</span>
+                  <span className="text-[10px] text-[#94A3B8] block">Kematian berhasil dibalas rekan</span>
                 </div>
                 <div className="p-3 rounded-lg bg-[#0F141C] border border-sky-500/20">
                   <span className="text-[10px] text-sky-400 font-semibold block">Refrag Kills</span>
                   <span className="text-xl font-black text-sky-400">{trade.tradesWon}</span>
-                  <span className="text-[10px] text-[#64748B] block">Kill balasan didapat</span>
+                  <span className="text-[10px] text-[#94A3B8] block">Kill balasan didapat</span>
                 </div>
                 <div className="p-3 rounded-lg bg-[#0F141C] border border-rose-500/20">
                   <span className="text-[10px] text-rose-400 font-semibold block">Dry Deaths</span>
                   <span className="text-xl font-black text-rose-400">{trade.untradedDeaths}</span>
-                  <span className="text-[10px] text-[#64748B] block">Mati terisolasi tanpa balasan</span>
+                  <span className="text-[10px] text-[#94A3B8] block">Mati terisolasi tanpa balasan</span>
                 </div>
               </div>
 

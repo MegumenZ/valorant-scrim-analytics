@@ -4,13 +4,10 @@ import React from "react";
 import {
   BrainCircuit,
   Swords,
-  ShieldCheck,
   MapPin,
   TrendingUp,
   TrendingDown,
-  Sparkles,
   Target,
-  Zap,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -35,8 +32,7 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
                   Kesehatan Taktis Tim
                 </CardTitle>
                 <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-500/30 bg-emerald-500/10 font-bold">
-                  <Zap className="w-2.5 h-2.5 mr-1" />
-                  Analisis Kolektif Real-Time
+                  Analisis Kolektif
                 </Badge>
               </div>
               <p className="text-[11px] text-[#94A3B8]">
@@ -139,24 +135,25 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
 
         {/* Actionable Coach Focus Box */}
         <div className="p-4 rounded-xl bg-[#090C10] border border-[#1C2433] space-y-3">
-          <div className="flex items-center gap-2 text-xs font-bold text-white border-b border-[#1C2433] pb-2">
-            <Sparkles className="w-4 h-4 text-amber-400" />
+          <div className="flex items-center justify-between text-xs font-bold text-white border-b border-[#1C2433] pb-2">
             <span>Fokus Evaluasi Tim Minggu Ini (Prioritas Coach)</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {overview.topTeamPriorities.map((item, idx) => (
-              <div key={idx} className="p-3 rounded-lg bg-[#0F141C] border border-[#1C2433] space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <Target className="w-3.5 h-3.5 text-emerald-400" />
-                    {item.title}
-                  </span>
+              <div key={idx} className="p-3 rounded-lg bg-[#0F141C] border border-[#1C2433] space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${item.urgency === "HIGH" ? "bg-rose-400" : "bg-sky-400"}`} />
+                    <span className="text-xs font-bold text-white">
+                      {item.title}
+                    </span>
+                  </div>
                   <Badge variant={item.urgency === "HIGH" ? "loss" : "outline"} className="text-[9px] py-0 px-1.5 font-bold">
                     {item.urgency === "HIGH" ? "Prioritas Tinggi" : "Pengembangan"}
                   </Badge>
                 </div>
-                <p className="text-[11px] text-[#94A3B8] leading-relaxed">
+                <p className="text-[11px] text-[#94A3B8] leading-relaxed pl-4">
                   {item.desc}
                 </p>
               </div>

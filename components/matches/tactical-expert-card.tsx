@@ -3,22 +3,10 @@
 import React from "react";
 import {
   ShieldCheck,
-  Swords,
-  Crosshair,
-  TrendingUp,
-  TrendingDown,
   AlertTriangle,
-  Users,
   Target,
-  Sparkles,
-  Flame,
-  Bomb,
-  Clock,
-  Split,
-  Trophy,
   CheckCircle2,
   BrainCircuit,
-  Zap,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,25 +15,6 @@ import { TacticalMatchReport } from "@/lib/utils/tactical-expert-engine";
 interface TacticalExpertCardProps {
   report: TacticalMatchReport;
 }
-
-const ICON_MAP: Record<string, React.ReactNode> = {
-  Swords: <Swords className="w-4 h-4 text-emerald-400" />,
-  ShieldCheck: <ShieldCheck className="w-4 h-4 text-emerald-400" />,
-  Crosshair: <Crosshair className="w-4 h-4 text-emerald-400" />,
-  Trophy: <Trophy className="w-4 h-4 text-amber-400" />,
-  CheckCircle2: <CheckCircle2 className="w-4 h-4 text-emerald-400" />,
-  Sparkles: <Sparkles className="w-4 h-4 text-sky-400" />,
-  Flame: <Flame className="w-4 h-4 text-amber-400" />,
-  AlertTriangle: <AlertTriangle className="w-4 h-4 text-rose-400" />,
-  TrendingDown: <TrendingDown className="w-4 h-4 text-rose-400" />,
-  Bomb: <Bomb className="w-4 h-4 text-rose-400" />,
-  Clock: <Clock className="w-4 h-4 text-amber-400" />,
-  Split: <Split className="w-4 h-4 text-amber-400" />,
-  Users: <Users className="w-4 h-4 text-sky-400" />,
-  Target: <Target className="w-4 h-4 text-sky-400" />,
-  ShieldAlert: <AlertTriangle className="w-4 h-4 text-amber-400" />,
-  Timer: <Clock className="w-4 h-4 text-sky-400" />,
-};
 
 export function TacticalExpertCard({ report }: TacticalExpertCardProps) {
   return (
@@ -59,11 +28,10 @@ export function TacticalExpertCard({ report }: TacticalExpertCardProps) {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <CardTitle className="text-sm font-bold text-white flex items-center gap-1.5">
+                <CardTitle className="text-sm font-bold text-white">
                   Rapor Taktis & Evaluasi Coach
                 </CardTitle>
                 <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-500/30 bg-emerald-500/10 font-bold">
-                  <Zap className="w-2.5 h-2.5 mr-1" />
                   Analisis Real-Time
                 </Badge>
               </div>
@@ -92,12 +60,9 @@ export function TacticalExpertCard({ report }: TacticalExpertCardProps) {
 
       <CardContent className="p-5 space-y-5">
         {/* Executive Summary */}
-        <div className="p-3.5 rounded-xl bg-[#090C10] border border-[#1C2433] text-xs text-slate-200 leading-relaxed flex items-start gap-3">
-          <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-          <div>
-            <span className="font-bold text-white block mb-0.5">Ringkasan Evaluasi Taktis:</span>
-            <span>{report.summary}</span>
-          </div>
+        <div className="p-3.5 rounded-xl bg-[#090C10] border-l-4 border-l-amber-500 border border-[#1C2433] text-xs text-slate-200 leading-relaxed">
+          <span className="font-bold text-amber-400 block mb-0.5">Ringkasan Evaluasi Taktis:</span>
+          <span>{report.summary}</span>
         </div>
 
         {/* 5 Tactical Pillars Gauge */}
@@ -139,11 +104,11 @@ export function TacticalExpertCard({ report }: TacticalExpertCardProps) {
             <div className="space-y-3">
               {report.strengths.map((item, idx) => (
                 <div key={idx} className="space-y-1">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-white">
-                    {ICON_MAP[item.icon] || <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
-                    <span>{item.title}</span>
+                  <div className="flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
+                    <span className="text-xs font-bold text-white">{item.title}</span>
                   </div>
-                  <p className="text-[11px] text-[#94A3B8] leading-relaxed pl-5">
+                  <p className="text-[11px] text-[#94A3B8] leading-relaxed pl-3.5">
                     {item.desc}
                   </p>
                 </div>
@@ -160,11 +125,11 @@ export function TacticalExpertCard({ report }: TacticalExpertCardProps) {
             <div className="space-y-3">
               {report.weaknesses.map((item, idx) => (
                 <div key={idx} className="space-y-1">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-white">
-                    {ICON_MAP[item.icon] || <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />}
-                    <span>{item.title}</span>
+                  <div className="flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-400 mt-1.5 shrink-0" />
+                    <span className="text-xs font-bold text-white">{item.title}</span>
                   </div>
-                  <p className="text-[11px] text-[#94A3B8] leading-relaxed pl-5">
+                  <p className="text-[11px] text-[#94A3B8] leading-relaxed pl-3.5">
                     {item.desc}
                   </p>
                 </div>
@@ -181,11 +146,11 @@ export function TacticalExpertCard({ report }: TacticalExpertCardProps) {
             <div className="space-y-3">
               {report.drills.map((item, idx) => (
                 <div key={idx} className="space-y-1">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-white">
-                    {ICON_MAP[item.icon] || <Target className="w-3.5 h-3.5 text-sky-400" />}
-                    <span>{item.title}</span>
+                  <div className="flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-sky-400 mt-1.5 shrink-0" />
+                    <span className="text-xs font-bold text-white">{item.title}</span>
                   </div>
-                  <p className="text-[11px] text-[#94A3B8] leading-relaxed pl-5">
+                  <p className="text-[11px] text-[#94A3B8] leading-relaxed pl-3.5">
                     {item.desc}
                   </p>
                 </div>
