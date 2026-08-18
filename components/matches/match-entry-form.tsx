@@ -131,11 +131,14 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         }
       }
 
+      const defaultDuration = winner === "TEAM" ? 52 : 38;
+
       items.push({
         round: r,
         side: roundSide,
         winner,
         winType,
+        durationSeconds: defaultDuration,
       });
     }
     return items;
@@ -190,12 +193,14 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         if (winner === "TEAM" && !winType) {
           winType = roundSide === "ATTACK" ? "DETONATION" : "DEFUSE";
         }
+        const durationSeconds = existing?.durationSeconds ?? (winner === "TEAM" ? 52 : 38);
 
         newItems.push({
           round: r,
           side: roundSide,
           winner,
           winType,
+          durationSeconds,
         });
       }
       return newItems;
@@ -208,10 +213,12 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         if (item.round === roundNum) {
           const nextWinner = item.winner === "TEAM" ? "OPPONENT" : "TEAM";
           const defaultWinType: RoundWinType = item.side === "ATTACK" ? "DETONATION" : "DEFUSE";
+          const defaultDuration = nextWinner === "TEAM" ? 52 : 38;
           return {
             ...item,
             winner: nextWinner,
             winType: nextWinner === "TEAM" ? (item.winType || defaultWinType) : null,
+            durationSeconds: item.durationSeconds ?? defaultDuration,
           };
         }
         return item;
@@ -234,6 +241,27 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         }
         return item;
       })
+    );
+  };
+
+  const handleCycleRoundDuration = (roundNum: number, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const presets = [30, 45, 55, 75, 90, 110];
+    setRoundsTimeline((prev) =>
+      prev.map((item) => {
+        if (item.round === roundNum) {
+          const curr = item.durationSeconds || (item.winner === "TEAM" ? 52 : 38);
+          const nextPreset = presets.find((p) => p > curr) || presets[0];
+          return { ...item, durationSeconds: nextPreset };
+        }
+        return item;
+      })
+    );
+  };
+
+  const handleApplyDurationToAll = (winner: "TEAM" | "OPPONENT", seconds: number) => {
+    setRoundsTimeline((prev) =>
+      prev.map((item) => (item.winner === winner ? { ...item, durationSeconds: seconds } : item))
     );
   };
 
@@ -346,26 +374,17 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
     return 14;
   });
 
-  // Round Pacing State (Duration in Seconds)
-  const [avgWinDurationSec, setAvgWinDurationSec] = useState<number>(() => {
-    if (initialData?.roundsTimeline && initialData.roundsTimeline.length > 0) {
-      const winRounds = initialData.roundsTimeline.filter((r) => r.winner === "TEAM" && r.durationSeconds);
-      if (winRounds.length > 0) {
-        return Math.round(winRounds.reduce((acc, r) => acc + (r.durationSeconds || 0), 0) / winRounds.length);
-      }
-    }
-    return 52;
-  });
+  // Live Round Pacing State (Calculated directly from individual rounds in roundsTimeline)
+  const winRounds = roundsTimeline.filter((r) => r.winner === "TEAM");
+  const lossRounds = roundsTimeline.filter((r) => r.winner === "OPPONENT");
 
-  const [avgLossDurationSec, setAvgLossDurationSec] = useState<number>(() => {
-    if (initialData?.roundsTimeline && initialData.roundsTimeline.length > 0) {
-      const lossRounds = initialData.roundsTimeline.filter((r) => r.winner === "OPPONENT" && r.durationSeconds);
-      if (lossRounds.length > 0) {
-        return Math.round(lossRounds.reduce((acc, r) => acc + (r.durationSeconds || 0), 0) / lossRounds.length);
-      }
-    }
-    return 38;
-  });
+  const liveAvgWinDurationSec = winRounds.length > 0
+    ? Math.round(winRounds.reduce((acc, r) => acc + (r.durationSeconds || 52), 0) / winRounds.length)
+    : 0;
+
+  const liveAvgLossDurationSec = lossRounds.length > 0
+    ? Math.round(lossRounds.reduce((acc, r) => acc + (r.durationSeconds || 38), 0) / lossRounds.length)
+    : 0;
 
   const untradedDeaths = Math.max(0, totalTeamDeaths - tradedDeaths);
   const tradeEfficiency = totalTeamDeaths > 0
@@ -390,8 +409,12 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
     setVodUrl("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
     setTradedDeaths(15);
     setTradesWon(16);
-    setAvgWinDurationSec(54);
-    setAvgLossDurationSec(36);
+    setRoundsTimeline((prev) =>
+      prev.map((r, i) => ({
+        ...r,
+        durationSeconds: r.winner === "TEAM" ? (i % 2 === 0 ? 56 : 48) : (i % 2 === 0 ? 32 : 40),
+      }))
+    );
 
     if (availablePlayers.length >= 5) {
       setPlayerRows([
@@ -432,7 +455,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
 
       const finalRoundsTimeline = roundsTimeline.map((r) => ({
         ...r,
-        durationSeconds: r.durationSeconds ?? (r.winner === "TEAM" ? avgWinDurationSec : avgLossDurationSec),
+        durationSeconds: r.durationSeconds ?? (r.winner === "TEAM" ? 52 : 38),
         tradedDeaths: r.tradedDeaths ?? Math.round(tradedDeaths / Math.max(1, roundsTimeline.length)),
         tradesWon: r.tradesWon ?? Math.round(tradesWon / Math.max(1, roundsTimeline.length)),
       }));
@@ -703,6 +726,18 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                   </div>
                 </div>
 
+                <div className="flex items-center gap-3 text-[11px]">
+                  <span className="flex items-center gap-1 font-mono text-[#94A3B8]">
+                    <Timer className="w-3 h-3 text-emerald-400" />
+                    Rata W: <strong className="text-emerald-400">{formatRoundDuration(liveAvgWinDurationSec)}</strong>
+                  </span>
+                  <span className="text-[#334155]">•</span>
+                  <span className="flex items-center gap-1 font-mono text-[#94A3B8]">
+                    <Timer className="w-3 h-3 text-rose-400" />
+                    Rata L: <strong className="text-rose-400">{formatRoundDuration(liveAvgLossDurationSec)}</strong>
+                  </span>
+                </div>
+
                 {roundsTimeline.filter(r => r.winner === "TEAM").length !== Number(scoreTeam) && (
                   <span className="text-[11px] text-amber-400 font-medium flex items-center gap-1">
                     <AlertCircle className="w-3.5 h-3.5" />
@@ -731,6 +766,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                     const isPistol = item.round === 1;
                     const winType: RoundWinType = item.winType || "ELIMINATION";
                     const winConfig = WIN_TYPE_LABELS[winType];
+                    const roundDur = item.durationSeconds || (isWin ? 52 : 38);
 
                     return (
                       <div
@@ -771,6 +807,17 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                         ) : (
                           <span className="text-[9px] text-[#64748B] font-medium">-</span>
                         )}
+
+                        {/* Per-Round Duration Button */}
+                        <button
+                          type="button"
+                          onClick={(e) => handleCycleRoundDuration(item.round, e)}
+                          title={`Durasi R${item.round}: ${roundDur} detik (${formatRoundDuration(roundDur)}). Klik untuk ganti preset waktu (30s ➔ 45s ➔ 55s ➔ 75s ➔ 90s ➔ 110s)`}
+                          className="w-full py-0.5 px-0.5 rounded text-[8px] font-mono font-bold bg-[#090C10] border border-[#1C2433] hover:border-sky-500/50 text-slate-300 hover:text-white transition-all flex items-center justify-center gap-0.5"
+                        >
+                          <Timer className="w-2 h-2 text-sky-400 shrink-0" />
+                          <span>{roundDur}s</span>
+                        </button>
                       </div>
                     );
                   })}
@@ -798,6 +845,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                       const isPistol = item.round === 13;
                       const winType: RoundWinType = item.winType || "ELIMINATION";
                       const winConfig = WIN_TYPE_LABELS[winType];
+                      const roundDur = item.durationSeconds || (isWin ? 52 : 38);
 
                       return (
                         <div
@@ -838,6 +886,17 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           ) : (
                             <span className="text-[9px] text-[#64748B] font-medium">-</span>
                           )}
+
+                          {/* Per-Round Duration Button */}
+                          <button
+                            type="button"
+                            onClick={(e) => handleCycleRoundDuration(item.round, e)}
+                            title={`Durasi R${item.round}: ${roundDur} detik (${formatRoundDuration(roundDur)}). Klik untuk ganti preset waktu (30s ➔ 45s ➔ 55s ➔ 75s ➔ 90s ➔ 110s)`}
+                            className="w-full py-0.5 px-0.5 rounded text-[8px] font-mono font-bold bg-[#090C10] border border-[#1C2433] hover:border-sky-500/50 text-slate-300 hover:text-white transition-all flex items-center justify-center gap-0.5"
+                          >
+                            <Timer className="w-2 h-2 text-sky-400 shrink-0" />
+                            <span>{roundDur}s</span>
+                          </button>
                         </div>
                       );
                     })}
@@ -859,6 +918,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                       const isWin = item.winner === "TEAM";
                       const winType: RoundWinType = item.winType || "ELIMINATION";
                       const winConfig = WIN_TYPE_LABELS[winType];
+                      const roundDur = item.durationSeconds || (isWin ? 52 : 38);
 
                       return (
                         <div
@@ -894,6 +954,17 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           ) : (
                             <span className="text-[9px] text-[#64748B] font-medium">-</span>
                           )}
+
+                          {/* Per-Round Duration Button */}
+                          <button
+                            type="button"
+                            onClick={(e) => handleCycleRoundDuration(item.round, e)}
+                            title={`Durasi R${item.round}: ${roundDur} detik (${formatRoundDuration(roundDur)}). Klik untuk ganti preset waktu (30s ➔ 45s ➔ 55s ➔ 75s ➔ 90s ➔ 110s)`}
+                            className="w-full py-0.5 px-0.5 rounded text-[8px] font-mono font-bold bg-[#090C10] border border-[#1C2433] hover:border-sky-500/50 text-slate-300 hover:text-white transition-all flex items-center justify-center gap-0.5"
+                          >
+                            <Timer className="w-2 h-2 text-sky-400 shrink-0" />
+                            <span>{roundDur}s</span>
+                          </button>
                         </div>
                       );
                     })}
@@ -1464,53 +1535,50 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                   <Timer className="w-4 h-4 text-sky-400" />
                   <span className="text-sm font-bold text-white">Waktu Ronde Menang vs Kalah (Pacing)</span>
                 </div>
-                <span className="text-xs text-[#94A3B8]">
-                  Standar Ronde: 100 Detik
-                </span>
+                <Badge variant="outline" className="text-[10px] text-sky-400 border-sky-500/30">
+                  Dihitung dari Input Per-Ronde
+                </Badge>
               </div>
 
-              {/* Duration Inputs */}
+              {/* Aggregated from Per-Round Inputs */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Win Duration */}
                 <div className="p-3 rounded-lg bg-[#0F141C] border border-emerald-500/20 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-emerald-400">Rata-rata Ronde Menang</span>
-                    <span className="text-sm font-black font-mono text-white">{formatRoundDuration(avgWinDurationSec)}</span>
+                    <span className="text-xs text-[#94A3B8]">({winRounds.length} Ronde)</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      min="15"
-                      max="145"
-                      value={avgWinDurationSec}
-                      onChange={(e) => setAvgWinDurationSec(Number(e.target.value) || 52)}
-                      className="h-8 text-xs font-bold font-mono text-center text-emerald-400"
-                    />
-                    <span className="text-xs text-[#94A3B8]">detik</span>
+                  <div className="text-2xl font-black font-mono text-white">
+                    {formatRoundDuration(liveAvgWinDurationSec)}{" "}
+                    <span className="text-xs font-medium text-[#94A3B8]">({liveAvgWinDurationSec}s)</span>
                   </div>
-                  {/* Presets */}
-                  <div className="flex items-center gap-1 text-[10px]">
-                    <button
-                      type="button"
-                      onClick={() => setAvgWinDurationSec(35)}
-                      className="px-2 py-0.5 rounded bg-[#161D28] text-[#94A3B8] hover:text-white"
-                    >
-                      Cepat (35s)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAvgWinDurationSec(55)}
-                      className="px-2 py-0.5 rounded bg-[#161D28] text-[#94A3B8] hover:text-white"
-                    >
-                      Sedang (55s)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAvgWinDurationSec(85)}
-                      className="px-2 py-0.5 rounded bg-[#161D28] text-[#94A3B8] hover:text-white"
-                    >
-                      Lambat (85s)
-                    </button>
+
+                  {/* Batch Quick-Assign */}
+                  <div className="pt-1 space-y-1">
+                    <span className="text-[10px] text-[#64748B] block">Set Cepat Semua Ronde W:</span>
+                    <div className="flex items-center gap-1 text-[10px]">
+                      <button
+                        type="button"
+                        onClick={() => handleApplyDurationToAll("TEAM", 35)}
+                        className="px-2 py-0.5 rounded bg-[#161D28] text-[#94A3B8] hover:text-white hover:bg-emerald-500/20 transition-colors"
+                      >
+                        ⚡ 35s
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleApplyDurationToAll("TEAM", 55)}
+                        className="px-2 py-0.5 rounded bg-[#161D28] text-[#94A3B8] hover:text-white hover:bg-emerald-500/20 transition-colors"
+                      >
+                        ⚖️ 55s
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleApplyDurationToAll("TEAM", 85)}
+                        className="px-2 py-0.5 rounded bg-[#161D28] text-[#94A3B8] hover:text-white hover:bg-emerald-500/20 transition-colors"
+                      >
+                        ⏳ 85s
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -1518,42 +1586,39 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                 <div className="p-3 rounded-lg bg-[#0F141C] border border-rose-500/20 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-rose-400">Rata-rata Ronde Kalah</span>
-                    <span className="text-sm font-black font-mono text-white">{formatRoundDuration(avgLossDurationSec)}</span>
+                    <span className="text-xs text-[#94A3B8]">({lossRounds.length} Ronde)</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      min="15"
-                      max="145"
-                      value={avgLossDurationSec}
-                      onChange={(e) => setAvgLossDurationSec(Number(e.target.value) || 38)}
-                      className="h-8 text-xs font-bold font-mono text-center text-rose-400"
-                    />
-                    <span className="text-xs text-[#94A3B8]">detik</span>
+                  <div className="text-2xl font-black font-mono text-white">
+                    {formatRoundDuration(liveAvgLossDurationSec)}{" "}
+                    <span className="text-xs font-medium text-[#94A3B8]">({liveAvgLossDurationSec}s)</span>
                   </div>
-                  {/* Presets */}
-                  <div className="flex items-center gap-1 text-[10px]">
-                    <button
-                      type="button"
-                      onClick={() => setAvgLossDurationSec(30)}
-                      className="px-2 py-0.5 rounded bg-[#161D28] text-[#94A3B8] hover:text-white"
-                    >
-                      Early (30s)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAvgLossDurationSec(48)}
-                      className="px-2 py-0.5 rounded bg-[#161D28] text-[#94A3B8] hover:text-white"
-                    >
-                      Mid (48s)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAvgLossDurationSec(80)}
-                      className="px-2 py-0.5 rounded bg-[#161D28] text-[#94A3B8] hover:text-white"
-                    >
-                      Late (80s)
-                    </button>
+
+                  {/* Batch Quick-Assign */}
+                  <div className="pt-1 space-y-1">
+                    <span className="text-[10px] text-[#64748B] block">Set Cepat Semua Ronde L:</span>
+                    <div className="flex items-center gap-1 text-[10px]">
+                      <button
+                        type="button"
+                        onClick={() => handleApplyDurationToAll("OPPONENT", 30)}
+                        className="px-2 py-0.5 rounded bg-[#161D28] text-[#94A3B8] hover:text-white hover:bg-rose-500/20 transition-colors"
+                      >
+                        ⚡ 30s
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleApplyDurationToAll("OPPONENT", 48)}
+                        className="px-2 py-0.5 rounded bg-[#161D28] text-[#94A3B8] hover:text-white hover:bg-rose-500/20 transition-colors"
+                      >
+                        ⚖️ 48s
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleApplyDurationToAll("OPPONENT", 80)}
+                        className="px-2 py-0.5 rounded bg-[#161D28] text-[#94A3B8] hover:text-white hover:bg-rose-500/20 transition-colors"
+                      >
+                        ⏳ 80s
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1561,28 +1626,28 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
               {/* Comparison Visual Bar */}
               <div className="space-y-1.5 pt-1">
                 <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-[#94A3B8]">Perbandingan Durasi Waktu Ronde:</span>
+                  <span className="text-[#94A3B8]">Perbandingan Waktu Menang vs Kalah:</span>
                   <span className="text-white font-mono">
-                    Menang: {formatRoundDuration(avgWinDurationSec)} vs Kalah: {formatRoundDuration(avgLossDurationSec)}
+                    W: {formatRoundDuration(liveAvgWinDurationSec)} vs L: {formatRoundDuration(liveAvgLossDurationSec)}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
                     <div className="flex justify-between text-[10px] text-emerald-400 font-bold">
-                      <span>Menang ({avgWinDurationSec}s)</span>
-                      <span>{avgWinDurationSec < 45 ? "⚡ Fast Rush" : avgWinDurationSec <= 75 ? "⚖️ Mid Exec" : "⏳ Late Round"}</span>
+                      <span>Menang ({liveAvgWinDurationSec}s)</span>
+                      <span>{liveAvgWinDurationSec < 45 ? "⚡ Fast Rush" : liveAvgWinDurationSec <= 75 ? "⚖️ Mid Exec" : "⏳ Late Round"}</span>
                     </div>
                     <div className="w-full bg-[#161D28] h-2 rounded-full overflow-hidden">
-                      <div className="bg-emerald-400 h-full rounded-full" style={{ width: `${Math.min(100, (avgWinDurationSec / 100) * 100)}%` }} />
+                      <div className="bg-emerald-400 h-full rounded-full" style={{ width: `${Math.min(100, (liveAvgWinDurationSec / 100) * 100)}%` }} />
                     </div>
                   </div>
                   <div className="space-y-1">
                     <div className="flex justify-between text-[10px] text-rose-400 font-bold">
-                      <span>Kalah ({avgLossDurationSec}s)</span>
-                      <span>{avgLossDurationSec < 45 ? "⚡ Early Pick" : avgLossDurationSec <= 75 ? "⚖️ Mid Round" : "⏳ Post-Plant Loss"}</span>
+                      <span>Kalah ({liveAvgLossDurationSec}s)</span>
+                      <span>{liveAvgLossDurationSec < 45 ? "⚡ Early Pick" : liveAvgLossDurationSec <= 75 ? "⚖️ Mid Round" : "⏳ Post-Plant Loss"}</span>
                     </div>
                     <div className="w-full bg-[#161D28] h-2 rounded-full overflow-hidden">
-                      <div className="bg-rose-400 h-full rounded-full" style={{ width: `${Math.min(100, (avgLossDurationSec / 100) * 100)}%` }} />
+                      <div className="bg-rose-400 h-full rounded-full" style={{ width: `${Math.min(100, (liveAvgLossDurationSec / 100) * 100)}%` }} />
                     </div>
                   </div>
                 </div>
@@ -1591,10 +1656,10 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
               {/* Pacing Coach Insight */}
               <div className="p-3 rounded-lg bg-[#0F141C] border border-sky-500/20 text-xs text-[#94A3B8] leading-relaxed">
                 💡 <strong>Insight Pacing Coach:</strong>{" "}
-                {avgWinDurationSec > avgLossDurationSec ? (
-                  <span>Tim bermain lebih sukses saat eksekusi sabar & default ({formatRoundDuration(avgWinDurationSec)}), namun rentan kalah jika terjadi first blood cepat sebelum 40 detik.</span>
+                {liveAvgWinDurationSec > liveAvgLossDurationSec ? (
+                  <span>Tim bermain lebih konsisten saat eksekusi sabar & default ({formatRoundDuration(liveAvgWinDurationSec)}), namun rentan kalah jika terjadi first blood cepat sebelum {formatRoundDuration(liveAvgLossDurationSec)}.</span>
                 ) : (
-                  <span>Tim sangat mematikan saat tempo cepat ({formatRoundDuration(avgWinDurationSec)}), namun kesulitan memenangkan ronde jika pertandingan berlarut-larut ke late game.</span>
+                  <span>Tim sangat mematikan saat tempo cepat ({formatRoundDuration(liveAvgWinDurationSec)}), namun kesulitan memenangkan ronde jika pertandingan berlarut-larut ke late game.</span>
                 )}
               </div>
             </div>

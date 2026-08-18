@@ -278,6 +278,13 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
                       ) : (
                         <span className="text-[9px] text-[#64748B] font-medium">-</span>
                       )}
+                      {/* Round Duration Badge */}
+                      <div className="w-full pt-0.5 border-t border-[#1C2433]/60 flex items-center justify-center">
+                        <span className="text-[8px] font-mono text-slate-400 flex items-center gap-0.5">
+                          <Timer className="w-2 h-2 text-sky-400" />
+                          {item.durationSeconds || (isWin ? 52 : 38)}s
+                        </span>
+                      </div>
                     </div>
                   );
                 })}
@@ -331,6 +338,13 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
                         ) : (
                           <span className="text-[9px] text-[#64748B] font-medium">-</span>
                         )}
+                        {/* Round Duration Badge */}
+                        <div className="w-full pt-0.5 border-t border-[#1C2433]/60 flex items-center justify-center">
+                          <span className="text-[8px] font-mono text-slate-400 flex items-center gap-0.5">
+                            <Timer className="w-2 h-2 text-sky-400" />
+                            {item.durationSeconds || (isWin ? 52 : 38)}s
+                          </span>
+                        </div>
                       </div>
                     );
                   })}
@@ -373,6 +387,13 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
                         ) : (
                           <span className="text-[9px] text-[#64748B] font-medium">-</span>
                         )}
+                        {/* Round Duration Badge */}
+                        <div className="w-full pt-0.5 border-t border-[#1C2433]/60 flex items-center justify-center">
+                          <span className="text-[8px] font-mono text-slate-400 flex items-center gap-0.5">
+                            <Timer className="w-2 h-2 text-sky-400" />
+                            {item.durationSeconds || (isWin ? 52 : 38)}s
+                          </span>
+                        </div>
                       </div>
                     );
                   })}
