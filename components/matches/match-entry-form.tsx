@@ -379,26 +379,18 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
 
   const totalTeamDeaths = playerRows.reduce((acc, r) => acc + (Number(r.deaths) || 0), 0);
 
-  // Trading Kills State
-  const [tradedDeaths, setTradedDeaths] = useState<number>(() => {
+  // Trading Kills State (Single input for coach)
+  const [tradeKills, setTradeKills] = useState<number>(() => {
     if (initialData?.roundsTimeline && initialData.roundsTimeline.length > 0) {
-      const sum = initialData.roundsTimeline.reduce((acc, r) => acc + (r.tradedDeaths || 0), 0);
+      const sum = initialData.roundsTimeline.reduce((acc, r) => acc + (r.tradedDeaths || r.tradesWon || 0), 0);
       if (sum > 0) return sum;
     }
     return 14;
   });
 
-  const [tradesWon, setTradesWon] = useState<number>(() => {
-    if (initialData?.roundsTimeline && initialData.roundsTimeline.length > 0) {
-      const sum = initialData.roundsTimeline.reduce((acc, r) => acc + (r.tradesWon || 0), 0);
-      if (sum > 0) return sum;
-    }
-    return 14;
-  });
-
-  const untradedDeaths = Math.max(0, totalTeamDeaths - tradedDeaths);
+  const untradedDeaths = Math.max(0, totalTeamDeaths - tradeKills);
   const tradeEfficiency = totalTeamDeaths > 0
-    ? Math.min(100, Math.round((tradedDeaths / totalTeamDeaths) * 100))
+    ? Math.min(100, Math.round((tradeKills / totalTeamDeaths) * 100))
     : 0;
 
   const handleRowChange = (index: number, field: keyof PlayerStatRow, value: any) => {
@@ -417,8 +409,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
     setStartSide("ATTACK");
     setNotes("Anti-eco sangat rapi, retake A site berhasil dengan koordinasi flash dan smoke.");
     setVodUrl("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
-    setTradedDeaths(15);
-    setTradesWon(16);
+    setTradeKills(15);
 
     if (availablePlayers.length >= 5) {
       setPlayerRows([
@@ -470,8 +461,8 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
           winner: r.winner,
           winType: outcome,
           outcomeType: outcome,
-          tradedDeaths: r.tradedDeaths ?? Math.round(tradedDeaths / Math.max(1, roundsTimeline.length)),
-          tradesWon: r.tradesWon ?? Math.round(tradesWon / Math.max(1, roundsTimeline.length)),
+          tradedDeaths: r.tradedDeaths ?? Math.round(tradeKills / Math.max(1, roundsTimeline.length)),
+          tradesWon: r.tradesWon ?? Math.round(tradeKills / Math.max(1, roundsTimeline.length)),
         };
       });
 
@@ -1385,7 +1376,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
             </div>
             <div className="p-3 rounded-xl bg-[#090C10] border border-emerald-500/20">
               <span className="text-xs font-semibold text-emerald-400 block">Kematian Di-Trade</span>
-              <span className="text-2xl font-black text-emerald-400">{tradedDeaths}</span>
+              <span className="text-2xl font-black text-emerald-400">{tradeKills}</span>
               <span className="text-[10px] text-[#64748B] block mt-0.5">Teman mati langsung dibalas</span>
             </div>
             <div className="p-3 rounded-xl bg-[#090C10] border border-amber-500/20">
@@ -1395,58 +1386,42 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
             </div>
           </div>
 
-          {/* Stepper Inputs for Coach */}
+          {/* Single Stepper Input for Coach */}
           <div className="p-4 rounded-xl bg-[#090C10] border border-[#1C2433] space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[#1C2433]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <label className="text-xs font-bold text-white block">Kematian Berhasil Di-Trade (Traded Deaths)</label>
-                <span className="text-[11px] text-[#64748B]">Berapa kali rekan tim langsung membalas kill setelah teman gugur</span>
+                <label className="text-xs font-bold text-white block">
+                  Total Trade Kill / Refrag Berhasil
+                </label>
+                <span className="text-[11px] text-[#64748B]">
+                  Berapa kali tim langsung membalas membunuh musuh saat rekan tim gugur (jeda 3-5 detik)
+                </span>
               </div>
               <div className="flex items-center gap-1.5 self-end sm:self-auto">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setTradedDeaths((prev) => Math.max(0, prev - 1))}
-                  className="h-8 w-8 p-0 text-sm"
+                  onClick={() => setTradeKills((prev) => Math.max(0, prev - 1))}
+                  className="h-8 w-8 p-0 text-sm font-bold"
                 >
                   -
                 </Button>
-                <span className="w-10 text-center font-bold text-base text-emerald-400">{tradedDeaths}</span>
+                <input
+                  type="number"
+                  min="0"
+                  max={totalTeamDeaths || 100}
+                  value={tradeKills}
+                  onChange={(e) => setTradeKills(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                  title="Ketik jumlah trade kill langsung"
+                  className="w-14 text-center font-bold text-base bg-[#0F141C] border border-[#1C2433] rounded px-1 py-1 text-emerald-400 focus:outline-none focus:border-emerald-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setTradedDeaths((prev) => Math.min(totalTeamDeaths || 50, prev + 1))}
-                  className="h-8 w-8 p-0 text-sm"
-                >
-                  +
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1">
-              <div>
-                <label className="text-xs font-bold text-white block">Kill Trade Balasan (Trades Won / Refrags)</label>
-                <span className="text-[11px] text-[#64748B]">Total kill balasan yang didapat tim dalam jeda 3-5 detik</span>
-              </div>
-              <div className="flex items-center gap-1.5 self-end sm:self-auto">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setTradesWon((prev) => Math.max(0, prev - 1))}
-                  className="h-8 w-8 p-0 text-sm"
-                >
-                  -
-                </Button>
-                <span className="w-10 text-center font-bold text-base text-sky-400">{tradesWon}</span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setTradesWon((prev) => prev + 1)}
-                  className="h-8 w-8 p-0 text-sm"
+                  onClick={() => setTradeKills((prev) => Math.min(totalTeamDeaths || 100, prev + 1))}
+                  className="h-8 w-8 p-0 text-sm font-bold"
                 >
                   +
                 </Button>
