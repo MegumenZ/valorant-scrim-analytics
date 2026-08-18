@@ -227,11 +227,18 @@ export async function getDashboardSummary(): Promise<{
   }));
 
   // Tactical Win Conditions Calculation
+  // Tactical Win & Loss Breakdown Calculation (Contextual to Attacker vs Defender)
   let totalTeamRoundWins = 0;
   let elimWins = 0;
-  let defuseWins = 0; // Retake & Spike Defused
-  let detonationWins = 0; // Post-Plant Spike Detonated
-  let timeWins = 0;
+  let defuseWins = 0;     // Retake & Spike Defused (Defender Win)
+  let detonationWins = 0; // Post-Plant Spike Detonated (Attacker Win)
+  let timeWins = 0;       // Waktu Habis (Defender Win)
+
+  let totalTeamRoundLosses = 0;
+  let elimLosses = 0;        // Tim Tereliminasi
+  let defusedLosses = 0;     // Musuh Retake & Defuse (Saat Kita Attacker)
+  let detonationLosses = 0;  // Spike Musuh Meledak (Saat Kita Defender Gagal Retake)
+  let timeoutLosses = 0;     // Waktu Habis (Saat Kita Attacker Gagal Plant)
 
   for (const m of allMatches) {
     if (m.roundTimeline) {
@@ -239,16 +246,29 @@ export async function getDashboardSummary(): Promise<{
         const rounds = JSON.parse(m.roundTimeline);
         if (Array.isArray(rounds)) {
           for (const r of rounds) {
+            const outcome = r.outcomeType || r.winType || "ELIMINATION";
             if (r.winner === "TEAM") {
               totalTeamRoundWins++;
-              if (r.winType === "DEFUSE") {
-                defuseWins++;
-              } else if (r.winType === "DETONATION") {
-                detonationWins++;
-              } else if (r.winType === "TIME") {
-                timeWins++;
+              if (r.side === "ATTACK") {
+                if (outcome === "DETONATION") detonationWins++;
+                else elimWins++;
               } else {
-                elimWins++;
+                // DEFENSE
+                if (outcome === "DEFUSE") defuseWins++;
+                else if (outcome === "TIME") timeWins++;
+                else elimWins++;
+              }
+            } else {
+              // OPPONENT WIN = TEAM LOSS
+              totalTeamRoundLosses++;
+              if (r.side === "ATTACK") {
+                if (outcome === "DEFUSE") defusedLosses++;
+                else if (outcome === "TIME") timeoutLosses++;
+                else elimLosses++;
+              } else {
+                // DEFENSE
+                if (outcome === "DETONATION") detonationLosses++;
+                else elimLosses++;
               }
             }
           }
@@ -259,6 +279,8 @@ export async function getDashboardSummary(): Promise<{
     } else {
       totalTeamRoundWins += m.scoreTeam;
       elimWins += m.scoreTeam;
+      totalTeamRoundLosses += m.scoreOpponent;
+      elimLosses += m.scoreOpponent;
     }
   }
 
@@ -274,22 +296,22 @@ export async function getDashboardSummary(): Promise<{
     timeoutRate: totalTeamRoundWins > 0 ? Math.round((timeWins / totalTeamRoundWins) * 100) : 0,
   };
 
-  // Trading Kills and Round Duration (Pacing) Calculation
+  const tacticalLosses = {
+    totalLosses: totalTeamRoundLosses,
+    eliminations: elimLosses,
+    eliminationRate: totalTeamRoundLosses > 0 ? Math.round((elimLosses / totalTeamRoundLosses) * 100) : 0,
+    defusedLosses,
+    defusedLossRate: totalTeamRoundLosses > 0 ? Math.round((defusedLosses / totalTeamRoundLosses) * 100) : 0,
+    detonationLosses,
+    detonationLossRate: totalTeamRoundLosses > 0 ? Math.round((detonationLosses / totalTeamRoundLosses) * 100) : 0,
+    timeoutLosses,
+    timeoutLossRate: totalTeamRoundLosses > 0 ? Math.round((timeoutLosses / totalTeamRoundLosses) * 100) : 0,
+  };
+
+  // Trading Kills Calculation
   let totalTeamDeaths = 0;
   let totalTradesWon = 0;
   let totalTradedDeaths = 0;
-
-  let totalWinDurationSec = 0;
-  let totalWinRoundsCount = 0;
-  let totalLossDurationSec = 0;
-  let totalLossRoundsCount = 0;
-
-  let fastWins = 0;
-  let midWins = 0;
-  let lateWins = 0;
-  let fastLosses = 0;
-  let midLosses = 0;
-  let lateLosses = 0;
 
   for (const m of allMatches) {
     const matchDeaths = m.playerStats.reduce((acc, s) => acc + s.deaths, 0);
@@ -302,29 +324,9 @@ export async function getDashboardSummary(): Promise<{
           for (const r of rounds) {
             if (r.tradesWon) totalTradesWon += r.tradesWon;
             if (r.tradedDeaths) totalTradedDeaths += r.tradedDeaths;
-
-            const dur = r.durationSeconds ?? (r.winner === "TEAM" ? 52 : 38);
-            if (r.winner === "TEAM") {
-              totalWinDurationSec += dur;
-              totalWinRoundsCount++;
-              if (dur < 45) fastWins++;
-              else if (dur <= 75) midWins++;
-              else lateWins++;
-            } else {
-              totalLossDurationSec += dur;
-              totalLossRoundsCount++;
-              if (dur < 45) fastLosses++;
-              else if (dur <= 75) midLosses++;
-              else lateLosses++;
-            }
           }
         }
       } catch (e) {}
-    } else {
-      totalWinRoundsCount += m.scoreTeam;
-      totalWinDurationSec += m.scoreTeam * 52;
-      totalLossRoundsCount += m.scoreOpponent;
-      totalLossDurationSec += m.scoreOpponent * 38;
     }
   }
 
@@ -350,25 +352,6 @@ export async function getDashboardSummary(): Promise<{
     tradeRating,
   };
 
-  const avgWinDurationSec = totalWinRoundsCount > 0
-    ? Math.round(totalWinDurationSec / totalWinRoundsCount)
-    : 52;
-
-  const avgLossDurationSec = totalLossRoundsCount > 0
-    ? Math.round(totalLossDurationSec / totalLossRoundsCount)
-    : 38;
-
-  const pacingStats = {
-    avgWinDurationSec,
-    avgLossDurationSec,
-    fastWins,
-    midWins,
-    lateWins,
-    fastLosses,
-    midLosses,
-    lateLosses,
-  };
-
   return {
     summary: {
       totalMatches,
@@ -389,8 +372,8 @@ export async function getDashboardSummary(): Promise<{
         defenseWinRate,
       },
       tacticalWins,
+      tacticalLosses,
       tradingStats,
-      pacingStats,
       mapBreakdown,
       acsTrend,
     },

@@ -12,16 +12,73 @@ import { Badge } from "@/components/ui/badge";
 import { VALORANT_MAPS, VALORANT_AGENTS, ValorantMap, getAgentIcon } from "@/lib/data/valorant";
 import { Player, MatchAttachment } from "@/lib/db/schema";
 import { createMatch, updateMatch } from "@/lib/actions/matches";
-import { calculateKD, calculateMatchResult, formatRoundDuration } from "@/lib/utils/analytics";
+import { calculateKD, calculateMatchResult } from "@/lib/utils/analytics";
 import { compressImageToWebP, processAndCompressPdf, formatFileSize } from "@/lib/utils/file-compressor";
-import { RoundItem, RoundWinType } from "@/lib/validations/match";
+import { RoundItem, RoundOutcomeType, RoundWinType } from "@/lib/validations/match";
 
-const WIN_TYPE_LABELS: Record<RoundWinType, { label: string; short: string; desc: string; color: string; bg: string; border: string }> = {
-  ELIMINATION: { label: "Musuh Tereliminasi", short: "Eliminasi", desc: "Pertarungan terbuka / Tim lawan habis", color: "text-rose-400", bg: "bg-rose-500/15", border: "border-rose-500/30" },
-  DEFUSE: { label: "Spike Defused (Retake)", short: "Retake / Defuse", desc: "Defender sukses retake & defuse spike", color: "text-sky-400", bg: "bg-sky-500/15", border: "border-sky-500/30" },
-  DETONATION: { label: "Spike Meledak (Post-Plant)", short: "Post-Plant", desc: "Attacker pasang spike & meledak", color: "text-amber-400", bg: "bg-amber-500/15", border: "border-amber-500/30" },
-  TIME: { label: "Waktu Habis (Defense)", short: "Waktu Habis", desc: "Defender menahan site hingga timer ronde 0:00", color: "text-emerald-400", bg: "bg-emerald-500/15", border: "border-emerald-500/30" },
-};
+export interface OutcomeConfig {
+  label: string;
+  short: string;
+  desc: string;
+  color: string;
+  bg: string;
+  border: string;
+}
+
+export function getOutcomeConfig(
+  side: "ATTACK" | "DEFENSE",
+  winner: "TEAM" | "OPPONENT",
+  outcome?: RoundOutcomeType | null
+): OutcomeConfig {
+  const isWin = winner === "TEAM";
+
+  if (isWin) {
+    if (side === "ATTACK") {
+      if (outcome === "DETONATION") {
+        return { label: "Spike Meledak (Post-Plant)", short: "Post-Plant", desc: "Spike berhasil meledak", color: "text-amber-400", bg: "bg-amber-500/15", border: "border-amber-500/30" };
+      }
+      return { label: "Musuh Tereliminasi", short: "Eliminasi", desc: "Semua defender tereliminasi", color: "text-rose-400", bg: "bg-rose-500/15", border: "border-rose-500/30" };
+    } else {
+      // DEFENSE WIN
+      if (outcome === "DEFUSE") {
+        return { label: "Spike Defused (Retake)", short: "Retake", desc: "Spike berhasil didefuse", color: "text-sky-400", bg: "bg-sky-500/15", border: "border-sky-500/30" };
+      }
+      if (outcome === "TIME") {
+        return { label: "Waktu Habis (Stall)", short: "Waktu Habis", desc: "Menahan site hingga 0:00", color: "text-emerald-400", bg: "bg-emerald-500/15", border: "border-emerald-500/30" };
+      }
+      return { label: "Musuh Tereliminasi", short: "Eliminasi", desc: "Semua attacker tereliminasi", color: "text-rose-400", bg: "bg-rose-500/15", border: "border-rose-500/30" };
+    }
+  } else {
+    // LOSS (L)
+    if (side === "ATTACK") {
+      // ATTACK LOSS
+      if (outcome === "DEFUSE") {
+        return { label: "Musuh Retake Spike", short: "Musuh Retake", desc: "Defender berhasil defuse spike kita", color: "text-sky-400", bg: "bg-sky-500/15", border: "border-sky-500/30" };
+      }
+      if (outcome === "TIME") {
+        return { label: "Waktu Habis (Gagal Plant)", short: "Waktu Habis", desc: "Kehabisan waktu sebelum plant", color: "text-emerald-400", bg: "bg-emerald-500/15", border: "border-emerald-500/30" };
+      }
+      return { label: "Tim Tereliminasi", short: "Tereliminasi", desc: "Semua anggota tim mati", color: "text-rose-400", bg: "bg-rose-500/15", border: "border-rose-500/30" };
+    } else {
+      // DEFENSE LOSS
+      if (outcome === "DETONATION") {
+        return { label: "Spike Musuh Meledak", short: "Spike Meledak", desc: "Gagal retake spike musuh", color: "text-amber-400", bg: "bg-amber-500/15", border: "border-amber-500/30" };
+      }
+      return { label: "Tim Tereliminasi", short: "Tereliminasi", desc: "Semua defender tim mati", color: "text-rose-400", bg: "bg-rose-500/15", border: "border-rose-500/30" };
+    }
+  }
+}
+
+export function getValidOutcomes(
+  side: "ATTACK" | "DEFENSE",
+  winner: "TEAM" | "OPPONENT"
+): RoundOutcomeType[] {
+  if (winner === "TEAM") {
+    return side === "ATTACK" ? ["DETONATION", "ELIMINATION"] : ["DEFUSE", "ELIMINATION", "TIME"];
+  } else {
+    return side === "ATTACK" ? ["DEFUSE", "ELIMINATION", "TIME"] : ["DETONATION", "ELIMINATION"];
+  }
+}
 
 interface PlayerStatRow {
   playerId: string;
@@ -122,23 +179,15 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         remLoss--;
       }
 
-      let winType: RoundWinType | null = null;
-      if (winner === "TEAM") {
-        if (roundSide === "ATTACK") {
-          winType = r % 3 === 0 ? "DETONATION" : "ELIMINATION";
-        } else {
-          winType = r % 3 === 0 ? "DEFUSE" : "ELIMINATION";
-        }
-      }
-
-      const defaultDuration = winner === "TEAM" ? 52 : 38;
+      const valid = getValidOutcomes(roundSide, winner);
+      const outcome = valid[0];
 
       items.push({
         round: r,
         side: roundSide,
         winner,
-        winType,
-        durationSeconds: defaultDuration,
+        winType: outcome,
+        outcomeType: outcome,
       });
     }
     return items;
@@ -189,18 +238,15 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
 
         const existing = prev[r - 1];
         const winner = existing ? existing.winner : "TEAM";
-        let winType: RoundWinType | null = existing?.winType ?? null;
-        if (winner === "TEAM" && !winType) {
-          winType = roundSide === "ATTACK" ? "DETONATION" : "DEFUSE";
-        }
-        const durationSeconds = existing?.durationSeconds ?? (winner === "TEAM" ? 52 : 38);
+        const valid = getValidOutcomes(roundSide, winner);
+        const outcome = existing?.outcomeType || existing?.winType || valid[0];
 
         newItems.push({
           round: r,
           side: roundSide,
           winner,
-          winType,
-          durationSeconds,
+          winType: outcome,
+          outcomeType: outcome,
         });
       }
       return newItems;
@@ -212,13 +258,12 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
       prev.map((item) => {
         if (item.round === roundNum) {
           const nextWinner = item.winner === "TEAM" ? "OPPONENT" : "TEAM";
-          const defaultWinType: RoundWinType = item.side === "ATTACK" ? "DETONATION" : "DEFUSE";
-          const defaultDuration = nextWinner === "TEAM" ? 52 : 38;
+          const valid = getValidOutcomes(item.side, nextWinner);
           return {
             ...item,
             winner: nextWinner,
-            winType: nextWinner === "TEAM" ? (item.winType || defaultWinType) : null,
-            durationSeconds: item.durationSeconds ?? defaultDuration,
+            winType: valid[0],
+            outcomeType: valid[0],
           };
         }
         return item;
@@ -226,63 +271,19 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
     );
   };
 
-  const handleCycleWinType = (roundNum: number, e?: React.MouseEvent) => {
+  const handleCycleOutcome = (roundNum: number, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setRoundsTimeline((prev) =>
       prev.map((item) => {
-        if (item.round === roundNum && item.winner === "TEAM") {
-          const current = item.winType || "ELIMINATION";
-          let next: RoundWinType;
-          if (current === "ELIMINATION") next = "DEFUSE";
-          else if (current === "DEFUSE") next = "DETONATION";
-          else if (current === "DETONATION") next = "TIME";
-          else next = "ELIMINATION";
-          return { ...item, winType: next };
-        }
-        return item;
-      })
-    );
-  };
-
-  const handleRoundDurationChange = (roundNum: number, value: string | number) => {
-    if (value === "") {
-      setRoundsTimeline((prev) =>
-        prev.map((item) => (item.round === roundNum ? { ...item, durationSeconds: undefined } : item))
-      );
-      return;
-    }
-    const parsed = typeof value === "number" ? value : parseInt(value, 10);
-    setRoundsTimeline((prev) =>
-      prev.map((item) => {
         if (item.round === roundNum) {
-          return {
-            ...item,
-            durationSeconds: isNaN(parsed) ? undefined : Math.max(1, Math.min(300, parsed)),
-          };
+          const valid = getValidOutcomes(item.side, item.winner);
+          const current = item.outcomeType || item.winType || valid[0];
+          const currIdx = valid.indexOf(current as RoundOutcomeType);
+          const nextOutcome = valid[(currIdx + 1) % valid.length];
+          return { ...item, winType: nextOutcome, outcomeType: nextOutcome };
         }
         return item;
       })
-    );
-  };
-
-  const handleCycleRoundDuration = (roundNum: number, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    const presets = [30, 45, 55, 75, 90, 110];
-    setRoundsTimeline((prev) =>
-      prev.map((item) => {
-        if (item.round === roundNum) {
-          const curr = item.durationSeconds || (item.winner === "TEAM" ? 52 : 38);
-          const nextPreset = presets.find((p) => p > curr) || presets[0];
-          return { ...item, durationSeconds: nextPreset };
-        }
-        return item;
-      })
-    );
-  };
-
-  const handleApplyDurationToAll = (winner: "TEAM" | "OPPONENT", seconds: number) => {
-    setRoundsTimeline((prev) =>
-      prev.map((item) => (item.winner === winner ? { ...item, durationSeconds: seconds } : item))
     );
   };
 
@@ -395,18 +396,6 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
     return 14;
   });
 
-  // Live Round Pacing State (Calculated directly from individual rounds in roundsTimeline)
-  const winRounds = roundsTimeline.filter((r) => r.winner === "TEAM");
-  const lossRounds = roundsTimeline.filter((r) => r.winner === "OPPONENT");
-
-  const liveAvgWinDurationSec = winRounds.length > 0
-    ? Math.round(winRounds.reduce((acc, r) => acc + (r.durationSeconds || 52), 0) / winRounds.length)
-    : 0;
-
-  const liveAvgLossDurationSec = lossRounds.length > 0
-    ? Math.round(lossRounds.reduce((acc, r) => acc + (r.durationSeconds || 38), 0) / lossRounds.length)
-    : 0;
-
   const untradedDeaths = Math.max(0, totalTeamDeaths - tradedDeaths);
   const tradeEfficiency = totalTeamDeaths > 0
     ? Math.min(100, Math.round((tradedDeaths / totalTeamDeaths) * 100))
@@ -430,12 +419,6 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
     setVodUrl("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
     setTradedDeaths(15);
     setTradesWon(16);
-    setRoundsTimeline((prev) =>
-      prev.map((r, i) => ({
-        ...r,
-        durationSeconds: r.winner === "TEAM" ? (i % 2 === 0 ? 56 : 48) : (i % 2 === 0 ? 32 : 40),
-      }))
-    );
 
     if (availablePlayers.length >= 5) {
       setPlayerRows([
@@ -450,12 +433,16 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg(null);
     setLoading(true);
+    setErrorMsg(null);
 
     try {
-      const selectedIds = playerRows.map((r) => r.playerId).filter(Boolean);
-      if (selectedIds.length !== 5) {
+      if (!opponentName.trim()) {
+        throw new Error("Mohon isi Nama Tim Lawan.");
+      }
+
+      const emptyPlayerRow = playerRows.find((r) => !r.playerId);
+      if (emptyPlayerRow) {
         throw new Error("Mohon pilih 5 pemain aktif untuk match ini.");
       }
       
@@ -474,12 +461,19 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         kastPercent: null,
       }));
 
-      const finalRoundsTimeline = roundsTimeline.map((r) => ({
-        ...r,
-        durationSeconds: r.durationSeconds ?? (r.winner === "TEAM" ? 52 : 38),
-        tradedDeaths: r.tradedDeaths ?? Math.round(tradedDeaths / Math.max(1, roundsTimeline.length)),
-        tradesWon: r.tradesWon ?? Math.round(tradesWon / Math.max(1, roundsTimeline.length)),
-      }));
+      const finalRoundsTimeline = roundsTimeline.map((r) => {
+        const valid = getValidOutcomes(r.side, r.winner);
+        const outcome = r.outcomeType || r.winType || valid[0];
+        return {
+          round: r.round,
+          side: r.side,
+          winner: r.winner,
+          winType: outcome,
+          outcomeType: outcome,
+          tradedDeaths: r.tradedDeaths ?? Math.round(tradedDeaths / Math.max(1, roundsTimeline.length)),
+          tradesWon: r.tradesWon ?? Math.round(tradesWon / Math.max(1, roundsTimeline.length)),
+        };
+      });
 
       const payload = {
         matchDate,
@@ -734,7 +728,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
             <>
               {/* Tally / Sync Status Bar */}
               <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg bg-[#090C10] border border-[#1C2433] text-xs">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                   <div className="flex items-center gap-1.5 font-bold">
                     <span className="w-2 h-2 rounded-full bg-emerald-400" />
                     <span className="text-emerald-400">Tim: {roundsTimeline.filter(r => r.winner === "TEAM").length} W</span>
@@ -747,16 +741,8 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 text-[11px]">
-                  <span className="flex items-center gap-1 font-mono text-[#94A3B8]">
-                    <Timer className="w-3 h-3 text-emerald-400" />
-                    Rata W: <strong className="text-emerald-400">{formatRoundDuration(liveAvgWinDurationSec)}</strong>
-                  </span>
-                  <span className="text-[#334155]">•</span>
-                  <span className="flex items-center gap-1 font-mono text-[#94A3B8]">
-                    <Timer className="w-3 h-3 text-rose-400" />
-                    Rata L: <strong className="text-rose-400">{formatRoundDuration(liveAvgLossDurationSec)}</strong>
-                  </span>
+                <div className="text-[11px] text-[#94A3B8]">
+                  💡 Klik <strong className="text-white">W/L</strong> untuk ganti hasil, klik <strong className="text-sky-400">Tag Taktik</strong> untuk ganti cara menang / cara kalah
                 </div>
 
                 {roundsTimeline.filter(r => r.winner === "TEAM").length !== Number(scoreTeam) && (
@@ -785,13 +771,12 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                   {roundsTimeline.slice(0, 12).map((item) => {
                     const isWin = item.winner === "TEAM";
                     const isPistol = item.round === 1;
-                    const winType: RoundWinType = item.winType || "ELIMINATION";
-                    const winConfig = WIN_TYPE_LABELS[winType];
+                    const outcomeConfig = getOutcomeConfig(item.side, item.winner, item.outcomeType || item.winType);
 
                     return (
                       <div
                         key={item.round}
-                        className={`relative rounded-xl border p-1.5 flex flex-col items-center justify-between gap-1 transition-all select-none ${
+                        className={`relative rounded-xl border p-1.5 flex flex-col items-center justify-between gap-1.5 transition-all select-none ${
                           isWin
                             ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
                             : "bg-rose-500/10 border-rose-500/30 text-rose-400"
@@ -810,39 +795,20 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           type="button"
                           onClick={() => handleToggleRoundWinner(item.round)}
                           title="Klik untuk ubah Menang (W) / Kalah (L)"
-                          className="text-base font-black tracking-wider hover:scale-110 active:scale-95 transition-transform"
+                          className="text-lg font-black tracking-wider hover:scale-110 active:scale-95 transition-transform py-0.5"
                         >
                           {isWin ? "W" : "L"}
                         </button>
 
-                        {isWin ? (
-                          <button
-                            type="button"
-                            onClick={(e) => handleCycleWinType(item.round, e)}
-                            title={`Cara Menang: ${winConfig.label} (Klik untuk ganti)`}
-                            className={`w-full py-0.5 px-0.5 rounded text-[8px] sm:text-[9px] font-bold border truncate hover:brightness-125 transition-all text-center ${winConfig.bg} ${winConfig.border} ${winConfig.color}`}
-                          >
-                            {winConfig.short}
-                          </button>
-                        ) : (
-                          <span className="text-[9px] text-[#64748B] font-medium">-</span>
-                        )}
-
-                        {/* Per-Round Direct Duration Typing Input */}
-                        <div className="w-full flex items-center justify-center gap-0.5 bg-[#090C10] border border-[#1C2433] focus-within:border-sky-500/80 rounded px-1 py-0.5 transition-colors">
-                          <Timer className="w-2.5 h-2.5 text-sky-400 shrink-0 opacity-80" />
-                          <input
-                            type="number"
-                            min="5"
-                            max="240"
-                            value={item.durationSeconds ?? ""}
-                            onChange={(e) => handleRoundDurationChange(item.round, e.target.value)}
-                            placeholder={isWin ? "52" : "38"}
-                            title={`Ketik durasi Ronde R${item.round} dalam detik (e.g. 45).`}
-                            className="w-full text-center bg-transparent text-[9px] sm:text-[10px] font-mono font-bold text-slate-200 focus:text-white focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0"
-                          />
-                          <span className="text-[8px] text-[#64748B] font-mono select-none">s</span>
-                        </div>
+                        {/* Tactical Outcome Cycler (Both for W and L) */}
+                        <button
+                          type="button"
+                          onClick={(e) => handleCycleOutcome(item.round, e)}
+                          title={`${isWin ? "Cara Menang" : "Cara Kalah"}: ${outcomeConfig.label} - ${outcomeConfig.desc}. Klik untuk ganti.`}
+                          className={`w-full py-1 px-0.5 rounded text-[8px] sm:text-[9px] font-bold border truncate hover:brightness-125 transition-all text-center ${outcomeConfig.bg} ${outcomeConfig.border} ${outcomeConfig.color}`}
+                        >
+                          {outcomeConfig.short}
+                        </button>
                       </div>
                     );
                   })}
@@ -868,13 +834,12 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                     {roundsTimeline.slice(12, 24).map((item) => {
                       const isWin = item.winner === "TEAM";
                       const isPistol = item.round === 13;
-                      const winType: RoundWinType = item.winType || "ELIMINATION";
-                      const winConfig = WIN_TYPE_LABELS[winType];
+                      const outcomeConfig = getOutcomeConfig(item.side, item.winner, item.outcomeType || item.winType);
 
                       return (
                         <div
                           key={item.round}
-                          className={`relative rounded-xl border p-1.5 flex flex-col items-center justify-between gap-1 transition-all select-none ${
+                          className={`relative rounded-xl border p-1.5 flex flex-col items-center justify-between gap-1.5 transition-all select-none ${
                             isWin
                               ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
                               : "bg-rose-500/10 border-rose-500/30 text-rose-400"
@@ -893,39 +858,20 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                             type="button"
                             onClick={() => handleToggleRoundWinner(item.round)}
                             title="Klik untuk ubah Menang (W) / Kalah (L)"
-                            className="text-base font-black tracking-wider hover:scale-110 active:scale-95 transition-transform"
+                            className="text-lg font-black tracking-wider hover:scale-110 active:scale-95 transition-transform py-0.5"
                           >
                             {isWin ? "W" : "L"}
                           </button>
 
-                          {isWin ? (
-                            <button
-                              type="button"
-                              onClick={(e) => handleCycleWinType(item.round, e)}
-                              title={`Cara Menang: ${winConfig.label} (Klik untuk ganti)`}
-                              className={`w-full py-0.5 px-0.5 rounded text-[8px] sm:text-[9px] font-bold border truncate hover:brightness-125 transition-all text-center ${winConfig.bg} ${winConfig.border} ${winConfig.color}`}
-                            >
-                              {winConfig.short}
-                            </button>
-                          ) : (
-                            <span className="text-[9px] text-[#64748B] font-medium">-</span>
-                          )}
-
-                          {/* Per-Round Direct Duration Typing Input */}
-                          <div className="w-full flex items-center justify-center gap-0.5 bg-[#090C10] border border-[#1C2433] focus-within:border-sky-500/80 rounded px-1 py-0.5 transition-colors">
-                            <Timer className="w-2.5 h-2.5 text-sky-400 shrink-0 opacity-80" />
-                            <input
-                              type="number"
-                              min="5"
-                              max="240"
-                              value={item.durationSeconds ?? ""}
-                              onChange={(e) => handleRoundDurationChange(item.round, e.target.value)}
-                              placeholder={isWin ? "52" : "38"}
-                              title={`Ketik durasi Ronde R${item.round} dalam detik (e.g. 45).`}
-                              className="w-full text-center bg-transparent text-[9px] sm:text-[10px] font-mono font-bold text-slate-200 focus:text-white focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0"
-                            />
-                            <span className="text-[8px] text-[#64748B] font-mono select-none">s</span>
-                          </div>
+                          {/* Tactical Outcome Cycler (Both for W and L) */}
+                          <button
+                            type="button"
+                            onClick={(e) => handleCycleOutcome(item.round, e)}
+                            title={`${isWin ? "Cara Menang" : "Cara Kalah"}: ${outcomeConfig.label} - ${outcomeConfig.desc}. Klik untuk ganti.`}
+                            className={`w-full py-1 px-0.5 rounded text-[8px] sm:text-[9px] font-bold border truncate hover:brightness-125 transition-all text-center ${outcomeConfig.bg} ${outcomeConfig.border} ${outcomeConfig.color}`}
+                          >
+                            {outcomeConfig.short}
+                          </button>
                         </div>
                       );
                     })}
@@ -945,13 +891,12 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                   <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-1.5">
                     {roundsTimeline.slice(24).map((item) => {
                       const isWin = item.winner === "TEAM";
-                      const winType: RoundWinType = item.winType || "ELIMINATION";
-                      const winConfig = WIN_TYPE_LABELS[winType];
+                      const outcomeConfig = getOutcomeConfig(item.side, item.winner, item.outcomeType || item.winType);
 
                       return (
                         <div
                           key={item.round}
-                          className={`relative rounded-xl border p-1.5 flex flex-col items-center justify-between gap-1 transition-all select-none ${
+                          className={`relative rounded-xl border p-1.5 flex flex-col items-center justify-between gap-1.5 transition-all select-none ${
                             isWin
                               ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
                               : "bg-rose-500/10 border-rose-500/30 text-rose-400"
@@ -965,39 +910,20 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                             type="button"
                             onClick={() => handleToggleRoundWinner(item.round)}
                             title="Klik untuk ubah Menang (W) / Kalah (L)"
-                            className="text-base font-black tracking-wider hover:scale-110 active:scale-95 transition-transform"
+                            className="text-lg font-black tracking-wider hover:scale-110 active:scale-95 transition-transform py-0.5"
                           >
                             {isWin ? "W" : "L"}
                           </button>
 
-                          {isWin ? (
-                            <button
-                              type="button"
-                              onClick={(e) => handleCycleWinType(item.round, e)}
-                              title={`Cara Menang: ${winConfig.label} (Klik untuk ganti)`}
-                              className={`w-full py-0.5 px-0.5 rounded text-[8px] sm:text-[9px] font-bold border truncate hover:brightness-125 transition-all text-center ${winConfig.bg} ${winConfig.border} ${winConfig.color}`}
-                            >
-                              {winConfig.short}
-                            </button>
-                          ) : (
-                            <span className="text-[9px] text-[#64748B] font-medium">-</span>
-                          )}
-
-                          {/* Per-Round Direct Duration Typing Input */}
-                          <div className="w-full flex items-center justify-center gap-0.5 bg-[#090C10] border border-[#1C2433] focus-within:border-sky-500/80 rounded px-1 py-0.5 transition-colors">
-                            <Timer className="w-2.5 h-2.5 text-sky-400 shrink-0 opacity-80" />
-                            <input
-                              type="number"
-                              min="5"
-                              max="240"
-                              value={item.durationSeconds ?? ""}
-                              onChange={(e) => handleRoundDurationChange(item.round, e.target.value)}
-                              placeholder={isWin ? "52" : "38"}
-                              title={`Ketik durasi Ronde R${item.round} dalam detik (e.g. 45).`}
-                              className="w-full text-center bg-transparent text-[9px] sm:text-[10px] font-mono font-bold text-slate-200 focus:text-white focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0"
-                            />
-                            <span className="text-[8px] text-[#64748B] font-mono select-none">s</span>
-                          </div>
+                          {/* Tactical Outcome Cycler (Both for W and L) */}
+                          <button
+                            type="button"
+                            onClick={(e) => handleCycleOutcome(item.round, e)}
+                            title={`${isWin ? "Cara Menang" : "Cara Kalah"}: ${outcomeConfig.label} - ${outcomeConfig.desc}. Klik untuk ganti.`}
+                            className={`w-full py-1 px-0.5 rounded text-[8px] sm:text-[9px] font-bold border truncate hover:brightness-125 transition-all text-center ${outcomeConfig.bg} ${outcomeConfig.border} ${outcomeConfig.color}`}
+                          >
+                            {outcomeConfig.short}
+                          </button>
                         </div>
                       );
                     })}
@@ -1005,85 +931,80 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                 </div>
               )}
 
-              {/* TACTICAL WIN BREAKDOWN PANEL */}
+              {/* TACTICAL BREAKDOWN SUMMARY IN SECTION 2 */}
               {(() => {
                 const teamWins = roundsTimeline.filter(r => r.winner === "TEAM");
-                const elimWins = teamWins.filter(r => !r.winType || r.winType === "ELIMINATION").length;
-                const defuseWins = teamWins.filter(r => r.winType === "DEFUSE").length;
-                const detonationWins = teamWins.filter(r => r.winType === "DETONATION").length;
-                const timeWins = teamWins.filter(r => r.winType === "TIME").length;
+                const teamLosses = roundsTimeline.filter(r => r.winner === "OPPONENT");
+
+                const defuseWins = teamWins.filter(r => (r.outcomeType || r.winType) === "DEFUSE").length;
+                const detonationWins = teamWins.filter(r => (r.outcomeType || r.winType) === "DETONATION").length;
+                const timeWins = teamWins.filter(r => (r.outcomeType || r.winType) === "TIME").length;
+                const elimWins = teamWins.filter(r => !(r.outcomeType || r.winType) || (r.outcomeType || r.winType) === "ELIMINATION").length;
+
+                const defusedLosses = teamLosses.filter(r => (r.outcomeType || r.winType) === "DEFUSE").length;
+                const detonationLosses = teamLosses.filter(r => (r.outcomeType || r.winType) === "DETONATION").length;
+                const timeoutLosses = teamLosses.filter(r => (r.outcomeType || r.winType) === "TIME").length;
+                const elimLosses = teamLosses.filter(r => !(r.outcomeType || r.winType) || (r.outcomeType || r.winType) === "ELIMINATION").length;
 
                 return (
-                  <div className="p-3.5 rounded-xl bg-[#090C10] border border-[#1C2433] space-y-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-amber-400" />
-                        <span className="text-xs font-bold text-white">Analisis Cara Menang Ronde (Win Conditions)</span>
+                  <div className="space-y-3 pt-2">
+                    {/* W Breakdown */}
+                    <div className="p-3.5 rounded-xl bg-[#090C10] border border-[#1C2433] space-y-2.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-emerald-400">Analisis Cara Menang ({teamWins.length} W)</span>
+                        <span className="text-[10px] text-[#94A3B8]">Klik badge pada ronde W untuk mengganti</span>
                       </div>
-                      <span className="text-[11px] text-[#94A3B8]">
-                        Klik tag taktik pada kotak ronde <strong className="text-emerald-400 font-bold">W</strong> untuk mengganti cara menang.
-                      </span>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+                        <div className="p-2 rounded-lg bg-[#0F141C] border border-sky-500/20">
+                          <span className="text-[10px] text-sky-400 font-semibold block">Retake / Defuse</span>
+                          <span className="text-base font-black text-white">{defuseWins}</span>
+                          <span className="text-[9px] text-[#64748B] block">Defender</span>
+                        </div>
+                        <div className="p-2 rounded-lg bg-[#0F141C] border border-amber-500/20">
+                          <span className="text-[10px] text-amber-400 font-semibold block">Post-Plant</span>
+                          <span className="text-base font-black text-white">{detonationWins}</span>
+                          <span className="text-[9px] text-[#64748B] block">Attacker</span>
+                        </div>
+                        <div className="p-2 rounded-lg bg-[#0F141C] border border-rose-500/20">
+                          <span className="text-[10px] text-rose-400 font-semibold block">Eliminasi</span>
+                          <span className="text-base font-black text-white">{elimWins}</span>
+                          <span className="text-[9px] text-[#64748B] block">Duel Bersih</span>
+                        </div>
+                        <div className="p-2 rounded-lg bg-[#0F141C] border border-emerald-500/20">
+                          <span className="text-[10px] text-emerald-400 font-semibold block">Waktu Habis</span>
+                          <span className="text-base font-black text-white">{timeWins}</span>
+                          <span className="text-[9px] text-[#64748B] block">Defender Stall</span>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                      {/* Retake & Defuse */}
-                      <div className="p-2.5 rounded-lg bg-[#0F141C] border border-sky-500/20 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-sky-400 flex items-center gap-1">
-                            <ShieldCheck className="w-3 h-3" />
-                            Retake & Defuse
-                          </span>
-                          <span className="text-[10px] text-[#94A3B8] font-mono">
-                            {teamWins.length > 0 ? Math.round((defuseWins / teamWins.length) * 100) : 0}%
-                          </span>
-                        </div>
-                        <div className="text-lg font-black text-white">{defuseWins} <span className="text-xs font-medium text-[#94A3B8]">Ronde</span></div>
-                        <p className="text-[10px] text-[#64748B]">Spike berhasil didefuse (Defender)</p>
+                    {/* L Breakdown */}
+                    <div className="p-3.5 rounded-xl bg-[#090C10] border border-[#1C2433] space-y-2.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-bold text-rose-400">Analisis Cara Kalah ({teamLosses.length} L)</span>
+                        <span className="text-[10px] text-[#94A3B8]">Klik badge pada ronde L untuk mengganti</span>
                       </div>
-
-                      {/* Post-Plant */}
-                      <div className="p-2.5 rounded-lg bg-[#0F141C] border border-amber-500/20 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-amber-400 flex items-center gap-1">
-                            <Bomb className="w-3 h-3" />
-                            Post-Plant (Boom)
-                          </span>
-                          <span className="text-[10px] text-[#94A3B8] font-mono">
-                            {teamWins.length > 0 ? Math.round((detonationWins / teamWins.length) * 100) : 0}%
-                          </span>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+                        <div className="p-2 rounded-lg bg-[#0F141C] border border-sky-500/20">
+                          <span className="text-[10px] text-sky-400 font-semibold block">Musuh Retake</span>
+                          <span className="text-base font-black text-white">{defusedLosses}</span>
+                          <span className="text-[9px] text-[#64748B] block">Saat Attack</span>
                         </div>
-                        <div className="text-lg font-black text-white">{detonationWins} <span className="text-xs font-medium text-[#94A3B8]">Ronde</span></div>
-                        <p className="text-[10px] text-[#64748B]">Spike meledak (Attacker)</p>
-                      </div>
-
-                      {/* Eliminasi */}
-                      <div className="p-2.5 rounded-lg bg-[#0F141C] border border-rose-500/20 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-rose-400 flex items-center gap-1">
-                            <Swords className="w-3 h-3" />
-                            Musuh Eliminasi
-                          </span>
-                          <span className="text-[10px] text-[#94A3B8] font-mono">
-                            {teamWins.length > 0 ? Math.round((elimWins / teamWins.length) * 100) : 0}%
-                          </span>
+                        <div className="p-2 rounded-lg bg-[#0F141C] border border-amber-500/20">
+                          <span className="text-[10px] text-amber-400 font-semibold block">Spike Meledak</span>
+                          <span className="text-base font-black text-white">{detonationLosses}</span>
+                          <span className="text-[9px] text-[#64748B] block">Saat Defense</span>
                         </div>
-                        <div className="text-lg font-black text-white">{elimWins} <span className="text-xs font-medium text-[#94A3B8]">Ronde</span></div>
-                        <p className="text-[10px] text-[#64748B]">Semua musuh tereliminasi</p>
-                      </div>
-
-                      {/* Waktu Habis */}
-                      <div className="p-2.5 rounded-lg bg-[#0F141C] border border-emerald-500/20 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
-                            <Timer className="w-3 h-3" />
-                            Waktu Habis
-                          </span>
-                          <span className="text-[10px] text-[#94A3B8] font-mono">
-                            {teamWins.length > 0 ? Math.round((timeWins / teamWins.length) * 100) : 0}%
-                          </span>
+                        <div className="p-2 rounded-lg bg-[#0F141C] border border-rose-500/20">
+                          <span className="text-[10px] text-rose-400 font-semibold block">Tereliminasi</span>
+                          <span className="text-base font-black text-white">{elimLosses}</span>
+                          <span className="text-[9px] text-[#64748B] block">Wiped Out</span>
                         </div>
-                        <div className="text-lg font-black text-white">{timeWins} <span className="text-xs font-medium text-[#94A3B8]">Ronde</span></div>
-                        <p className="text-[10px] text-[#64748B]">Site tertahan hingga timer 0:00</p>
+                        <div className="p-2 rounded-lg bg-[#0F141C] border border-emerald-500/20">
+                          <span className="text-[10px] text-emerald-400 font-semibold block">Gagal Plant (0:00)</span>
+                          <span className="text-base font-black text-white">{timeoutLosses}</span>
+                          <span className="text-[9px] text-[#64748B] block">Saat Attack</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1436,266 +1357,118 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         </CardContent>
       </Card>
 
-      {/* SECTION 4: ANALISIS TRADING KILLS & DURASI RONDE (PACING) */}
+      {/* SECTION 4: ANALISIS TRADING KILLS */}
       <Card>
         <CardHeader className="py-3.5 px-5 border-b border-[#1C2433]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <CardTitle className="text-sm font-semibold">4. Analisis Trading Kills & Durasi Ronde (Pacing)</CardTitle>
+              <Swords className="w-4 h-4 text-rose-400" />
+              <CardTitle className="text-sm font-semibold">4. Analisis Trading Kills & Crosshair Spacing</CardTitle>
               <Badge variant="outline" className="text-[10px] text-amber-400 border-amber-500/30 bg-amber-500/10">
                 Fitur Analisis Coach
               </Badge>
             </div>
-            <span className="text-xs text-[#94A3B8]">
-              Evaluasi Spacing & Kecepatan Ronde
-            </span>
+            <Badge
+              variant={tradeEfficiency >= 60 ? "win" : tradeEfficiency >= 45 ? "draw" : "loss"}
+              className="text-xs font-bold"
+            >
+              {tradeEfficiency}% Trade Rate
+            </Badge>
           </div>
         </CardHeader>
-        <CardContent className="p-5 space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* LEFT: TRADING KILLS ANALYSIS */}
-            <div className="p-4 rounded-xl bg-[#090C10] border border-[#1C2433] space-y-4">
-              <div className="flex items-center justify-between border-b border-[#1C2433] pb-3">
-                <div className="flex items-center gap-2">
-                  <Swords className="w-4 h-4 text-rose-400" />
-                  <span className="text-sm font-bold text-white">Trading Kills (Refrag Quality)</span>
-                </div>
-                <Badge
-                  variant={tradeEfficiency >= 60 ? "win" : tradeEfficiency >= 45 ? "draw" : "loss"}
-                  className="text-xs font-bold"
+        <CardContent className="p-5 space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
+            <div className="p-3 rounded-xl bg-[#090C10] border border-[#1C2433]">
+              <span className="text-xs font-semibold text-[#94A3B8] block">Total Deaths Tim</span>
+              <span className="text-2xl font-black text-rose-400">{totalTeamDeaths}</span>
+              <span className="text-[10px] text-[#64748B] block mt-0.5">Akumulasi 5 pemain</span>
+            </div>
+            <div className="p-3 rounded-xl bg-[#090C10] border border-emerald-500/20">
+              <span className="text-xs font-semibold text-emerald-400 block">Kematian Di-Trade</span>
+              <span className="text-2xl font-black text-emerald-400">{tradedDeaths}</span>
+              <span className="text-[10px] text-[#64748B] block mt-0.5">Teman mati langsung dibalas</span>
+            </div>
+            <div className="p-3 rounded-xl bg-[#090C10] border border-amber-500/20">
+              <span className="text-xs font-semibold text-amber-400 block">Dry Deaths (Terisolasi)</span>
+              <span className="text-2xl font-black text-amber-400">{untradedDeaths}</span>
+              <span className="text-[10px] text-[#64748B] block mt-0.5">Mati tanpa sempat di-refrag</span>
+            </div>
+          </div>
+
+          {/* Stepper Inputs for Coach */}
+          <div className="p-4 rounded-xl bg-[#090C10] border border-[#1C2433] space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[#1C2433]">
+              <div>
+                <label className="text-xs font-bold text-white block">Kematian Berhasil Di-Trade (Traded Deaths)</label>
+                <span className="text-[11px] text-[#64748B]">Berapa kali rekan tim langsung membalas kill setelah teman gugur</span>
+              </div>
+              <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setTradedDeaths((prev) => Math.max(0, prev - 1))}
+                  className="h-8 w-8 p-0 text-sm"
                 >
-                  {tradeEfficiency}% Trade Rate
-                </Badge>
-              </div>
-
-              {/* Stat Gauges */}
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="p-2.5 rounded-lg bg-[#0F141C] border border-[#1C2433]">
-                  <span className="text-[10px] font-semibold text-[#94A3B8] block">Total Deaths Tim</span>
-                  <span className="text-lg font-black text-rose-400">{totalTeamDeaths}</span>
-                </div>
-                <div className="p-2.5 rounded-lg bg-[#0F141C] border border-emerald-500/20">
-                  <span className="text-[10px] font-semibold text-emerald-400 block">Kematian Di-Trade</span>
-                  <span className="text-lg font-black text-emerald-400">{tradedDeaths}</span>
-                </div>
-                <div className="p-2.5 rounded-lg bg-[#0F141C] border border-amber-500/20">
-                  <span className="text-[10px] font-semibold text-amber-400 block">Dry Deaths (Terisolasi)</span>
-                  <span className="text-lg font-black text-amber-400">{untradedDeaths}</span>
-                </div>
-              </div>
-
-              {/* Stepper Inputs for Coach */}
-              <div className="space-y-3 pt-1">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-xs font-bold text-white block">Kematian Berhasil Di-Trade (Traded Deaths)</label>
-                    <span className="text-[11px] text-[#64748B]">Berapa kali rekan tim langsung membalas kill setelah teman mati</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setTradedDeaths((prev) => Math.max(0, prev - 1))}
-                      className="h-7 w-7 p-0 text-xs"
-                    >
-                      -
-                    </Button>
-                    <span className="w-8 text-center font-bold text-sm text-emerald-400">{tradedDeaths}</span>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setTradedDeaths((prev) => Math.min(totalTeamDeaths || 50, prev + 1))}
-                      className="h-7 w-7 p-0 text-xs"
-                    >
-                      +
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-xs font-bold text-white block">Kill Trade Balasan (Trades Won / Refrags)</label>
-                    <span className="text-[11px] text-[#64748B]">Total kill balasan yang didapat tim dalam jeda 3-5 detik</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setTradesWon((prev) => Math.max(0, prev - 1))}
-                      className="h-7 w-7 p-0 text-xs"
-                    >
-                      -
-                    </Button>
-                    <span className="w-8 text-center font-bold text-sm text-sky-400">{tradesWon}</span>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setTradesWon((prev) => prev + 1)}
-                      className="h-7 w-7 p-0 text-xs"
-                    >
-                      +
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Assessment Note */}
-              <div className={`p-3 rounded-lg border text-xs leading-relaxed ${
-                tradeEfficiency >= 60
-                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
-                  : tradeEfficiency >= 45
-                  ? "bg-amber-500/10 border-amber-500/30 text-amber-300"
-                  : "bg-rose-500/10 border-rose-500/30 text-rose-300"
-              }`}>
-                {tradeEfficiency >= 60 ? (
-                  <p>🔥 <strong>Trade Sangat Baik ({tradeEfficiency}%):</strong> Spacing dan reaksi crosshair refrag pemain sangat rapat, tim jarang kehilangan orang secara gratis.</p>
-                ) : tradeEfficiency >= 45 ? (
-                  <p>⚡ <strong>Trade Standar ({tradeEfficiency}%):</strong> Koordinasi trade cukup solid, namun masih terdapat {untradedDeaths} kematian tanpa balasan saat rotasi atau isolasi site.</p>
-                ) : (
-                  <p>⚠️ <strong>Trade Perlu Evaluasi ({tradeEfficiency}%):</strong> Terlalu banyak dry deaths ({untradedDeaths} kali mati tanpa balasan). Perbaiki jarak antar pemain saat eksekusi atau defense.</p>
-                )}
+                  -
+                </Button>
+                <span className="w-10 text-center font-bold text-base text-emerald-400">{tradedDeaths}</span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setTradedDeaths((prev) => Math.min(totalTeamDeaths || 50, prev + 1))}
+                  className="h-8 w-8 p-0 text-sm"
+                >
+                  +
+                </Button>
               </div>
             </div>
 
-            {/* RIGHT: ROUND PACING & DURATION */}
-            <div className="p-4 rounded-xl bg-[#090C10] border border-[#1C2433] space-y-4">
-              <div className="flex items-center justify-between border-b border-[#1C2433] pb-3">
-                <div className="flex items-center gap-2">
-                  <Timer className="w-4 h-4 text-sky-400" />
-                  <span className="text-sm font-bold text-white">Waktu Ronde Menang vs Kalah (Pacing)</span>
-                </div>
-                <Badge variant="outline" className="text-[10px] text-sky-400 border-sky-500/30">
-                  Dihitung dari Input Per-Ronde
-                </Badge>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1">
+              <div>
+                <label className="text-xs font-bold text-white block">Kill Trade Balasan (Trades Won / Refrags)</label>
+                <span className="text-[11px] text-[#64748B]">Total kill balasan yang didapat tim dalam jeda 3-5 detik</span>
               </div>
-
-              {/* Aggregated from Per-Round Inputs */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Win Duration */}
-                <div className="p-3 rounded-lg bg-[#0F141C] border border-emerald-500/20 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-emerald-400">Rata-rata Ronde Menang</span>
-                    <span className="text-xs text-[#94A3B8]">({winRounds.length} Ronde)</span>
-                  </div>
-                  <div className="text-2xl font-black font-mono text-white">
-                    {formatRoundDuration(liveAvgWinDurationSec)}{" "}
-                    <span className="text-xs font-medium text-[#94A3B8]">({liveAvgWinDurationSec}s)</span>
-                  </div>
-
-                  {/* Batch Quick-Assign */}
-                  <div className="pt-1 space-y-1">
-                    <span className="text-[10px] text-[#64748B] block">Set Cepat Semua Ronde W:</span>
-                    <div className="flex items-center gap-1 text-[10px]">
-                      <button
-                        type="button"
-                        onClick={() => handleApplyDurationToAll("TEAM", 35)}
-                        className="px-2 py-0.5 rounded bg-[#161D28] text-[#94A3B8] hover:text-white hover:bg-emerald-500/20 transition-colors"
-                      >
-                        ⚡ 35s
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleApplyDurationToAll("TEAM", 55)}
-                        className="px-2 py-0.5 rounded bg-[#161D28] text-[#94A3B8] hover:text-white hover:bg-emerald-500/20 transition-colors"
-                      >
-                        ⚖️ 55s
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleApplyDurationToAll("TEAM", 85)}
-                        className="px-2 py-0.5 rounded bg-[#161D28] text-[#94A3B8] hover:text-white hover:bg-emerald-500/20 transition-colors"
-                      >
-                        ⏳ 85s
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Loss Duration */}
-                <div className="p-3 rounded-lg bg-[#0F141C] border border-rose-500/20 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-rose-400">Rata-rata Ronde Kalah</span>
-                    <span className="text-xs text-[#94A3B8]">({lossRounds.length} Ronde)</span>
-                  </div>
-                  <div className="text-2xl font-black font-mono text-white">
-                    {formatRoundDuration(liveAvgLossDurationSec)}{" "}
-                    <span className="text-xs font-medium text-[#94A3B8]">({liveAvgLossDurationSec}s)</span>
-                  </div>
-
-                  {/* Batch Quick-Assign */}
-                  <div className="pt-1 space-y-1">
-                    <span className="text-[10px] text-[#64748B] block">Set Cepat Semua Ronde L:</span>
-                    <div className="flex items-center gap-1 text-[10px]">
-                      <button
-                        type="button"
-                        onClick={() => handleApplyDurationToAll("OPPONENT", 30)}
-                        className="px-2 py-0.5 rounded bg-[#161D28] text-[#94A3B8] hover:text-white hover:bg-rose-500/20 transition-colors"
-                      >
-                        ⚡ 30s
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleApplyDurationToAll("OPPONENT", 48)}
-                        className="px-2 py-0.5 rounded bg-[#161D28] text-[#94A3B8] hover:text-white hover:bg-rose-500/20 transition-colors"
-                      >
-                        ⚖️ 48s
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleApplyDurationToAll("OPPONENT", 80)}
-                        className="px-2 py-0.5 rounded bg-[#161D28] text-[#94A3B8] hover:text-white hover:bg-rose-500/20 transition-colors"
-                      >
-                        ⏳ 80s
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Comparison Visual Bar */}
-              <div className="space-y-1.5 pt-1">
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-[#94A3B8]">Perbandingan Waktu Menang vs Kalah:</span>
-                  <span className="text-white font-mono">
-                    W: {formatRoundDuration(liveAvgWinDurationSec)} vs L: {formatRoundDuration(liveAvgLossDurationSec)}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[10px] text-emerald-400 font-bold">
-                      <span>Menang ({liveAvgWinDurationSec}s)</span>
-                      <span>{liveAvgWinDurationSec < 45 ? "⚡ Fast Rush" : liveAvgWinDurationSec <= 75 ? "⚖️ Mid Exec" : "⏳ Late Round"}</span>
-                    </div>
-                    <div className="w-full bg-[#161D28] h-2 rounded-full overflow-hidden">
-                      <div className="bg-emerald-400 h-full rounded-full" style={{ width: `${Math.min(100, (liveAvgWinDurationSec / 100) * 100)}%` }} />
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[10px] text-rose-400 font-bold">
-                      <span>Kalah ({liveAvgLossDurationSec}s)</span>
-                      <span>{liveAvgLossDurationSec < 45 ? "⚡ Early Pick" : liveAvgLossDurationSec <= 75 ? "⚖️ Mid Round" : "⏳ Post-Plant Loss"}</span>
-                    </div>
-                    <div className="w-full bg-[#161D28] h-2 rounded-full overflow-hidden">
-                      <div className="bg-rose-400 h-full rounded-full" style={{ width: `${Math.min(100, (liveAvgLossDurationSec / 100) * 100)}%` }} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Pacing Coach Insight */}
-              <div className="p-3 rounded-lg bg-[#0F141C] border border-sky-500/20 text-xs text-[#94A3B8] leading-relaxed">
-                💡 <strong>Insight Pacing Coach:</strong>{" "}
-                {liveAvgWinDurationSec > liveAvgLossDurationSec ? (
-                  <span>Tim bermain lebih konsisten saat eksekusi sabar & default ({formatRoundDuration(liveAvgWinDurationSec)}), namun rentan kalah jika terjadi first blood cepat sebelum {formatRoundDuration(liveAvgLossDurationSec)}.</span>
-                ) : (
-                  <span>Tim sangat mematikan saat tempo cepat ({formatRoundDuration(liveAvgWinDurationSec)}), namun kesulitan memenangkan ronde jika pertandingan berlarut-larut ke late game.</span>
-                )}
+              <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setTradesWon((prev) => Math.max(0, prev - 1))}
+                  className="h-8 w-8 p-0 text-sm"
+                >
+                  -
+                </Button>
+                <span className="w-10 text-center font-bold text-base text-sky-400">{tradesWon}</span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setTradesWon((prev) => prev + 1)}
+                  className="h-8 w-8 p-0 text-sm"
+                >
+                  +
+                </Button>
               </div>
             </div>
+          </div>
+
+          {/* Assessment Note */}
+          <div className={`p-3.5 rounded-xl border text-xs leading-relaxed ${
+            tradeEfficiency >= 60
+              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
+              : tradeEfficiency >= 45
+              ? "bg-amber-500/10 border-amber-500/30 text-amber-300"
+              : "bg-rose-500/10 border-rose-500/30 text-rose-300"
+          }`}>
+            {tradeEfficiency >= 60 ? (
+              <p>🔥 <strong>Trade Sangat Baik ({tradeEfficiency}%):</strong> Spacing dan reaksi crosshair refrag pemain sangat rapat, tim jarang kehilangan orang secara gratis.</p>
+            ) : tradeEfficiency >= 45 ? (
+              <p>⚡ <strong>Trade Standar ({tradeEfficiency}%):</strong> Koordinasi trade cukup solid, namun masih terdapat {untradedDeaths} kematian tanpa balasan saat rotasi atau isolasi site.</p>
+            ) : (
+              <p>⚠️ <strong>Trade Perlu Evaluasi ({tradeEfficiency}%):</strong> Terlalu banyak dry deaths ({untradedDeaths} kali mati tanpa balasan). Perbaiki jarak antar pemain saat eksekusi atau defense.</p>
+            )}
           </div>
         </CardContent>
       </Card>

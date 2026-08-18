@@ -27,21 +27,22 @@ export const attachmentSchema = z.object({
   uploadedAt: z.string(),
 });
 
-export const roundWinTypeSchema = z.enum([
-  "ELIMINATION", // Musuh Tereliminasi
-  "DEFUSE",      // Spike Di-defuse / Sukses Retake
-  "DETONATION",  // Spike Meledak / Post-Plant
-  "TIME",        // Waktu Habis
+export const roundOutcomeTypeSchema = z.enum([
+  "ELIMINATION", // Musuh tereliminasi / Tim tereliminasi
+  "DEFUSE",      // Spike didefuse (Retake Defender)
+  "DETONATION",  // Spike meledak (Post-Plant Attacker)
+  "TIME",        // Waktu habis (Defender menahan / Attacker kehabisan waktu)
 ]);
 
-export type RoundWinType = z.infer<typeof roundWinTypeSchema>;
+export type RoundOutcomeType = z.infer<typeof roundOutcomeTypeSchema>;
+export type RoundWinType = RoundOutcomeType;
 
 export const roundItemSchema = z.object({
   round: z.number(),
   side: z.enum(["ATTACK", "DEFENSE"]),
   winner: z.enum(["TEAM", "OPPONENT"]),
-  winType: roundWinTypeSchema.optional().nullable(),
-  durationSeconds: z.coerce.number().int().min(5).max(300).optional().nullable(),
+  winType: roundOutcomeTypeSchema.optional().nullable(),
+  outcomeType: roundOutcomeTypeSchema.optional().nullable(),
   tradedDeaths: z.coerce.number().int().min(0).max(10).optional().nullable(),
   tradesWon: z.coerce.number().int().min(0).max(10).optional().nullable(),
 });

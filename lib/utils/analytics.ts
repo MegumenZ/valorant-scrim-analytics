@@ -66,12 +66,24 @@ export interface TacticalWinBreakdown {
   totalWins: number;
   eliminations: number;
   eliminationRate: number;
-  defuses: number;       // Retake & Spike Defused
+  defuses: number;       // Retake & Spike Defused (Defender)
   defuseRate: number;
-  detonations: number;   // Post-Plant Spike Detonated
+  detonations: number;   // Post-Plant Spike Detonated (Attacker)
   detonationRate: number;
-  timeouts: number;      // Waktu Habis
+  timeouts: number;      // Waktu Habis (Defender)
   timeoutRate: number;
+}
+
+export interface TacticalLossBreakdown {
+  totalLosses: number;
+  eliminations: number;      // Tim tereliminasi
+  eliminationRate: number;
+  defusedLosses: number;     // Musuh Retake & Defuse Spike (Saat kita Attacker)
+  defusedLossRate: number;
+  detonationLosses: number;  // Spike Musuh Meledak (Saat kita Defender gagal retake)
+  detonationLossRate: number;
+  timeoutLosses: number;     // Waktu Habis saat Attacker gagal plant
+  timeoutLossRate: number;
 }
 
 export interface TradingKillStats {
@@ -81,24 +93,6 @@ export interface TradingKillStats {
   totalDeaths: number;      // Total kematian tim
   tradeEfficiency: number;  // % kematian yang berhasil di-trade (0-100%)
   tradeRating: "EXCELLENT" | "GOOD" | "POOR";
-}
-
-export interface RoundPacingStats {
-  avgWinDurationSec: number;   // Rata-rata durasi ronde menang dalam detik
-  avgLossDurationSec: number;  // Rata-rata durasi ronde kalah dalam detik
-  fastWins: number;            // Menang < 45s
-  midWins: number;             // Menang 45 - 75s
-  lateWins: number;            // Menang > 75s
-  fastLosses: number;          // Kalah < 45s
-  midLosses: number;           // Kalah 45 - 75s
-  lateLosses: number;          // Kalah > 75s
-}
-
-export function formatRoundDuration(seconds: number): string {
-  if (!seconds || seconds <= 0) return "0:00";
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.round(seconds % 60);
-  return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
 }
 
 export interface DashboardSummary {
@@ -120,8 +114,8 @@ export interface DashboardSummary {
     defenseWinRate: number;
   };
   tacticalWins: TacticalWinBreakdown;
+  tacticalLosses: TacticalLossBreakdown;
   tradingStats: TradingKillStats;
-  pacingStats: RoundPacingStats;
   mapBreakdown: Array<{
     map: ValorantMap;
     total: number;
