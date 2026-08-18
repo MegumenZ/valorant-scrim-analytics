@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { Map as MapIcon, PlusCircle } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 import { getMapAnalyticsData } from "@/lib/actions/matches";
 import { MAP_METADATA, ValorantMap } from "@/lib/data/valorant";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,22 +21,18 @@ export default async function MapsAnalyticsPage() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12 select-none">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#242e40] pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1C2433] pb-5">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-100 flex items-center gap-2">
-            <MapIcon className="w-6 h-6 text-rose-500" />
-            <span>Analitik Peta & Side Balance</span>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+            Statistik Map
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Statistik performa tim dan rasio kemenangan berdasarkan peta serta sisi permainan.
-          </p>
         </div>
 
         {isAdmin && (
           <Link href="/matches/new">
-            <Button size="sm" className="gap-1.5 font-bold shadow-md shadow-rose-950/40">
+            <Button size="sm" className="gap-1.5 font-semibold shadow-sm">
               <PlusCircle className="w-4 h-4" />
-              <span>+ Catat Match</span>
+              <span>Catat Match</span>
             </Button>
           </Link>
         )}
@@ -65,34 +61,34 @@ export default async function MapsAnalyticsPage() {
           return (
             <Card
               key={stat.map}
-              className="bg-[#141a24] hover:border-[#334155] transition-all overflow-hidden flex flex-col justify-between"
+              className="bg-[#0F141C] border-[#1C2433] hover:border-[#2A364F] transition-all overflow-hidden flex flex-col justify-between"
             >
               {/* Header with Map Splash Art Banner */}
-              <div className="relative h-28 overflow-hidden border-b border-[#242e40] flex items-end p-4">
+              <div className="relative h-28 overflow-hidden border-b border-[#1C2433] flex items-end p-4">
                 <img
                   src={meta.splash}
                   alt={stat.map}
                   className="absolute inset-0 w-full h-full object-cover object-center brightness-75 hover:scale-105 transition-transform duration-500"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#141a24] via-[#141a24]/40 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0F141C] via-[#0F141C]/40 to-transparent" />
                 <div className="relative z-10 flex items-center justify-between w-full">
                   <div>
-                    <h3 className="text-lg font-black uppercase tracking-wide text-white drop-shadow-md">
+                    <h3 className="text-lg font-bold text-white drop-shadow-md">
                       {stat.map}
                     </h3>
-                    <p className="text-[11px] text-slate-300 font-medium drop-shadow-sm">
+                    <p className="text-[11px] text-[#94A3B8] font-medium drop-shadow-sm">
                       {meta.location}
                     </p>
                   </div>
                   {hasMatches ? (
                     <Badge
                       variant={stat.winRate >= 50 ? "win" : "loss"}
-                      className="text-xs px-2.5 py-0.5 shadow-md"
+                      className="text-xs px-2.5 py-0.5"
                     >
                       {stat.winRate}% Win
                     </Badge>
                   ) : (
-                    <Badge variant="outline" className="text-xs text-slate-400 bg-black/60 backdrop-blur-sm">
+                    <Badge variant="outline" className="text-xs text-[#94A3B8] bg-black/60 backdrop-blur-sm">
                       Belum Dimainkan
                     </Badge>
                   )}
@@ -101,19 +97,15 @@ export default async function MapsAnalyticsPage() {
 
               {/* Card Content & Stats */}
               <CardContent className="p-4 sm:p-5 space-y-4 text-xs">
-                <p className="text-xs text-slate-400 italic">
-                  "{meta.callout}"
-                </p>
-
                 {/* Progress Bar Win Rate */}
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-xs">
-                    <span className="text-slate-400">Rekor Menang/Kalah:</span>
-                    <span className={`font-bold ${stat.winRate >= 50 ? "text-emerald-400" : "text-rose-400"}`}>
+                    <span className="text-[#94A3B8]">Rekor Menang / Kalah:</span>
+                    <span className={`font-semibold ${stat.winRate >= 50 ? "text-emerald-400" : "text-rose-400"}`}>
                       {stat.wins}W - {stat.losses}L ({stat.winRate}%)
                     </span>
                   </div>
-                  <div className="h-2 w-full bg-[#0e131b] rounded-full overflow-hidden border border-[#242e40]">
+                  <div className="h-2 w-full bg-[#090C10] rounded-full overflow-hidden border border-[#1C2433]">
                     <div
                       className={`h-full rounded-full transition-all ${
                         stat.winRate >= 50 ? "bg-emerald-500" : "bg-rose-500"
@@ -124,15 +116,15 @@ export default async function MapsAnalyticsPage() {
                 </div>
 
                 {/* Rounds Won/Lost */}
-                <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-[#242e40]/70 text-xs">
-                  <div className="p-2.5 rounded-lg bg-[#0e131b] border border-[#242e40]">
-                    <div className="text-slate-400">Ronde Menang:</div>
+                <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-[#1C2433] text-xs">
+                  <div className="p-2.5 rounded-lg bg-[#090C10] border border-[#1C2433]">
+                    <div className="text-[#94A3B8]">Ronde Menang:</div>
                     <div className="text-sm font-bold text-emerald-400 mt-0.5">
-                      {stat.roundsWon} <span className="text-[11px] text-slate-500 font-normal">({stat.roundWinRate}%)</span>
+                      {stat.roundsWon} <span className="text-[11px] text-[#64748B] font-normal">({stat.roundWinRate}%)</span>
                     </div>
                   </div>
-                  <div className="p-2.5 rounded-lg bg-[#0e131b] border border-[#242e40]">
-                    <div className="text-slate-400">Ronde Kalah:</div>
+                  <div className="p-2.5 rounded-lg bg-[#090C10] border border-[#1C2433]">
+                    <div className="text-[#94A3B8]">Ronde Kalah:</div>
                     <div className="text-sm font-bold text-rose-400 mt-0.5">
                       {stat.roundsLost}
                     </div>
@@ -141,24 +133,22 @@ export default async function MapsAnalyticsPage() {
 
                 {/* Side Bias (Attack vs Defense Start) */}
                 <div className="space-y-1.5 pt-1">
-                  <div className="text-xs font-semibold text-slate-300">
+                  <div className="text-xs font-semibold text-white">
                     Sisi Awal Pertandingan
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-rose-400 flex items-center gap-1.5 font-medium">
-                      <span className="w-2 h-2 rounded-full bg-rose-500" />
+                    <span className="text-rose-400 font-medium">
                       Mulai Attack:
                     </span>
-                    <span className="text-slate-200 font-semibold">
+                    <span className="text-white font-semibold">
                       {stat.attackStartWins}/{stat.attackStartMatches} Menang ({attackWinRate}%)
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-sky-400 flex items-center gap-1.5 font-medium">
-                      <span className="w-2 h-2 rounded-full bg-sky-500" />
+                    <span className="text-sky-400 font-medium">
                       Mulai Defense:
                     </span>
-                    <span className="text-slate-200 font-semibold">
+                    <span className="text-white font-semibold">
                       {stat.defenseStartWins}/{stat.defenseStartMatches} Menang ({defenseWinRate}%)
                     </span>
                   </div>
@@ -166,11 +156,11 @@ export default async function MapsAnalyticsPage() {
               </CardContent>
 
               {/* Card Footer */}
-              <div className="p-3.5 border-t border-[#242e40] bg-[#0e131b] flex items-center justify-between text-xs text-slate-400">
-                <span>Total Scrim: <strong className="text-slate-200">{stat.totalMatches} Match</strong></span>
+              <div className="p-3.5 border-t border-[#1C2433] bg-[#090C10]/40 flex items-center justify-between text-xs text-[#94A3B8]">
+                <span>Total Scrim: <strong className="text-white">{stat.totalMatches} Match</strong></span>
                 <Link href={`/matches?map=${stat.map}`}>
                   <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-rose-400 hover:bg-rose-500/10">
-                    Filter Match &rarr;
+                    Lihat Match &rarr;
                   </Button>
                 </Link>
               </div>
@@ -181,3 +171,4 @@ export default async function MapsAnalyticsPage() {
     </div>
   );
 }
+

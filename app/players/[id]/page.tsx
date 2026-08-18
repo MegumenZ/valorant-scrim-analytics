@@ -49,33 +49,33 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
       </div>
 
       {/* PLAYER HERO HEADER */}
-      <div className="rounded-2xl border border-[#242e40] bg-[#141a24] p-6 shadow-xl">
+      <div className="rounded-xl border border-[#1C2433] bg-[#0F141C] p-6 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-[#1c2432] border border-[#242e40] flex items-center justify-center text-slate-100 font-black text-xl shadow-md">
+            <div className="w-12 h-12 rounded-lg bg-[#161D28] border border-[#2A364F] flex items-center justify-center text-white font-bold text-lg shadow-sm">
               {player.name.substring(0, 2).toUpperCase()}
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-black tracking-tight text-white">
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
                   {player.name}
                 </h1>
                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${roleColor.badge}`}>
                   {player.primaryRole}
                 </span>
                 <span
-                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
                     player.isActive
-                      ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                      : "bg-[#1c2432] text-slate-400 border border-[#242e40]"
+                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                      : "bg-[#161D28] text-[#94A3B8] border border-[#1C2433]"
                   }`}
                 >
                   {player.isActive ? "Starter Aktif" : "Cadangan"}
                 </span>
               </div>
-              <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400 mt-1">
-                {player.riotId && <span>Riot ID: <strong className="text-slate-200">{player.riotId}</strong></span>}
-                {player.discordId && <span>Discord: <strong className="text-slate-200">{player.discordId}</strong></span>}
+              <div className="flex flex-wrap items-center gap-3 text-xs text-[#94A3B8] mt-1.5">
+                {player.riotId && <span>Riot ID: <strong className="text-[#F1F5F9] font-medium">{player.riotId}</strong></span>}
+                {player.discordId && <span>Discord: <strong className="text-[#F1F5F9] font-medium">{player.discordId}</strong></span>}
               </div>
             </div>
           </div>

@@ -25,13 +25,11 @@ interface RosterLeaderboardProps {
 export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-4">
+      <CardHeader className="flex flex-row items-center justify-between py-4 px-5">
         <div>
-          <CardTitle className="flex items-center gap-2">
-            <Trophy className="w-4 h-4 text-amber-400" />
-            <span>Leaderboard Roster</span>
+          <CardTitle className="text-base">
+            Leaderboard Roster
           </CardTitle>
-          <CardDescription>Akumulasi performa tempur seluruh pemain Team SC</CardDescription>
         </div>
         <Link href="/roster">
           <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8 font-medium">

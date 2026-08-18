@@ -57,21 +57,17 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
   return (
     <div className="space-y-8 select-none">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#242e40] pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1C2433] pb-5">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-100 flex items-center gap-2">
-            <UserCheck className="w-6 h-6 text-rose-500" />
-            <span>Manajemen Roster Tim</span>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+            Roster Pemain
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Susunan pemain inti, cadangan, dan peran skuad.
-          </p>
         </div>
 
         {isAdmin && (
-          <Button onClick={handleOpenAdd} size="sm" className="gap-1.5 font-bold shadow-md shadow-rose-950/40">
+          <Button onClick={handleOpenAdd} size="sm" className="gap-1.5 font-semibold shadow-sm">
             <UserPlus className="w-4 h-4" />
-            <span>+ Tambah Pemain</span>
+            <span>Tambah Pemain</span>
           </Button>
         )}
       </div>
@@ -80,13 +76,13 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-            <h2 className="text-sm font-bold text-slate-200 uppercase tracking-wide">
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <h2 className="text-sm font-semibold text-white">
               Pemain Inti ({activeStarters.length})
             </h2>
           </div>
-          <span className="text-xs text-slate-400">
-            {activeStarters.length === 5 ? "Slot Penuh (5/5)" : `Slot: ${activeStarters.length}/5 Pemain`}
+          <span className="text-xs text-[#94A3B8]">
+            {activeStarters.length === 5 ? "Slot Penuh (5/5)" : `Slot: ${activeStarters.length}/5`}
           </span>
         </div>
 
@@ -99,23 +95,23 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
             return (
               <Card
                 key={player.id}
-                className="hover:border-[#334155] transition-all bg-[#141a24] flex flex-col justify-between"
+                className="bg-[#0F141C] border-[#1C2433] hover:border-[#2A364F] transition-all flex flex-col justify-between"
               >
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-3 border-b border-[#1C2433]">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-[#1c2432] border border-[#242e40] flex items-center justify-center text-slate-100 font-extrabold text-sm shadow-sm">
+                      <div className="w-10 h-10 rounded-lg bg-[#161D28] border border-[#2A364F] flex items-center justify-center text-white font-bold text-sm shadow-sm">
                         {player.name.substring(0, 2).toUpperCase()}
                       </div>
                       <div>
                         <Link
                           href={`/players/${player.id}`}
-                          className="font-bold text-slate-100 hover:text-rose-400 transition-colors text-base"
+                          className="font-bold text-white hover:text-[#FF4655] transition-colors text-base"
                         >
                           {player.name}
                         </Link>
                         {player.riotId && (
-                          <p className="text-xs text-slate-400">
+                          <p className="text-xs text-[#94A3B8]">
                             {player.riotId}
                           </p>
                         )}
@@ -128,20 +124,20 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
                   </div>
                 </CardHeader>
 
-                <CardContent className="py-2.5 text-xs space-y-1 text-slate-400 border-t border-[#242e40]/70">
+                <CardContent className="py-3 text-xs space-y-1.5 text-[#94A3B8]">
                   <div className="flex justify-between">
                     <span>Discord:</span>
-                    <span className="text-slate-200">{player.discordId || "-"}</span>
+                    <span className="text-[#F1F5F9]">{player.discordId || "-"}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Status:</span>
-                    <span className="text-emerald-400 font-bold">Starter Aktif</span>
+                    <span className="text-emerald-400 font-semibold">Starter Aktif</span>
                   </div>
                 </CardContent>
 
-                <div className="p-3 border-t border-[#242e40]/70 flex items-center justify-between gap-2 bg-[#0e131b]">
+                <div className="p-3 border-t border-[#1C2433] flex items-center justify-between gap-2 bg-[#090C10]/40">
                   <Link href={`/players/${player.id}`} className="flex-1">
-                    <Button variant="ghost" size="sm" className="w-full text-xs gap-1 h-7">
+                    <Button variant="ghost" size="sm" className="w-full text-xs gap-1 h-7 text-[#94A3B8] hover:text-white">
                       <span>Lihat Statistik</span>
                       <ExternalLink className="w-3 h-3" />
                     </Button>
@@ -153,7 +149,7 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleToggleStatus(player)}
-                        className="h-7 px-2 text-xs text-slate-400 hover:text-amber-400"
+                        className="h-7 px-2 text-xs text-[#94A3B8] hover:text-amber-400"
                         title="Pindahkan ke Cadangan"
                       >
                         Set Sub
@@ -162,7 +158,7 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleOpenEdit(player)}
-                        className="h-7 w-7 p-0 text-slate-400 hover:text-white"
+                        className="h-7 w-7 p-0 text-[#94A3B8] hover:text-white"
                         title="Edit Data Pemain"
                       >
                         <Edit className="w-3.5 h-3.5" />
@@ -186,18 +182,18 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
       </div>
 
       {/* SECTION 2: SUBSTITUTES / BENCH */}
-      <div className="space-y-4 pt-4 border-t border-[#242e40]">
+      <div className="space-y-4 pt-4 border-t border-[#1C2433]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-slate-500" />
-            <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wide">
-              Pemain Cadangan & Sub ({substitutes.length} Pemain)
+            <span className="w-2 h-2 rounded-full bg-[#64748B]" />
+            <h2 className="text-sm font-semibold text-[#94A3B8]">
+              Pemain Cadangan ({substitutes.length})
             </h2>
           </div>
         </div>
 
         {substitutes.length === 0 ? (
-          <div className="p-6 rounded-xl border border-dashed border-[#242e40] text-center text-slate-500 text-xs">
+          <div className="p-6 rounded-xl border border-dashed border-[#1C2433] text-center text-[#64748B] text-xs">
             Belum ada pemain cadangan yang terdaftar.
           </div>
         ) : (
@@ -210,23 +206,23 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
               return (
                 <Card
                   key={player.id}
-                  className="bg-[#10151f] border-[#242e40] flex flex-col justify-between"
+                  className="bg-[#0F141C] border-[#1C2433] hover:border-[#2A364F] flex flex-col justify-between"
                 >
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-3 border-b border-[#1C2433]">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-[#1c2432] border border-[#242e40] flex items-center justify-center text-slate-400 font-extrabold text-xs">
+                        <div className="w-9 h-9 rounded-lg bg-[#161D28] border border-[#2A364F] flex items-center justify-center text-[#94A3B8] font-bold text-xs">
                           {player.name.substring(0, 2).toUpperCase()}
                         </div>
                         <div>
                           <Link
                             href={`/players/${player.id}`}
-                            className="font-bold text-slate-300 hover:text-rose-400 transition-colors text-sm"
+                            className="font-bold text-white hover:text-[#FF4655] transition-colors text-sm"
                           >
                             {player.name}
                           </Link>
                           {player.riotId && (
-                            <p className="text-xs text-slate-400">
+                            <p className="text-xs text-[#94A3B8]">
                               {player.riotId}
                             </p>
                           )}
@@ -239,9 +235,9 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
                     </div>
                   </CardHeader>
 
-                  <div className="p-3 border-t border-[#242e40] flex items-center justify-between gap-2">
+                  <div className="p-3 border-t border-[#1C2433] flex items-center justify-between gap-2 bg-[#090C10]/40">
                     <Link href={`/players/${player.id}`} className="flex-1">
-                      <Button variant="ghost" size="sm" className="w-full text-xs h-7">
+                      <Button variant="ghost" size="sm" className="w-full text-xs h-7 text-[#94A3B8] hover:text-white">
                         <span>Statistik</span>
                       </Button>
                     </Link>
@@ -260,7 +256,7 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleOpenEdit(player)}
-                          className="h-7 w-7 p-0 text-slate-400"
+                          className="h-7 w-7 p-0 text-[#94A3B8]"
                         >
                           <Edit className="w-3.5 h-3.5" />
                         </Button>

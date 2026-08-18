@@ -14,13 +14,11 @@ interface RecentMatchesTableProps {
 export function RecentMatchesTable({ matches }: RecentMatchesTableProps) {
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-4">
+      <CardHeader className="flex flex-row items-center justify-between py-4 px-5">
         <div>
-          <CardTitle className="flex items-center gap-2">
-            <Swords className="w-4 h-4 text-[#FF4655]" />
-            <span>Log Scrim Terkini</span>
+          <CardTitle className="text-base">
+            Log Scrim Terkini
           </CardTitle>
-          <CardDescription>5 hasil scrimmage tim terakhir</CardDescription>
         </div>
         <Link href="/matches">
           <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8 font-medium">

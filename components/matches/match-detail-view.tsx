@@ -182,12 +182,11 @@ export function MatchDetailView({ match }: MatchDetailViewProps) {
       <Card>
         <CardHeader className="py-4 px-5 border-b border-[#1C2433]">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-amber-400" />
-              <span>Scoreboard Performa 5 Pemain Inti</span>
+            <CardTitle className="text-base">
+              Scoreboard Performa Pemain
             </CardTitle>
             <span className="text-xs text-[#94A3B8]">
-              Disortir berdasarkan ACS tertinggi
+              Disortir berdasarkan ACS
             </span>
           </div>
         </CardHeader>

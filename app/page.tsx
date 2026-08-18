@@ -22,20 +22,12 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6 pb-12 select-none">
-      {/* Top Banner / Welcome */}
+      {/* Top Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1C2433] pb-5">
         <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-              Dashboard Scrim Analytics
-            </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              Musim Berjalan
-            </span>
-          </div>
-          <p className="text-xs text-[#94A3B8] mt-1">
-            Evaluasi komprehensif performa scrimmage, efisiensi map, dan combat output tim.
-          </p>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+            Dashboard Scrim
+          </h1>
         </div>
 
         {isAdmin && (
@@ -43,7 +35,7 @@ export default async function DashboardPage() {
             <Link href="/matches/new">
               <Button size="sm" className="gap-1.5 font-semibold shadow-sm">
                 <PlusCircle className="w-4 h-4" />
-                <span>+ Catat Match Baru</span>
+                <span>Catat Match Baru</span>
               </Button>
             </Link>
           </div>
