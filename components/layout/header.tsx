@@ -97,8 +97,8 @@ export function Header() {
           </Link>
         )}
 
-        {/* Quick Record CTA for Admin (Desktop only) */}
-        {isAdmin && (
+        {/* Quick Record CTA for Admin (Desktop only, hidden when already on new/edit match page) */}
+        {isAdmin && !pathname.startsWith("/matches/new") && !pathname.includes("/edit") && (
           <Link href="/matches/new" className="hidden md:inline-flex">
             <Button size="sm" className="gap-1.5 font-semibold h-8 shadow-sm">
               <PlusCircle className="w-3.5 h-3.5" />

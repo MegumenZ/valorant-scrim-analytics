@@ -255,15 +255,11 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-6xl mx-auto pb-12 select-none">
       {/* Header Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#242e40] pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1C2433] pb-5">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-100 flex items-center gap-2">
-            <PlusCircle className="w-6 h-6 text-rose-500" />
-            <span>{initialData ? "Edit Pertandingan Scrim" : "Catat Scrim Baru"}</span>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+            {initialData ? "Edit Scrim" : "Catat Scrim Baru"}
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Formulir pencatatan hasil scrim dan performa pemain.
-          </p>
         </div>
 
         {process.env.NODE_ENV !== "production" && (
@@ -273,7 +269,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
               variant="secondary"
               size="sm"
               onClick={handleFillDemoData}
-              className="text-xs gap-1.5 border-dashed border-rose-500/40 text-rose-400 hover:bg-rose-500/10"
+              className="text-xs gap-1.5 border border-[#2A364F] text-[#94A3B8] hover:text-white"
               title="Khusus mode development lokal"
             >
               <Sparkles className="w-3.5 h-3.5" />
@@ -284,7 +280,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
       </div>
 
       {errorMsg && (
-        <div className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2.5">
+        <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2.5">
           <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
           <span>{errorMsg}</span>
         </div>
@@ -292,11 +288,11 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
 
       {/* SECTION 1: MATCH METADATA */}
       <Card>
-        <CardHeader className="py-3 px-5">
+        <CardHeader className="py-3.5 px-5 border-b border-[#1C2433]">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-bold">1. Informasi Pertandingan</CardTitle>
+            <CardTitle className="text-sm font-semibold">1. Informasi Pertandingan</CardTitle>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400">Hasil:</span>
+              <span className="text-xs text-[#94A3B8]">Hasil:</span>
               <Badge
                 variant={
                   computedResult === "WIN"
@@ -314,7 +310,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         <CardContent className="p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4">
           {/* Tanggal */}
           <div className="md:col-span-1 space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300">
+            <label className="text-xs font-semibold text-[#94A3B8]">
               Tanggal Match *
             </label>
             <Input
@@ -323,13 +319,13 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
               onChange={(e) => setMatchDate(e.target.value)}
               onClick={(e) => (e.target as HTMLInputElement).showPicker?.()}
               required
-              className="text-xs font-mono cursor-pointer hover:border-slate-500"
+              className="text-xs font-mono cursor-pointer"
             />
           </div>
 
           {/* Map */}
           <div className="md:col-span-1 space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300">
+            <label className="text-xs font-semibold text-[#94A3B8]">
               Pilihan Map *
             </label>
             <Select
@@ -338,7 +334,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
               className="text-xs font-semibold"
             >
               {VALORANT_MAPS.map((m) => (
-                <option key={m} value={m} className="bg-[#141a24] text-slate-100">
+                <option key={m} value={m} className="bg-[#090C10] text-[#F1F5F9]">
                   {m}
                 </option>
               ))}
@@ -347,7 +343,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
 
           {/* Tim Lawan */}
           <div className="md:col-span-2 space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300">
+            <label className="text-xs font-semibold text-[#94A3B8]">
               Nama Tim Lawan *
             </label>
             <Input
@@ -393,7 +389,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
 
           {/* Sisi Awal */}
           <div className="md:col-span-2 space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300">
+            <label className="text-xs font-semibold text-[#94A3B8]">
               Sisi Awal (Babak Pertama) *
             </label>
             <Select
@@ -401,10 +397,10 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
               onChange={(e) => setStartSide(e.target.value as "ATTACK" | "DEFENSE")}
               className="text-xs font-medium"
             >
-              <option value="ATTACK" className="bg-[#141a24] text-rose-400 font-semibold">
+              <option value="ATTACK" className="bg-[#090C10] text-rose-400 font-semibold">
                 Attack Side (Penyerang)
               </option>
-              <option value="DEFENSE" className="bg-[#141a24] text-sky-400 font-semibold">
+              <option value="DEFENSE" className="bg-[#090C10] text-sky-400 font-semibold">
                 Defense Side (Bertahan)
               </option>
             </Select>
@@ -412,7 +408,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
 
           {/* Link VOD */}
           <div className="md:col-span-4 space-y-1.5">
-            <label className="text-xs font-semibold text-slate-300">
+            <label className="text-xs font-semibold text-[#94A3B8]">
               Link Video VOD (YouTube / Twitch Opsional)
             </label>
             <Input
@@ -420,7 +416,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
               placeholder="https://www.youtube.com/watch?v=..."
               value={vodUrl}
               onChange={(e) => setVodUrl(e.target.value)}
-              className="text-xs text-slate-200"
+              className="text-xs text-[#F1F5F9]"
             />
           </div>
         </CardContent>
@@ -428,22 +424,17 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
 
       {/* SECTION 2: 5 PLAYER STATS MATRIX */}
       <Card>
-        <CardHeader className="py-3 px-5 border-b border-[#242e40]/70">
+        <CardHeader className="py-3.5 px-5 border-b border-[#1C2433]">
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-sm font-bold">2. Statistik 5 Pemain</CardTitle>
-              <CardDescription>
-                Input performa dan statistik tempur skuad
-              </CardDescription>
-            </div>
-            <span className="text-xs text-slate-400">
+            <CardTitle className="text-sm font-semibold">2. Statistik 5 Pemain</CardTitle>
+            <span className="text-xs text-[#94A3B8]">
               5 Slot Pemain
             </span>
           </div>
         </CardHeader>
         <CardContent className="p-0">
           {/* MOBILE VIEW: Player Stat Input Cards (md:hidden) */}
-          <div className="md:hidden divide-y divide-[#242e40]/70 p-3 space-y-4">
+          <div className="md:hidden divide-y divide-[#1C2433] p-3 space-y-4">
             {playerRows.map((row, index) => {
               const k = Number(row.kills) || 0;
               const d = Number(row.deaths) || 0;
@@ -452,15 +443,15 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
               return (
                 <div
                   key={index}
-                  className="rounded-xl bg-[#0e131b] border border-[#242e40] p-3.5 space-y-3"
+                  className="rounded-xl bg-[#090C10] border border-[#1C2433] p-3.5 space-y-3"
                 >
                   {/* Card Header: Slot Number & Live KD */}
-                  <div className="flex items-center justify-between pb-2 border-b border-[#242e40]/60">
+                  <div className="flex items-center justify-between pb-2 border-b border-[#1C2433]">
                     <div className="flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-full bg-rose-500/20 text-rose-400 font-black text-xs flex items-center justify-center">
+                      <span className="w-5 h-5 rounded-md bg-[#161D28] border border-[#2A364F] text-[#FF4655] font-bold text-xs flex items-center justify-center">
                         {index + 1}
                       </span>
-                      <span className="text-xs font-bold text-slate-200">
+                      <span className="text-xs font-semibold text-white">
                         Slot Pemain #{index + 1}
                       </span>
                     </div>
@@ -469,7 +460,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                       variant={
                         liveKD >= 1.2 ? "win" : liveKD >= 1.0 ? "draw" : "loss"
                       }
-                      className="text-[10px] px-2 py-0.5 font-bold"
+                      className="text-[10px] px-2 py-0.5 font-semibold"
                     >
                       {liveKD.toFixed(2)} KD
                     </Badge>
@@ -478,7 +469,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                   {/* Player & Agent Dropdowns */}
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-400">Pemain *</label>
+                      <label className="text-[10px] font-semibold text-[#94A3B8]">Pemain *</label>
                       <Select
                         value={row.playerId}
                         onChange={(e) => handleRowChange(index, "playerId", e.target.value)}
@@ -487,7 +478,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                       >
                         <option value="" disabled>Pilih Pemain</option>
                         {availablePlayers.map((p) => (
-                          <option key={p.id} value={p.id} className="bg-[#141a24] text-slate-100">
+                          <option key={p.id} value={p.id} className="bg-[#090C10] text-[#F1F5F9]">
                             {p.name} ({p.primaryRole})
                           </option>
                         ))}
@@ -495,7 +486,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-400">Agent *</label>
+                      <label className="text-[10px] font-semibold text-[#94A3B8]">Agent *</label>
                       <div className="relative">
                         <Select
                           value={row.agent}
@@ -504,7 +495,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           required
                         >
                           {VALORANT_AGENTS.map((a) => (
-                            <option key={a.name} value={a.name} className="bg-[#141a24] text-slate-100">
+                            <option key={a.name} value={a.name} className="bg-[#090C10] text-[#F1F5F9]">
                               {a.name} ({a.role})
                             </option>
                           ))}
@@ -520,7 +511,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
 
                   {/* Primary Combat Stats Grid (4 cols) */}
                   <div className="space-y-1 pt-1">
-                    <div className="text-[10px] font-semibold text-slate-400">Statistik Utama</div>
+                    <div className="text-[10px] font-semibold text-[#94A3B8]">Statistik Utama</div>
                     <div className="grid grid-cols-4 gap-1.5 text-center">
                       <div className="space-y-0.5">
                         <span className="text-[9px] text-sky-400 font-bold">ACS *</span>
@@ -559,7 +550,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                         />
                       </div>
                       <div className="space-y-0.5">
-                        <span className="text-[9px] text-slate-400 font-bold">Assists *</span>
+                        <span className="text-[9px] text-[#94A3B8] font-bold">Assists *</span>
                         <Input
                           type="number"
                           min="0"
@@ -567,7 +558,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           value={row.assists}
                           onChange={(e) => handleRowChange(index, "assists", e.target.value)}
                           required
-                          className="h-8 text-center font-bold text-slate-200 px-1 text-xs"
+                          className="h-8 text-center font-bold text-[#F1F5F9] px-1 text-xs"
                         />
                       </div>
                     </div>
@@ -575,10 +566,10 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
 
                   {/* Secondary Combat Stats Grid (4 cols) */}
                   <div className="space-y-1 pt-1">
-                    <div className="text-[10px] font-semibold text-slate-400">Duel & Efisiensi</div>
+                    <div className="text-[10px] font-semibold text-[#94A3B8]">Duel & Efisiensi</div>
                     <div className="grid grid-cols-4 gap-1.5 text-center">
                       <div className="space-y-0.5">
-                        <span className="text-[9px] text-slate-400 font-medium">ADR *</span>
+                        <span className="text-[9px] text-[#94A3B8] font-medium">ADR *</span>
                         <Input
                           type="number"
                           min="0"
@@ -587,7 +578,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           value={row.adr}
                           onChange={(e) => handleRowChange(index, "adr", e.target.value)}
                           required
-                          className="h-8 text-center font-semibold text-slate-200 px-1 text-xs"
+                          className="h-8 text-center font-semibold text-[#F1F5F9] px-1 text-xs"
                         />
                       </div>
                       <div className="space-y-0.5">
@@ -629,7 +620,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
 
                   {/* Clutch Input */}
                   <div className="flex items-center justify-between pt-1 text-xs">
-                    <span className="text-[11px] text-slate-400">Clutch 1vX Menang:</span>
+                    <span className="text-[11px] text-[#94A3B8]">Clutch 1vX Menang:</span>
                     <Input
                       type="number"
                       min="0"
@@ -648,7 +639,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-[#242e40] bg-[#0e131b] text-slate-400 font-semibold text-[11px]">
+                <tr className="border-b border-[#1C2433] bg-[#090C10] text-[#94A3B8] font-semibold text-[11px]">
                   <th className="py-3 px-3.5 min-w-[140px]">Pemain *</th>
                   <th className="py-3 px-3.5 min-w-[120px]">Agent *</th>
                   <th className="py-3 px-2 text-center w-20">ACS *</th>
@@ -663,7 +654,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                   <th className="py-3 px-3 text-center min-w-[85px]">Live K/D</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#242e40]/60">
+              <tbody className="divide-y divide-[#1C2433]">
                 {playerRows.map((row, index) => {
                   const k = Number(row.kills) || 0;
                   const d = Number(row.deaths) || 0;
@@ -672,7 +663,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                   return (
                     <tr
                       key={index}
-                      className="hover:bg-[#1c2432]/50 transition-colors"
+                      className="hover:bg-[#161D28]/40 transition-colors"
                     >
                       {/* Pemain */}
                       <td className="p-2.5">
@@ -684,7 +675,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                         >
                           <option value="" disabled>Pilih Pemain</option>
                           {availablePlayers.map((p) => (
-                            <option key={p.id} value={p.id} className="bg-[#141a24] text-slate-100">
+                            <option key={p.id} value={p.id} className="bg-[#090C10] text-[#F1F5F9]">
                               {p.name} ({p.primaryRole})
                             </option>
                           ))}
@@ -700,7 +691,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           required
                         >
                           {VALORANT_AGENTS.map((a) => (
-                            <option key={a.name} value={a.name} className="bg-[#141a24] text-slate-100">
+                            <option key={a.name} value={a.name} className="bg-[#090C10] text-[#F1F5F9]">
                               {a.name} ({a.role})
                             </option>
                           ))}
@@ -846,36 +837,34 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
       </Card>
 
       {/* SECTION 3: COACH EVALUATION & ATTACHMENTS */}
+      {/* SECTION 3: EVALUATION & ATTACHMENTS */}
       <Card>
-        <CardHeader className="py-3 px-5">
-          <CardTitle className="text-sm font-bold">3. Evaluasi & Catatan Taktis</CardTitle>
-          <CardDescription>
-            Catatan evaluasi strategi dan lampiran dokumen pendukung pertandingan
-          </CardDescription>
+        <CardHeader className="py-3.5 px-5 border-b border-[#1C2433]">
+          <CardTitle className="text-sm font-semibold">3. Evaluasi & Catatan Taktis</CardTitle>
         </CardHeader>
-        <CardContent className="p-5 pt-0 space-y-4">
+        <CardContent className="p-5 space-y-4">
           <Textarea
             rows={3}
             placeholder="Catatan evaluasi strategi atau analisis rotasi..."
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="text-xs text-slate-200 leading-relaxed"
+            className="text-xs text-[#F1F5F9] leading-relaxed"
           />
 
           {/* Attachments Section */}
-          <div className="space-y-3 pt-3 border-t border-[#242e40]">
+          <div className="space-y-3 pt-3 border-t border-[#1C2433]">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-              <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                <UploadCloud className="w-4 h-4 text-rose-500" />
+              <label className="text-xs font-semibold text-white flex items-center gap-1.5">
+                <UploadCloud className="w-4 h-4 text-[#FF4655]" />
                 <span>Lampiran Evaluasi</span>
               </label>
-              <span className="text-[11px] text-slate-400">
+              <span className="text-[11px] text-[#94A3B8]">
                 Maksimal 3 berkas (Gambar / PDF)
               </span>
             </div>
 
             {/* Drag & Drop Upload Box */}
-            <div className="relative border-2 border-dashed border-[#242e40] hover:border-rose-500/50 bg-[#0e131b] rounded-xl p-5 transition-colors flex flex-col items-center justify-center text-center group cursor-pointer">
+            <div className="relative border-2 border-dashed border-[#1C2433] hover:border-[#FF4655]/50 bg-[#090C10] rounded-xl p-5 transition-colors flex flex-col items-center justify-center text-center group cursor-pointer">
               <input
                 type="file"
                 multiple
@@ -885,13 +874,13 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
               />
               <div className="flex flex-col items-center gap-2 pointer-events-none">
-                <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 group-hover:scale-110 transition-transform">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-[#FF4655] group-hover:scale-105 transition-transform">
                   <UploadCloud className="w-5 h-5" />
                 </div>
-                <div className="text-xs font-bold text-slate-200">
+                <div className="text-xs font-semibold text-white">
                   {isCompressing ? "Memproses berkas..." : "Klik atau Tarik File Gambar / PDF ke Sini"}
                 </div>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[11px] text-[#94A3B8]">
                   Mendukung format PNG, JPG, dan PDF
                 </p>
               </div>
@@ -899,7 +888,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
 
             {/* Compression Feedback Banner */}
             {compressionFeedback && (
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-start gap-2.5 text-xs text-emerald-300">
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-start gap-2.5 text-xs text-emerald-300">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
                 <span className="leading-relaxed">{compressionFeedback}</span>
               </div>
@@ -911,11 +900,11 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                 {attachments.map((att) => (
                   <div
                     key={att.id}
-                    className="p-3 rounded-xl bg-[#141a24] border border-[#242e40] flex items-center justify-between gap-3 group relative overflow-hidden"
+                    className="p-3 rounded-xl bg-[#0F141C] border border-[#1C2433] flex items-center justify-between gap-3 group relative overflow-hidden"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       {att.type === "image" ? (
-                        <div className="w-10 h-10 rounded-lg bg-[#0e131b] border border-[#242e40] overflow-hidden shrink-0">
+                        <div className="w-10 h-10 rounded-lg bg-[#090C10] border border-[#1C2433] overflow-hidden shrink-0">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={att.dataUrl}
@@ -924,17 +913,17 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           />
                         </div>
                       ) : (
-                        <div className="w-10 h-10 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
+                        <div className="w-10 h-10 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 shrink-0">
                           <FileText className="w-5 h-5" />
                         </div>
                       )}
 
                       <div className="min-w-0">
-                        <p className="text-xs font-bold text-slate-200 truncate" title={att.name}>
+                        <p className="text-xs font-semibold text-white truncate" title={att.name}>
                           {att.name}
                         </p>
-                        <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
-                          <span className="px-1.5 py-0.2 rounded bg-[#0e131b] border border-[#242e40] text-emerald-400 font-semibold uppercase">
+                        <div className="flex items-center gap-1.5 text-[10px] text-[#94A3B8] mt-0.5">
+                          <span className="px-1.5 py-0.2 rounded bg-[#090C10] border border-[#1C2433] text-emerald-400 font-semibold uppercase">
                             {att.type === "image" ? "WebP" : "PDF"}
                           </span>
                           <span>{formatFileSize(att.sizeBytes)}</span>
@@ -947,7 +936,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                       variant="ghost"
                       size="sm"
                       onClick={() => handleRemoveAttachment(att.id)}
-                      className="h-7 w-7 p-0 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 shrink-0"
+                      className="h-7 w-7 p-0 text-[#94A3B8] hover:text-rose-400 hover:bg-rose-500/10 shrink-0"
                       title="Hapus Lampiran"
                     >
                       <Trash2 className="w-3.5 h-3.5" />

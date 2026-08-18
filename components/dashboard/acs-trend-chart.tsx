@@ -66,19 +66,19 @@ export function AcsTrendChart({ data }: AcsTrendChartProps) {
               data={chartData}
               margin={{ top: 10, right: 10, left: -25, bottom: 15 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#242e40" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#1C2433" vertical={false} />
               <XAxis
                 dataKey="matchLabel"
-                stroke="#94a3b8"
+                stroke="#64748B"
                 fontSize={11}
                 tickLine={false}
-                axisLine={{ stroke: "#242e40" }}
+                axisLine={{ stroke: "#1C2433" }}
               />
               <YAxis
-                stroke="#94a3b8"
+                stroke="#64748B"
                 fontSize={11}
                 tickLine={false}
-                axisLine={{ stroke: "#242e40" }}
+                axisLine={{ stroke: "#1C2433" }}
                 domain={[100, 300]}
               />
               <Tooltip
@@ -86,9 +86,9 @@ export function AcsTrendChart({ data }: AcsTrendChartProps) {
                   if (active && payload && payload.length) {
                     const item = payload[0].payload as AcsTrendItem & { matchLabel: string };
                     return (
-                      <div className="bg-[#141a24] border border-[#242e40] p-3 rounded-xl shadow-xl text-xs space-y-1">
+                      <div className="bg-[#0F141C] border border-[#1C2433] p-3 rounded-xl shadow-lg text-xs space-y-1">
                         <div className="flex items-center justify-between gap-3">
-                          <p className="font-bold text-slate-100">
+                          <p className="font-bold text-white">
                             vs {item.opponent}
                           </p>
                           <span
@@ -103,13 +103,13 @@ export function AcsTrendChart({ data }: AcsTrendChartProps) {
                             {item.result} ({item.score})
                           </span>
                         </div>
-                        <p className="text-slate-300">
+                        <p className="text-[#94A3B8]">
                           Map: <strong className="text-white">{item.map}</strong>
                         </p>
                         <p className="text-sky-400 font-semibold">
                           Avg Combat Score: {item.teamAvgAcs} ACS
                         </p>
-                        <p className="text-slate-400 text-[11px]">{item.matchDate}</p>
+                        <p className="text-[#64748B] text-[11px]">{item.matchDate}</p>
                       </div>
                     );
                   }
@@ -121,7 +121,7 @@ export function AcsTrendChart({ data }: AcsTrendChartProps) {
                 dataKey="teamAvgAcs"
                 stroke="#38BDF8"
                 strokeWidth={2.5}
-                dot={{ r: 4, fill: "#38BDF8", stroke: "#0b0e14", strokeWidth: 2 }}
+                dot={{ r: 4, fill: "#38BDF8", stroke: "#090C10", strokeWidth: 2 }}
                 activeDot={{ r: 6, fill: "#FF4655", stroke: "#ffffff", strokeWidth: 2 }}
               />
             </LineChart>

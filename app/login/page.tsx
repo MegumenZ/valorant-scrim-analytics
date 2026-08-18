@@ -33,39 +33,39 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       <div className="w-full max-w-md space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-[#141a24] border border-[#242e40] p-2 shadow-2xl shadow-rose-950/40 mb-1 overflow-hidden">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-xl bg-[#161D28] border border-[#2A364F] p-2 shadow-sm mb-1 overflow-hidden">
             <img
               src="/team-sc-logo.png"
               alt="Team SC Logo"
               className="w-full h-full object-contain"
             />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-            TEAM <span className="text-rose-500">SC</span> ANALYTICS
+          <h1 className="text-2xl font-bold tracking-tight text-white">
+            Team SC <span className="text-[#FF4655]">Analytics</span>
           </h1>
-          <p className="text-xs text-slate-400">
-            Masuk untuk mengakses analitik scrimmage, catatan evaluasi, dan rekap skuad.
+          <p className="text-xs text-[#94A3B8]">
+            Masuk untuk mengakses analitik scrimmage dan catatan evaluasi tim.
           </p>
         </div>
 
         {/* Error Alert Box */}
         {error && (
-          <div className="p-4 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-3 shadow-lg">
+          <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-start gap-3 shadow-sm">
             <ShieldAlert className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
             <div>
-              <span className="font-bold block text-rose-200 mb-0.5">Peringatan Keamanan / Login:</span>
+              <span className="font-semibold block text-rose-200 mb-0.5">Peringatan Login:</span>
               <p className="leading-relaxed">{errorMessages[error] || decodeURIComponent(error)}</p>
             </div>
           </div>
         )}
 
         {/* Main Login Card */}
-        <div className="rounded-2xl border border-[#242e40] bg-[#141a24] p-6 sm:p-7 shadow-2xl space-y-6">
+        <div className="rounded-xl border border-[#1C2433] bg-[#0F141C] p-6 sm:p-7 shadow-sm space-y-6">
           <div className="space-y-1 text-center">
-            <h2 className="text-base font-bold text-slate-100">
+            <h2 className="text-base font-semibold text-white">
               Masuk dengan Akun Discord
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-[#94A3B8]">
               Gunakan akun Discord Anda untuk sinkronisasi profil dan statistik tim secara aman.
             </p>
           </div>
@@ -75,7 +75,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <a href="/api/auth/discord" className="block w-full">
               <button
                 type="button"
-                className="w-full h-11 px-4 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold text-xs sm:text-sm tracking-wide transition-all shadow-lg shadow-indigo-950/50 flex items-center justify-center gap-3 active:scale-[0.98] cursor-pointer"
+                className="w-full h-11 px-4 rounded-lg bg-[#5865F2] hover:bg-[#4752C4] text-white font-semibold text-xs sm:text-sm tracking-wide transition-all shadow-sm flex items-center justify-center gap-3 active:scale-[0.99] cursor-pointer"
               >
                 {/* Discord SVG Logo */}
                 <svg className="w-5 h-5 fill-current shrink-0" viewBox="0 0 127.14 96.36">
@@ -94,8 +94,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
           {/* Quick Demo Logins (Only shown in Development or when Discord is unconfigured) */}
           {(!isDiscordConfigured || process.env.NODE_ENV !== "production") && (
-            <div className="pt-4 border-t border-[#242e40] space-y-2.5">
-              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider text-center">
+            <div className="pt-4 border-t border-[#1C2433] space-y-2.5">
+              <div className="text-[11px] font-semibold text-[#64748B] uppercase tracking-wider text-center">
                 Atau Uji Coba Cepat (Mode Demo Dev)
               </div>
               <div className="grid grid-cols-2 gap-2.5">
@@ -116,12 +116,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           )}
 
           {/* Privacy & Trust Notice */}
-          <div className="pt-3.5 border-t border-[#242e40]/70 flex items-start gap-2.5 text-slate-400 text-xs">
+          <div className="pt-3.5 border-t border-[#1C2433] flex items-start gap-2.5 text-[#94A3B8] text-xs">
             <Shield className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
             <div className="space-y-0.5 text-[11px] leading-relaxed">
-              <span className="font-bold text-slate-200 block">Jaminan Privasi & Keamanan Data</span>
-              <p className="text-slate-400">
-                Aplikasi ini hanya membaca nama pengguna dan foto profil dasar melalui protokol resmi Discord OAuth. Kami <span className="text-slate-300 font-semibold">tidak pernah mengakses</span> kata sandi, pesan pribadi, maupun memegang kendali data sensitif Anda.
+              <span className="font-semibold text-white block">Jaminan Privasi & Keamanan Data</span>
+              <p className="text-[#94A3B8]">
+                Aplikasi ini hanya membaca nama pengguna dan foto profil dasar melalui protokol resmi Discord OAuth. Kami tidak pernah mengakses kata sandi maupun data sensitif Anda.
               </p>
             </div>
           </div>

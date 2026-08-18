@@ -85,21 +85,16 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
       />
 
       {/* Modal Container */}
-      <div className="relative w-full max-w-md bg-[#141a24] border border-[#242e40] rounded-2xl shadow-2xl overflow-hidden z-10">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#242e40]">
+      <div className="relative w-full max-w-md bg-[#0F141C] border border-[#1C2433] rounded-xl shadow-2xl overflow-hidden z-10">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#1C2433]">
           <div className="flex items-center gap-2">
-            {playerToEdit ? (
-              <UserCheck className="w-5 h-5 text-emerald-400" />
-            ) : (
-              <UserPlus className="w-5 h-5 text-rose-500" />
-            )}
-            <h3 className="text-sm font-bold text-slate-100">
+            <h3 className="text-sm font-semibold text-white">
               {playerToEdit ? "Edit Data Pemain" : "Tambah Pemain Baru"}
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-[#1c2432]"
+            className="p-1 rounded-lg text-[#94A3B8] hover:text-white hover:bg-[#161D28]"
           >
             <X className="w-4 h-4" />
           </button>
@@ -107,14 +102,14 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs">
           {errorMsg && (
-            <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300">
+            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300">
               {errorMsg}
             </div>
           )}
 
           {/* Name */}
           <div className="space-y-1.5">
-            <label className="font-semibold text-slate-300">
+            <label className="font-semibold text-[#94A3B8]">
               Nama / Nickname Pemain *
             </label>
             <Input
@@ -129,7 +124,7 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
 
           {/* Riot ID */}
           <div className="space-y-1.5">
-            <label className="font-semibold text-slate-300">
+            <label className="font-semibold text-[#94A3B8]">
               Riot ID (Game Tag)
             </label>
             <Input
@@ -143,7 +138,7 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
 
           {/* Primary Role */}
           <div className="space-y-1.5">
-            <label className="font-semibold text-slate-300">
+            <label className="font-semibold text-[#94A3B8]">
               Role Utama *
             </label>
             <Select
@@ -152,7 +147,7 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
               className="text-xs font-medium"
             >
               {VALORANT_ROLES.map((role) => (
-                <option key={role} value={role} className="bg-[#141a24]">
+                <option key={role} value={role} className="bg-[#090C10] text-[#F1F5F9]">
                   {role}
                 </option>
               ))}
@@ -161,7 +156,7 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
 
           {/* Discord ID */}
           <div className="space-y-1.5">
-            <label className="font-semibold text-slate-300">
+            <label className="font-semibold text-[#94A3B8]">
               Username Discord
             </label>
             <Input
@@ -174,23 +169,23 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
           </div>
 
           {/* Status Toggle */}
-          <div className="pt-2 flex items-center justify-between border-t border-[#242e40]">
-            <span className="text-slate-300 font-semibold">Status Pemain:</span>
+          <div className="pt-2 flex items-center justify-between border-t border-[#1C2433]">
+            <span className="text-[#94A3B8] font-semibold">Status Pemain:</span>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={isActive}
                 onChange={(e) => setIsActive(e.target.checked)}
-                className="w-4 h-4 rounded text-rose-500 focus:ring-rose-500 bg-[#0e131b] border-[#242e40]"
+                className="w-4 h-4 rounded text-[#FF4655] focus:ring-[#FF4655] bg-[#090C10] border-[#1C2433]"
               />
-              <span className={isActive ? "text-emerald-400 font-bold" : "text-slate-400"}>
+              <span className={isActive ? "text-emerald-400 font-semibold" : "text-[#94A3B8]"}>
                 {isActive ? "Roster Starter (5 Inti)" : "Pemain Cadangan"}
               </span>
             </label>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-[#242e40]">
+          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-[#1C2433]">
             <Button
               type="button"
               variant="outline"
@@ -204,7 +199,7 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
               type="submit"
               size="sm"
               disabled={loading}
-              className="font-bold shadow-md shadow-rose-950/40"
+              className="font-semibold shadow-sm"
             >
               {loading ? (
                 <>
@@ -212,7 +207,7 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
                   <span>Menyimpan...</span>
                 </>
               ) : (
-                <span>{playerToEdit ? "Simpan Perubahan" : "+ Tambah Pemain"}</span>
+                <span>{playerToEdit ? "Simpan Perubahan" : "Tambah Pemain"}</span>
               )}
             </Button>
           </div>

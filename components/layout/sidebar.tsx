@@ -26,7 +26,7 @@ const navItems = [
     icon: Swords,
   },
   {
-    label: "Catat Match",
+    label: "Catat Scrim",
     href: "/matches/new",
     icon: PlusCircle,
     adminOnly: true,
@@ -83,6 +83,10 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
           const isActive =
             item.href === "/"
               ? pathname === "/"
+              : item.href === "/matches"
+              ? pathname === "/matches" || (pathname.startsWith("/matches/") && !pathname.startsWith("/matches/new") && !pathname.includes("/edit"))
+              : item.href === "/matches/new"
+              ? pathname.startsWith("/matches/new") || pathname.includes("/edit")
               : pathname.startsWith(item.href);
 
           if (item.adminOnly && !isAdmin) {

@@ -108,11 +108,11 @@ export function MatchFilters({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-[#141a24] border border-[#242e40] rounded-xl shadow-sm">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-[#0F141C] border border-[#1C2433] rounded-xl shadow-sm">
       <div className="flex flex-wrap items-center gap-2.5 flex-1">
         {/* Search Opponent */}
         <div className="relative min-w-[200px] flex-1 max-w-xs">
-          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+          <Search className="w-4 h-4 absolute left-3 top-2.5 text-[#94A3B8]" />
           <Input
             placeholder="Cari tim lawan..."
             value={searchQuery}
@@ -128,9 +128,9 @@ export function MatchFilters({
             onChange={(e) => onMapChange(e.target.value)}
             className="h-9 text-xs font-semibold"
           >
-            <option value="ALL">Semua Map</option>
+            <option value="ALL" className="bg-[#090C10] text-[#F1F5F9]">Semua Map</option>
             {VALORANT_MAPS.map((m) => (
-              <option key={m} value={m}>
+              <option key={m} value={m} className="bg-[#090C10] text-[#F1F5F9]">
                 {m}
               </option>
             ))}
@@ -144,10 +144,10 @@ export function MatchFilters({
             onChange={(e) => onResultChange(e.target.value)}
             className="h-9 text-xs font-semibold"
           >
-            <option value="ALL">Semua Hasil</option>
-            <option value="WIN">Menang (WIN)</option>
-            <option value="LOSS">Kalah (LOSS)</option>
-            <option value="DRAW">Seri (DRAW)</option>
+            <option value="ALL" className="bg-[#090C10] text-[#F1F5F9]">Semua Hasil</option>
+            <option value="WIN" className="bg-[#090C10] text-emerald-400">Menang (WIN)</option>
+            <option value="LOSS" className="bg-[#090C10] text-rose-400">Kalah (LOSS)</option>
+            <option value="DRAW" className="bg-[#090C10] text-amber-400">Seri (DRAW)</option>
           </Select>
         </div>
 
@@ -157,7 +157,7 @@ export function MatchFilters({
             variant="ghost"
             size="sm"
             onClick={onReset}
-            className="h-9 text-xs text-slate-400 hover:text-slate-200 gap-1"
+            className="h-9 text-xs text-[#94A3B8] hover:text-[#F1F5F9] gap-1"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Reset</span>

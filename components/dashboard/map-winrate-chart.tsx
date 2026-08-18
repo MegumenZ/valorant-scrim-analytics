@@ -69,39 +69,39 @@ export function MapWinrateChart({ data }: MapWinrateChartProps) {
               data={data}
               margin={{ top: 10, right: 10, left: -25, bottom: 15 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#242e40" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#1C2433" vertical={false} />
               <XAxis
                 dataKey="map"
-                stroke="#94a3b8"
+                stroke="#64748B"
                 fontSize={11}
                 tickLine={false}
-                axisLine={{ stroke: "#242e40" }}
+                axisLine={{ stroke: "#1C2433" }}
               />
               <YAxis
-                stroke="#94a3b8"
+                stroke="#64748B"
                 fontSize={11}
                 tickLine={false}
-                axisLine={{ stroke: "#242e40" }}
+                axisLine={{ stroke: "#1C2433" }}
                 domain={[0, 100]}
                 unit="%"
               />
               <Tooltip
-                cursor={{ fill: "rgba(36, 46, 64, 0.4)" }}
+                cursor={{ fill: "rgba(28, 36, 51, 0.4)" }}
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
                     const item = payload[0].payload as MapChartItem;
                     return (
-                      <div className="bg-[#141a24] border border-[#242e40] p-3 rounded-xl shadow-xl text-xs space-y-1">
-                        <p className="font-bold text-slate-100 text-sm">
+                      <div className="bg-[#0F141C] border border-[#1C2433] p-3 rounded-xl shadow-lg text-xs space-y-1">
+                        <p className="font-bold text-white text-sm">
                           {item.map}
                         </p>
                         <p className="text-emerald-400 font-semibold">
                           Win Rate: {item.winRate}%
                         </p>
-                        <p className="text-slate-300">
+                        <p className="text-[#94A3B8]">
                           Rekor: {item.wins} Menang - {item.losses} Kalah {item.draws > 0 ? `- ${item.draws} Seri` : ""}
                         </p>
-                        <p className="text-slate-400 text-[11px]">
+                        <p className="text-[#64748B] text-[11px]">
                           Total Match: {item.total} Game
                         </p>
                       </div>

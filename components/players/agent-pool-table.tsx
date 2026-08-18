@@ -11,19 +11,15 @@ interface AgentPoolTableProps {
 export function AgentPoolTable({ agentPool }: AgentPoolTableProps) {
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Crosshair className="w-4 h-4 text-rose-500" />
-          <span>Efisiensi & Statistik Agent Pool</span>
+      <CardHeader className="py-3.5 px-5 border-b border-[#1C2433]">
+        <CardTitle className="text-sm font-semibold">
+          Statistik Agent Pool
         </CardTitle>
-        <CardDescription>
-          Distribusi win rate dan statistik tempur saat memainkan agent tertentu
-        </CardDescription>
       </CardHeader>
       <CardContent className="p-0 overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
-            <tr className="border-y border-[#242e40] bg-[#0e131b] text-slate-400 font-semibold text-[11px]">
+            <tr className="border-b border-[#1C2433] bg-[#090C10] text-[#94A3B8] font-semibold text-[11px]">
               <th className="py-3 px-4">Agent</th>
               <th className="py-3 px-4 text-center">Match</th>
               <th className="py-3 px-4 text-center">Rekor (W-L)</th>
@@ -33,10 +29,10 @@ export function AgentPoolTable({ agentPool }: AgentPoolTableProps) {
               <th className="py-3 px-4 text-right">K/D Ratio</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#242e40]/70 font-medium">
+          <tbody className="divide-y divide-[#1C2433] font-medium">
             {agentPool.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-8 text-center text-slate-500">
+                <td colSpan={7} className="py-8 text-center text-[#64748B]">
                   Belum ada data pertandingan untuk pemain ini.
                 </td>
               </tr>
@@ -45,18 +41,18 @@ export function AgentPoolTable({ agentPool }: AgentPoolTableProps) {
                 const agentInfo = VALORANT_AGENTS.find((a) => a.name === stat.agent);
 
                 return (
-                  <tr key={stat.agent} className="hover:bg-[#1c2432]/60 transition-colors">
-                    <td className="py-3 px-4 font-bold text-slate-100">
+                  <tr key={stat.agent} className="hover:bg-[#161D28]/40 transition-colors">
+                    <td className="py-3 px-4 font-semibold text-white">
                       <div className="flex items-center gap-2.5">
                         <img
                           src={getAgentIcon(stat.agent)}
                           alt={stat.agent}
-                          className="w-8 h-8 rounded-full bg-[#141a24] border border-[#242e40] object-cover shrink-0"
+                          className="w-8 h-8 rounded-full bg-[#090C10] border border-[#1C2433] object-cover shrink-0"
                         />
                         <div>
-                          <div className="text-xs font-bold text-slate-100">{stat.agent}</div>
+                          <div className="text-xs font-semibold text-white">{stat.agent}</div>
                           {agentInfo && (
-                            <div className="text-[10px] text-slate-400 font-normal">
+                            <div className="text-[10px] text-[#94A3B8] font-normal">
                               {agentInfo.role}
                             </div>
                           )}
