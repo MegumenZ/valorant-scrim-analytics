@@ -253,6 +253,18 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
     });
   }, [scoreTeam, scoreOpponent, startSide]);
 
+  // Guard against unsaved data loss on accidental page reload/leave
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if ((opponentName.trim() || notes.trim()) && !loading) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [opponentName, notes, loading]);
+
   const handleToggleRoundWinner = (roundNum: number) => {
     setRoundsTimeline((prev) =>
       prev.map((item) => {
