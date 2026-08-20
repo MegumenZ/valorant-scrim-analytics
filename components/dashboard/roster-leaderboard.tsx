@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
-import { Trophy, ChevronRight, User } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
+import { ChevronRight } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Player } from "@/lib/db/schema";
 import { AGENT_ROLE_COLORS, ValorantRole } from "@/lib/data/valorant";
@@ -24,26 +24,30 @@ interface RosterLeaderboardProps {
 
 export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between py-4 px-5">
+    <Card className="bg-[#0C1017] border-[#1C2433] overflow-hidden shadow-sm">
+      <CardHeader className="flex flex-row items-center justify-between py-3.5 px-5 border-b border-[#1C2433] bg-[#090C10]">
         <div>
-          <CardTitle className="text-base">
+          <div className="font-mono text-[10px] font-bold tracking-widest text-[#94A3B8] uppercase">
+            // COMBAT STANDINGS
+          </div>
+          <CardTitle className="text-sm sm:text-base font-bold text-white tracking-tight mt-0.5">
             Leaderboard Roster
           </CardTitle>
         </div>
         <Link href="/roster">
-          <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8 font-medium">
+          <Button variant="outline" size="sm" className="font-mono text-xs gap-1.5 h-7 px-2.5 uppercase">
             <span>Kelola Roster</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </Button>
         </Link>
       </CardHeader>
+
       <CardContent className="p-0">
         {/* MOBILE VIEW: Leaderboard Cards (md:hidden) */}
         <div className="md:hidden divide-y divide-[#1C2433]">
           {leaderboard.length === 0 ? (
-            <div className="py-8 text-center text-[#64748B] text-xs">
-              Belum ada data pemain.
+            <div className="py-8 text-center font-mono text-[#64748B] text-xs">
+              // NO_PLAYER_DATA: Belum ada data pemain.
             </div>
           ) : (
             leaderboard.map((item, idx) => {
@@ -55,26 +59,26 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
                 <Link
                   key={item.player.id}
                   href={`/players/${item.player.id}`}
-                  className="block p-4 hover:bg-[#161D28] active:bg-[#202A3B] transition-colors"
+                  className="block p-4 hover:bg-[#141A24] active:bg-[#1A2230] transition-colors"
                 >
                   <div className="flex items-center justify-between gap-2 mb-2.5">
                     {/* Rank & Player Info */}
                     <div className="flex items-center gap-3">
-                      <div className="shrink-0">
+                      <div className="shrink-0 font-tactical font-black text-base">
                         {idx === 0 ? (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500/15 text-amber-400 font-bold text-xs">
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">
                             1
                           </span>
                         ) : idx === 1 ? (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-400/15 text-slate-300 font-bold text-xs">
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-slate-400/15 text-slate-300 border border-slate-400/30">
                             2
                           </span>
                         ) : idx === 2 ? (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-700/20 text-amber-500 font-bold text-xs">
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-amber-700/20 text-amber-500 border border-amber-700/30">
                             3
                           </span>
                         ) : (
-                          <span className="inline-flex items-center justify-center w-6 h-6 text-[#64748B] font-semibold text-xs">
+                          <span className="inline-flex items-center justify-center w-6 h-6 text-[#64748B] font-mono text-xs">
                             {idx + 1}
                           </span>
                         )}
@@ -82,13 +86,13 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
 
                       <div>
                         <div className="font-bold text-sm text-white flex items-center gap-2">
-                          <span>{item.player.name}</span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${roleColor.badge}`}>
+                          <span className="font-mono">{item.player.name}</span>
+                          <span className={`font-mono text-[9px] px-1.5 py-0.5 rounded font-bold border uppercase tracking-wider ${roleColor.badge}`}>
                             {item.player.primaryRole}
                           </span>
                         </div>
                         {item.player.riotId && (
-                          <div className="text-[11px] text-[#94A3B8] truncate max-w-[150px]">
+                          <div className="font-mono text-[10px] text-[#94A3B8] truncate max-w-[150px]">
                             {item.player.riotId}
                           </div>
                         )}
@@ -96,30 +100,30 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
                     </div>
 
                     {/* Matches Count */}
-                    <div className="text-xs text-[#94A3B8] shrink-0 font-medium">
-                      {item.matches} Match
+                    <div className="font-mono text-xs text-[#94A3B8] shrink-0 font-medium">
+                      {item.matches} MATCH
                     </div>
                   </div>
 
-                  {/* 3-Stat Metric Pill Grid */}
+                  {/* 3-Stat Metric Inline Grid */}
                   <div className="grid grid-cols-3 gap-2 pt-2.5 border-t border-[#1C2433] text-center">
-                    <div className="p-2 rounded-lg bg-[#090C10] border border-[#1C2433]">
-                      <div className="text-[10px] text-[#94A3B8] font-medium">Avg ACS</div>
-                      <div className="font-bold text-sm text-sky-400 tabular-nums">
+                    <div className="p-2 rounded bg-[#090C10] border border-[#1C2433]">
+                      <div className="font-mono text-[9px] text-[#94A3B8] font-bold uppercase">Avg ACS</div>
+                      <div className="font-tactical font-black text-base text-sky-400 tabular-nums">
                         {item.avgAcs}
                       </div>
                     </div>
-                    <div className="p-2 rounded-lg bg-[#090C10] border border-[#1C2433]">
-                      <div className="text-[10px] text-[#94A3B8] font-medium">K/D Ratio</div>
-                      <div className={`font-bold text-sm tabular-nums ${
-                        item.kdRatio >= 1.2 ? "text-emerald-400" : item.kdRatio >= 1.0 ? "text-white" : "text-rose-400"
+                    <div className="p-2 rounded bg-[#090C10] border border-[#1C2433]">
+                      <div className="font-mono text-[9px] text-[#94A3B8] font-bold uppercase">K/D Ratio</div>
+                      <div className={`font-tactical font-black text-base tabular-nums ${
+                        item.kdRatio >= 1.2 ? "text-emerald-400" : item.kdRatio >= 1.0 ? "text-white" : "text-[#FF4655]"
                       }`}>
                         {item.kdRatio.toFixed(2)}
                       </div>
                     </div>
-                    <div className="p-2 rounded-lg bg-[#090C10] border border-[#1C2433]">
-                      <div className="text-[10px] text-[#94A3B8] font-medium">First Blood (FK)</div>
-                      <div className="font-bold text-sm text-emerald-400 tabular-nums">
+                    <div className="p-2 rounded bg-[#090C10] border border-[#1C2433]">
+                      <div className="font-mono text-[9px] text-[#94A3B8] font-bold uppercase">First Blood</div>
+                      <div className="font-tactical font-black text-base text-emerald-400 tabular-nums">
                         {item.firstKills} FK
                       </div>
                     </div>
@@ -134,23 +138,23 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-[#1C2433] bg-[#090C10]/50 text-[#94A3B8] font-medium text-[11px]">
+              <tr className="border-b border-[#1C2433] bg-[#090C10] text-[#94A3B8] font-mono text-[10px] uppercase tracking-wider">
                 <th className="py-3 px-4 text-center w-10">#</th>
                 <th className="py-3 px-4">Pemain</th>
                 <th className="py-3 px-4">Role</th>
                 <th className="py-3 px-4 text-center">Match</th>
-                <th className="py-3 px-4 text-right">Avg ACS</th>
-                <th className="py-3 px-4 text-right">K/D Ratio</th>
+                <th className="py-3 px-4 text-center">Avg ACS</th>
+                <th className="py-3 px-4 text-center">K/D Ratio</th>
                 <th className="py-3 px-4 text-center">First Blood (FK)</th>
                 <th className="py-3 px-4 text-center">Clutch (1vX)</th>
                 <th className="py-3 px-4 text-right"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#1C2433] font-medium">
+            <tbody className="divide-y divide-[#1C2433]">
               {leaderboard.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-8 text-center text-[#64748B]">
-                    Belum ada data pemain.
+                  <td colSpan={9} className="py-8 text-center font-mono text-[#64748B]">
+                    // NO_PLAYER_DATA: Belum ada data pemain.
                   </td>
                 </tr>
               ) : (
@@ -162,77 +166,74 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
                   return (
                     <tr
                       key={item.player.id}
-                      className="hover:bg-[#161D28] transition-colors group"
+                      className="hover:bg-[#141A24] transition-colors group"
                     >
-                      <td className="py-3.5 px-4 text-center font-bold text-[#94A3B8]">
+                      <td className="py-3.5 px-4 text-center font-tactical font-black text-base">
                         {idx === 0 ? (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500/15 text-amber-400 font-bold text-xs">
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">
                             1
                           </span>
                         ) : idx === 1 ? (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-400/15 text-slate-300 font-bold text-xs">
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-slate-400/15 text-slate-300 border border-slate-400/30">
                             2
                           </span>
                         ) : idx === 2 ? (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-700/20 text-amber-500 font-bold text-xs">
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-amber-700/20 text-amber-500 border border-amber-700/30">
                             3
                           </span>
                         ) : (
-                          idx + 1
+                          <span className="text-[#64748B] font-mono text-xs">{idx + 1}</span>
                         )}
                       </td>
-                      <td className="py-3.5 px-4">
-                        <div>
-                          <Link
-                            href={`/players/${item.player.id}`}
-                            className="font-bold text-white group-hover:text-rose-400 transition-colors text-sm"
-                          >
-                            {item.player.name}
-                          </Link>
-                          {item.player.riotId && (
-                            <p className="text-[11px] text-[#94A3B8]">
-                              {item.player.riotId}
-                            </p>
-                          )}
-                        </div>
+                      <td className="py-3.5 px-4 font-bold text-white whitespace-nowrap">
+                        <div className="font-mono text-xs">{item.player.name}</div>
+                        {item.player.riotId && (
+                          <div className="font-mono text-[10px] text-[#94A3B8] font-normal">
+                            {item.player.riotId}
+                          </div>
+                        )}
                       </td>
-                      <td className="py-3.5 px-4">
+                      <td className="py-3.5 px-4 whitespace-nowrap">
                         <span
-                          className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${roleColor.badge}`}
+                          className={`font-mono text-[9px] px-1.5 py-0.5 rounded font-bold border uppercase tracking-wider ${roleColor.badge}`}
                         >
                           {item.player.primaryRole}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-center text-[#F1F5F9]">
+                      <td className="py-3.5 px-4 text-center font-mono text-xs text-[#94A3B8]">
                         {item.matches}
                       </td>
-                      <td className="py-3.5 px-4 text-right font-bold text-sky-400 tabular-nums text-sm">
+                      <td className="py-3.5 px-4 text-center font-tactical text-lg font-black text-sky-400 tabular-nums">
                         {item.avgAcs}
                       </td>
-                      <td className="py-3.5 px-4 text-right font-bold tabular-nums">
+                      <td className="py-3.5 px-4 text-center font-tactical text-lg font-black tabular-nums">
                         <span
                           className={
                             item.kdRatio >= 1.2
                               ? "text-emerald-400"
                               : item.kdRatio >= 1.0
                               ? "text-white"
-                              : "text-rose-400"
+                              : "text-[#FF4655]"
                           }
                         >
                           {item.kdRatio.toFixed(2)}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-center text-emerald-400 font-semibold tabular-nums">
-                        {item.firstKills} FK
+                      <td className="py-3.5 px-4 text-center font-tactical text-base font-bold text-emerald-400 tabular-nums">
+                        {item.firstKills}
                       </td>
-                      <td className="py-3.5 px-4 text-center font-bold text-amber-400 tabular-nums">
-                        {item.clutchesWon > 0 ? `${item.clutchesWon} W` : "-"}
+                      <td className="py-3.5 px-4 text-center font-tactical text-base font-bold text-amber-400 tabular-nums">
+                        {item.clutchesWon}
                       </td>
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
                         <Link href={`/players/${item.player.id}`}>
-                          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 hover:text-rose-400 hover:bg-rose-500/10">
-                            <User className="w-3 h-3" />
-                            <span>Profil</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 font-mono text-xs text-[#94A3B8] hover:text-white hover:bg-[#1C2433]"
+                          >
+                            <span>PROFIL</span>
+                            <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
                           </Button>
                         </Link>
                       </td>
@@ -247,4 +248,3 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
     </Card>
   );
 }
-

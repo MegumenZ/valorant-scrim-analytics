@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ValorantMap } from "@/lib/data/valorant";
 
 interface MapChartItem {
@@ -30,34 +30,42 @@ interface MapWinrateChartProps {
 export function MapWinrateChart({ data }: MapWinrateChartProps) {
   if (!data || data.length === 0) {
     return (
-      <Card className="h-full">
-        <CardHeader>
-          <CardTitle>Win Rate Berdasarkan Map</CardTitle>
-          <CardDescription>Belum ada data pertandingan yang tercatat.</CardDescription>
+      <Card className="h-full bg-[#0C1017] border-[#1C2433]">
+        <CardHeader className="py-3.5 px-5 border-b border-[#1C2433] bg-[#090C10]">
+          <div className="font-mono text-[10px] font-bold tracking-widest text-[#94A3B8] uppercase">
+            // MAP PERFORMANCE MATRIX
+          </div>
+          <CardTitle className="text-sm sm:text-base font-bold text-white tracking-tight mt-0.5">
+            Win Rate Berdasarkan Map
+          </CardTitle>
         </CardHeader>
-        <CardContent className="h-64 flex items-center justify-center text-slate-500 text-xs">
-          Belum ada data map tersedia
+        <CardContent className="h-64 flex items-center justify-center font-mono text-[#64748B] text-xs">
+          // NO_MAP_DATA: Belum ada data map tercatat.
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader>
-        <div className="flex items-center justify-between">
+    <Card className="h-full flex flex-col bg-[#0C1017] border-[#1C2433] overflow-hidden shadow-sm">
+      <CardHeader className="py-3.5 px-5 border-b border-[#1C2433] bg-[#090C10]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <CardTitle>Win Rate Berdasarkan Map</CardTitle>
-            <CardDescription>Persentase kemenangan tim pada setiap map</CardDescription>
+            <div className="font-mono text-[10px] font-bold tracking-widest text-[#94A3B8] uppercase">
+              // MAP PERFORMANCE MATRIX
+            </div>
+            <CardTitle className="text-sm sm:text-base font-bold text-white tracking-tight mt-0.5">
+              Win Rate Berdasarkan Map
+            </CardTitle>
           </div>
-          <div className="flex items-center gap-3 text-xs text-slate-400">
+          <div className="flex items-center gap-3 font-mono text-[10px] text-[#94A3B8]">
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-              <span>&ge; 50% Win</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span>&ge; 50% WIN</span>
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-              <span>&lt; 50% Win</span>
+              <span className="w-2 h-2 rounded-full bg-[#FF4655]" />
+              <span>&lt; 50% WIN</span>
             </span>
           </div>
         </div>
@@ -91,18 +99,15 @@ export function MapWinrateChart({ data }: MapWinrateChartProps) {
                   if (active && payload && payload.length) {
                     const item = payload[0].payload as MapChartItem;
                     return (
-                      <div className="bg-[#0F141C] border border-[#1C2433] p-3 rounded-xl shadow-lg text-xs space-y-1">
-                        <p className="font-bold text-white text-sm">
-                          {item.map}
+                      <div className="bg-[#090C10] border border-[#1C2433] p-3 rounded-lg shadow-xl text-xs space-y-1 font-mono">
+                        <p className="font-tactical font-black text-white text-base uppercase">
+                          MAP // {item.map}
                         </p>
-                        <p className="text-emerald-400 font-semibold">
-                          Win Rate: {item.winRate}%
+                        <p className={item.winRate >= 50 ? "text-emerald-400 font-bold" : "text-[#FF4655] font-bold"}>
+                          WIN RATE: {item.winRate}%
                         </p>
-                        <p className="text-[#94A3B8]">
-                          Rekor: {item.wins} Menang - {item.losses} Kalah {item.draws > 0 ? `- ${item.draws} Seri` : ""}
-                        </p>
-                        <p className="text-[#64748B] text-[11px]">
-                          Total Match: {item.total} Game
+                        <p className="text-[#94A3B8] text-[11px]">
+                          RECORD: {item.wins}W - {item.losses}L {item.draws > 0 ? `(${item.draws}D)` : ""} [{item.total} GAME]
                         </p>
                       </div>
                     );
@@ -110,11 +115,11 @@ export function MapWinrateChart({ data }: MapWinrateChartProps) {
                   return null;
                 }}
               />
-              <Bar dataKey="winRate" radius={[6, 6, 0, 0]} maxBarSize={44}>
+              <Bar dataKey="winRate" radius={[4, 4, 0, 0]}>
                 {data.map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
-                    fill={entry.winRate >= 50 ? "#10B981" : "#EF4444"}
+                    fill={entry.winRate >= 50 ? "#10B981" : "#FF4655"}
                   />
                 ))}
               </Bar>

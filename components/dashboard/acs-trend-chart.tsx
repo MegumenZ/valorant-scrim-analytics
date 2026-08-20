@@ -10,7 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 interface AcsTrendItem {
   matchId: string;
@@ -29,13 +29,17 @@ interface AcsTrendChartProps {
 export function AcsTrendChart({ data }: AcsTrendChartProps) {
   if (!data || data.length === 0) {
     return (
-      <Card className="h-full">
-        <CardHeader>
-          <CardTitle>Tren Combat Score Tim</CardTitle>
-          <CardDescription>Histori ACS tim antar pertandingan</CardDescription>
+      <Card className="h-full bg-[#0C1017] border-[#1C2433]">
+        <CardHeader className="py-3.5 px-5 border-b border-[#1C2433] bg-[#090C10]">
+          <div className="font-mono text-[10px] font-bold tracking-widest text-[#94A3B8] uppercase">
+            // COMBAT INTENSITY TREND
+          </div>
+          <CardTitle className="text-sm sm:text-base font-bold text-white tracking-tight mt-0.5">
+            Tren Combat Score Tim
+          </CardTitle>
         </CardHeader>
-        <CardContent className="h-64 flex items-center justify-center text-slate-500 text-xs">
-          Belum ada riwayat pertandingan tercatat
+        <CardContent className="h-64 flex items-center justify-center font-mono text-[#64748B] text-xs">
+          // NO_TREND_DATA: Belum ada riwayat pertandingan tercatat.
         </CardContent>
       </Card>
     );
@@ -47,15 +51,19 @@ export function AcsTrendChart({ data }: AcsTrendChartProps) {
   }));
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader>
+    <Card className="h-full flex flex-col bg-[#0C1017] border-[#1C2433] overflow-hidden shadow-sm">
+      <CardHeader className="py-3.5 px-5 border-b border-[#1C2433] bg-[#090C10]">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Tren Combat Score Tim</CardTitle>
-            <CardDescription>Rata-rata ACS tim sepanjang match terakhir</CardDescription>
+            <div className="font-mono text-[10px] font-bold tracking-widest text-[#94A3B8] uppercase">
+              // COMBAT INTENSITY TREND
+            </div>
+            <CardTitle className="text-sm sm:text-base font-bold text-white tracking-tight mt-0.5">
+              Tren Combat Score Tim
+            </CardTitle>
           </div>
-          <div className="text-xs text-sky-400 bg-sky-500/10 px-2.5 py-1 rounded-full border border-sky-500/30 font-semibold">
-            Target: 200+ ACS
+          <div className="font-mono text-[10px] text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded border border-sky-500/30 font-bold uppercase tracking-wider">
+            BENCHMARK: 200+ ACS
           </div>
         </div>
       </CardHeader>
@@ -86,30 +94,29 @@ export function AcsTrendChart({ data }: AcsTrendChartProps) {
                   if (active && payload && payload.length) {
                     const item = payload[0].payload as AcsTrendItem & { matchLabel: string };
                     return (
-                      <div className="bg-[#0F141C] border border-[#1C2433] p-3 rounded-xl shadow-lg text-xs space-y-1">
+                      <div className="bg-[#090C10] border border-[#1C2433] p-3 rounded-lg shadow-xl text-xs space-y-1 font-mono">
                         <div className="flex items-center justify-between gap-3">
-                          <p className="font-bold text-white">
-                            vs {item.opponent}
+                          <p className="font-tactical font-black text-white text-base uppercase">
+                            VS {item.opponent}
                           </p>
                           <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            className={`px-1.5 py-0.5 rounded text-[9px] font-bold border uppercase tracking-wider ${
                               item.result === "WIN"
-                                ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
                                 : item.result === "LOSS"
-                                ? "bg-rose-500/15 text-rose-400 border border-rose-500/30"
-                                : "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                                ? "bg-[#FF4655]/10 text-[#FF4655] border-[#FF4655]/40"
+                                : "bg-amber-500/10 text-amber-400 border-amber-500/30"
                             }`}
                           >
                             {item.result} ({item.score})
                           </span>
                         </div>
-                        <p className="text-[#94A3B8]">
-                          Map: <strong className="text-white">{item.map}</strong>
+                        <p className="text-sky-400 font-bold text-sm">
+                          {item.teamAvgAcs} ACS RATA-RATA
                         </p>
-                        <p className="text-sky-400 font-semibold">
-                          Avg Combat Score: {item.teamAvgAcs} ACS
+                        <p className="text-[#94A3B8] text-[10px]">
+                          MAP: {item.map} // TANGGAL: {item.matchDate}
                         </p>
-                        <p className="text-[#64748B] text-[11px]">{item.matchDate}</p>
                       </div>
                     );
                   }
@@ -119,10 +126,10 @@ export function AcsTrendChart({ data }: AcsTrendChartProps) {
               <Line
                 type="monotone"
                 dataKey="teamAvgAcs"
-                stroke="#38BDF8"
+                stroke="#0EA5E9"
                 strokeWidth={2.5}
-                dot={{ r: 4, fill: "#38BDF8", stroke: "#090C10", strokeWidth: 2 }}
-                activeDot={{ r: 6, fill: "#FF4655", stroke: "#ffffff", strokeWidth: 2 }}
+                dot={{ r: 4, fill: "#0C1017", stroke: "#0EA5E9", strokeWidth: 2 }}
+                activeDot={{ r: 6, fill: "#0EA5E9", stroke: "#FFFFFF", strokeWidth: 2 }}
               />
             </LineChart>
           </ResponsiveContainer>

@@ -1,5 +1,4 @@
 import React from "react";
-import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 interface KpiCardProps {
@@ -7,8 +6,9 @@ interface KpiCardProps {
   value: string | number;
   subtitle?: string;
   detail?: string;
-  icon: LucideIcon;
-  variant?: "default" | "win" | "loss" | "highlight" | "amber";
+  code?: string;
+  icon?: any;
+  variant?: "default" | "win" | "loss" | "highlight" | "amber" | "neutral" | "trade";
 }
 
 export function KpiCard({
@@ -16,64 +16,97 @@ export function KpiCard({
   value,
   subtitle,
   detail,
-  icon: Icon,
+  code,
   variant = "default",
 }: KpiCardProps) {
-  const variantStyles = {
-    default: {
-      iconBg: "bg-[#161D28] text-[#94A3B8] border-[#1C2433]",
-      textValue: "text-white",
-    },
-    win: {
-      iconBg: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-      textValue: "text-emerald-400",
-    },
-    loss: {
-      iconBg: "bg-rose-500/10 text-rose-400 border-rose-500/20",
-      textValue: "text-rose-400",
-    },
-    highlight: {
-      iconBg: "bg-rose-500/10 text-[#FF4655] border-rose-500/20",
-      textValue: "text-white",
-    },
-    amber: {
-      iconBg: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-      textValue: "text-amber-400",
-    },
+  const getVariantClasses = () => {
+    switch (variant) {
+      case "win":
+        return {
+          borderAccent: "border-l-2 border-l-emerald-400",
+          valColor: "text-emerald-400",
+          statusDot: "bg-emerald-400",
+        };
+      case "loss":
+        return {
+          borderAccent: "border-l-2 border-l-[#FF4655]",
+          valColor: "text-[#FF4655]",
+          statusDot: "bg-[#FF4655]",
+        };
+      case "trade":
+      case "neutral":
+        return {
+          borderAccent: "border-l-2 border-l-sky-400",
+          valColor: "text-white",
+          statusDot: "bg-sky-400",
+        };
+      case "highlight":
+        return {
+          borderAccent: "border-l-2 border-l-sky-400",
+          valColor: "text-white",
+          statusDot: "bg-sky-400",
+        };
+      case "amber":
+        return {
+          borderAccent: "border-l-2 border-l-amber-400",
+          valColor: "text-amber-400",
+          statusDot: "bg-amber-400",
+        };
+      default:
+        return {
+          borderAccent: "border-l-2 border-l-[#334155]",
+          valColor: "text-white",
+          statusDot: "bg-[#475569]",
+        };
+    }
   };
 
-  const style = variantStyles[variant];
+  const style = getVariantClasses();
 
   return (
-    <div className="rounded-xl border border-[#1C2433] bg-[#0F141C] p-5 shadow-sm transition-all duration-200 hover:border-[#2A364F] flex flex-col justify-between">
-      {/* Header Row: Clean Title & Icon */}
+    <div
+      className={cn(
+        "rounded-lg border border-[#1C2433] bg-[#0C1017] p-4 sm:p-5 shadow-sm transition-all duration-200 hover:border-[#2A364F] flex flex-col justify-between relative overflow-hidden",
+        style.borderAccent
+      )}
+    >
+      {/* Top Header: Monospace Technical Tag */}
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-medium text-[#94A3B8]">
-          {title}
+        <span className="font-mono text-[11px] font-semibold tracking-wider text-[#94A3B8] uppercase">
+          // {title}
         </span>
-        <div className={cn("p-2 rounded-lg border", style.iconBg)}>
-          <Icon className="w-4 h-4" />
-        </div>
+        {code ? (
+          <span className="font-mono text-[10px] text-[#64748B] tracking-widest font-bold">
+            [{code}]
+          </span>
+        ) : (
+          <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", style.statusDot)} />
+        )}
       </div>
 
-      {/* Value Display */}
-      <div className="mt-4">
-        <div className={cn("text-2xl sm:text-3xl font-bold tracking-tight tabular-nums", style.textValue)}>
+      {/* Hero Metric Number in Game-Native Tactical Typography */}
+      <div className="mt-3.5">
+        <div
+          className={cn(
+            "font-tactical text-3xl sm:text-4xl font-extrabold uppercase tracking-tight tabular-nums",
+            style.valColor
+          )}
+        >
           {value}
         </div>
+
+        {/* Inline Monospace Telemetry Subtitle */}
         {subtitle && (
-          <p className="mt-1.5 text-xs text-[#CBD5E1] font-medium">
+          <div className="mt-1 font-mono text-xs text-[#94A3B8] tracking-tight truncate">
             {subtitle}
-          </p>
+          </div>
         )}
         {detail && (
-          <p className="mt-0.5 text-[11px] text-[#64748B]">
+          <div className="mt-0.5 font-mono text-[10px] text-[#64748B] tracking-tight truncate">
             {detail}
-          </p>
+          </div>
         )}
       </div>
     </div>
   );
 }
-
-
