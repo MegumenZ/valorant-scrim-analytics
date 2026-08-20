@@ -31,15 +31,15 @@ export function AcsTrendChart({ data }: AcsTrendChartProps) {
     return (
       <Card className="h-full bg-[#0C1017] border-[#1C2433]">
         <CardHeader className="py-3.5 px-5 border-b border-[#1C2433] bg-[#090C10]">
-          <div className="font-mono text-[10px] font-bold tracking-widest text-[#94A3B8] uppercase">
-            // COMBAT INTENSITY TREND
-          </div>
-          <CardTitle className="text-sm sm:text-base font-bold text-white tracking-tight mt-0.5">
+          <CardTitle className="text-sm sm:text-base font-bold text-white tracking-tight">
             Tren Combat Score Tim
           </CardTitle>
+          <p className="text-xs text-[#94A3B8] mt-0.5">
+            Rata-rata ACS tim sepanjang match terakhir
+          </p>
         </CardHeader>
-        <CardContent className="h-64 flex items-center justify-center font-mono text-[#64748B] text-xs">
-          // NO_TREND_DATA: Belum ada riwayat pertandingan tercatat.
+        <CardContent className="h-64 flex items-center justify-center text-[#64748B] text-xs">
+          Belum ada riwayat pertandingan tercatat.
         </CardContent>
       </Card>
     );
@@ -55,15 +55,15 @@ export function AcsTrendChart({ data }: AcsTrendChartProps) {
       <CardHeader className="py-3.5 px-5 border-b border-[#1C2433] bg-[#090C10]">
         <div className="flex items-center justify-between">
           <div>
-            <div className="font-mono text-[10px] font-bold tracking-widest text-[#94A3B8] uppercase">
-              // COMBAT INTENSITY TREND
-            </div>
-            <CardTitle className="text-sm sm:text-base font-bold text-white tracking-tight mt-0.5">
+            <CardTitle className="text-sm sm:text-base font-bold text-white tracking-tight">
               Tren Combat Score Tim
             </CardTitle>
+            <p className="text-xs text-[#94A3B8] mt-0.5">
+              Rata-rata ACS tim sepanjang match terakhir
+            </p>
           </div>
-          <div className="font-mono text-[10px] text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded border border-sky-500/30 font-bold uppercase tracking-wider">
-            BENCHMARK: 200+ ACS
+          <div className="text-xs text-sky-400 bg-sky-500/10 px-2.5 py-1 rounded border border-sky-500/30 font-semibold">
+            Target: 200+ ACS
           </div>
         </div>
       </CardHeader>
@@ -94,13 +94,13 @@ export function AcsTrendChart({ data }: AcsTrendChartProps) {
                   if (active && payload && payload.length) {
                     const item = payload[0].payload as AcsTrendItem & { matchLabel: string };
                     return (
-                      <div className="bg-[#090C10] border border-[#1C2433] p-3 rounded-lg shadow-xl text-xs space-y-1 font-mono">
+                      <div className="bg-[#090C10] border border-[#1C2433] p-3 rounded-lg shadow-xl text-xs space-y-1">
                         <div className="flex items-center justify-between gap-3">
-                          <p className="font-tactical font-black text-white text-base uppercase">
-                            VS {item.opponent}
+                          <p className="font-bold text-white text-sm">
+                            vs {item.opponent}
                           </p>
                           <span
-                            className={`px-1.5 py-0.5 rounded text-[9px] font-bold border uppercase tracking-wider ${
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold border uppercase ${
                               item.result === "WIN"
                                 ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
                                 : item.result === "LOSS"
@@ -112,10 +112,10 @@ export function AcsTrendChart({ data }: AcsTrendChartProps) {
                           </span>
                         </div>
                         <p className="text-sky-400 font-bold text-sm">
-                          {item.teamAvgAcs} ACS RATA-RATA
+                          {item.teamAvgAcs} ACS Rata-rata
                         </p>
-                        <p className="text-[#94A3B8] text-[10px]">
-                          MAP: {item.map} // TANGGAL: {item.matchDate}
+                        <p className="text-[#94A3B8] text-[11px]">
+                          {item.map} · {item.matchDate}
                         </p>
                       </div>
                     );

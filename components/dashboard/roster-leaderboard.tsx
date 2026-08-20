@@ -27,15 +27,15 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
     <Card className="bg-[#0C1017] border-[#1C2433] overflow-hidden shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between py-3.5 px-5 border-b border-[#1C2433] bg-[#090C10]">
         <div>
-          <div className="font-mono text-[10px] font-bold tracking-widest text-[#94A3B8] uppercase">
-            // COMBAT STANDINGS
-          </div>
-          <CardTitle className="text-sm sm:text-base font-bold text-white tracking-tight mt-0.5">
+          <CardTitle className="text-sm sm:text-base font-bold text-white tracking-tight">
             Leaderboard Roster
           </CardTitle>
+          <p className="text-xs text-[#94A3B8] mt-0.5">
+            Akumulasi statistik performa individu seluruh pemain
+          </p>
         </div>
         <Link href="/roster">
-          <Button variant="outline" size="sm" className="font-mono text-xs gap-1.5 h-7 px-2.5 uppercase">
+          <Button variant="outline" size="sm" className="text-xs gap-1.5 h-7 px-2.5 font-medium">
             <span>Kelola Roster</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </Button>
@@ -46,8 +46,8 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
         {/* MOBILE VIEW: Leaderboard Cards (md:hidden) */}
         <div className="md:hidden divide-y divide-[#1C2433]">
           {leaderboard.length === 0 ? (
-            <div className="py-8 text-center font-mono text-[#64748B] text-xs">
-              // NO_PLAYER_DATA: Belum ada data pemain.
+            <div className="py-8 text-center text-[#64748B] text-xs">
+              Belum ada data pemain.
             </div>
           ) : (
             leaderboard.map((item, idx) => {
@@ -78,7 +78,7 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
                             3
                           </span>
                         ) : (
-                          <span className="inline-flex items-center justify-center w-6 h-6 text-[#64748B] font-mono text-xs">
+                          <span className="inline-flex items-center justify-center w-6 h-6 text-[#64748B] text-xs font-semibold">
                             {idx + 1}
                           </span>
                         )}
@@ -86,13 +86,13 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
 
                       <div>
                         <div className="font-bold text-sm text-white flex items-center gap-2">
-                          <span className="font-mono">{item.player.name}</span>
-                          <span className={`font-mono text-[9px] px-1.5 py-0.5 rounded font-bold border uppercase tracking-wider ${roleColor.badge}`}>
+                          <span>{item.player.name}</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold border ${roleColor.badge}`}>
                             {item.player.primaryRole}
                           </span>
                         </div>
                         {item.player.riotId && (
-                          <div className="font-mono text-[10px] text-[#94A3B8] truncate max-w-[150px]">
+                          <div className="text-[11px] text-[#94A3B8] truncate max-w-[150px]">
                             {item.player.riotId}
                           </div>
                         )}
@@ -100,21 +100,21 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
                     </div>
 
                     {/* Matches Count */}
-                    <div className="font-mono text-xs text-[#94A3B8] shrink-0 font-medium">
-                      {item.matches} MATCH
+                    <div className="text-xs text-[#94A3B8] shrink-0 font-medium">
+                      {item.matches} Match
                     </div>
                   </div>
 
                   {/* 3-Stat Metric Inline Grid */}
                   <div className="grid grid-cols-3 gap-2 pt-2.5 border-t border-[#1C2433] text-center">
                     <div className="p-2 rounded bg-[#090C10] border border-[#1C2433]">
-                      <div className="font-mono text-[9px] text-[#94A3B8] font-bold uppercase">Avg ACS</div>
+                      <div className="text-[10px] text-[#94A3B8] font-medium">Avg ACS</div>
                       <div className="font-tactical font-black text-base text-sky-400 tabular-nums">
                         {item.avgAcs}
                       </div>
                     </div>
                     <div className="p-2 rounded bg-[#090C10] border border-[#1C2433]">
-                      <div className="font-mono text-[9px] text-[#94A3B8] font-bold uppercase">K/D Ratio</div>
+                      <div className="text-[10px] text-[#94A3B8] font-medium">K/D Ratio</div>
                       <div className={`font-tactical font-black text-base tabular-nums ${
                         item.kdRatio >= 1.2 ? "text-emerald-400" : item.kdRatio >= 1.0 ? "text-white" : "text-[#FF4655]"
                       }`}>
@@ -122,7 +122,7 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
                       </div>
                     </div>
                     <div className="p-2 rounded bg-[#090C10] border border-[#1C2433]">
-                      <div className="font-mono text-[9px] text-[#94A3B8] font-bold uppercase">First Blood</div>
+                      <div className="text-[10px] text-[#94A3B8] font-medium">First Blood</div>
                       <div className="font-tactical font-black text-base text-emerald-400 tabular-nums">
                         {item.firstKills} FK
                       </div>
@@ -138,7 +138,7 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-[#1C2433] bg-[#090C10] text-[#94A3B8] font-mono text-[10px] uppercase tracking-wider">
+              <tr className="border-b border-[#1C2433] bg-[#090C10] text-[#94A3B8] font-semibold text-[11px]">
                 <th className="py-3 px-4 text-center w-10">#</th>
                 <th className="py-3 px-4">Pemain</th>
                 <th className="py-3 px-4">Role</th>
@@ -153,8 +153,8 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
             <tbody className="divide-y divide-[#1C2433]">
               {leaderboard.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-8 text-center font-mono text-[#64748B]">
-                    // NO_PLAYER_DATA: Belum ada data pemain.
+                  <td colSpan={9} className="py-8 text-center text-[#64748B]">
+                    Belum ada data pemain.
                   </td>
                 </tr>
               ) : (
@@ -182,25 +182,25 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
                             3
                           </span>
                         ) : (
-                          <span className="text-[#64748B] font-mono text-xs">{idx + 1}</span>
+                          <span className="text-[#64748B] text-xs font-semibold">{idx + 1}</span>
                         )}
                       </td>
                       <td className="py-3.5 px-4 font-bold text-white whitespace-nowrap">
-                        <div className="font-mono text-xs">{item.player.name}</div>
+                        <div className="text-xs">{item.player.name}</div>
                         {item.player.riotId && (
-                          <div className="font-mono text-[10px] text-[#94A3B8] font-normal">
+                          <div className="text-[11px] text-[#94A3B8] font-normal">
                             {item.player.riotId}
                           </div>
                         )}
                       </td>
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <span
-                          className={`font-mono text-[9px] px-1.5 py-0.5 rounded font-bold border uppercase tracking-wider ${roleColor.badge}`}
+                          className={`text-[10px] px-1.5 py-0.5 rounded font-semibold border ${roleColor.badge}`}
                         >
                           {item.player.primaryRole}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-center font-mono text-xs text-[#94A3B8]">
+                      <td className="py-3.5 px-4 text-center text-xs text-[#94A3B8] tabular-nums">
                         {item.matches}
                       </td>
                       <td className="py-3.5 px-4 text-center font-tactical text-lg font-black text-sky-400 tabular-nums">
@@ -230,9 +230,9 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-7 px-2 font-mono text-xs text-[#94A3B8] hover:text-white hover:bg-[#1C2433]"
+                            className="h-7 px-2 text-xs text-[#94A3B8] hover:text-white hover:bg-[#1C2433]"
                           >
-                            <span>PROFIL</span>
+                            <span>Profil</span>
                             <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
                           </Button>
                         </Link>

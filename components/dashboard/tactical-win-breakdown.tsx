@@ -7,8 +7,6 @@ import {
   Swords,
   Timer,
   ShieldAlert,
-  XCircle,
-  CheckCircle2,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { TacticalWinBreakdown, TacticalLossBreakdown, TradingKillStats } from "@/lib/utils/analytics";
@@ -104,32 +102,30 @@ export function TacticalWinBreakdownWidget({
 
   return (
     <Card className="bg-[#0C1017] border-[#1C2433] overflow-hidden shadow-sm">
-      {/* Tactical Telemetry Header */}
+      {/* Clean Header */}
       <CardHeader className="py-3.5 px-5 border-b border-[#1C2433] bg-[#090C10]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <div className="font-mono text-[10px] font-bold tracking-widest text-emerald-400 uppercase">
-              // COMBAT ROUND TELEMETRY
-            </div>
-            <div className="flex items-center gap-2.5 mt-0.5">
-              <CardTitle className="text-sm sm:text-base font-bold text-white tracking-tight">
-                Analisis Taktis Ronde & Efisiensi Spacing
-              </CardTitle>
-            </div>
+            <CardTitle className="text-sm sm:text-base font-bold text-white tracking-tight">
+              Analisis Taktis Ronde & Efisiensi Trade
+            </CardTitle>
+            <p className="text-xs text-[#94A3B8] mt-0.5">
+              Distribusi kondisi menang, penyebab kalah, dan disiplin spacing
+            </p>
           </div>
 
-          <div className="flex items-center gap-2 font-tactical text-xl font-black tracking-wider">
-            <span className="text-emerald-400 font-mono text-sm">[ {wins.totalWins}W ]</span>
-            <span className="text-[#64748B] font-mono text-xs">//</span>
-            <span className="text-[#FF4655] font-mono text-sm">[ {losses.totalLosses}L ]</span>
+          <div className="flex items-center gap-2 text-xs font-semibold">
+            <span className="text-emerald-400 font-bold">{wins.totalWins} Menang</span>
+            <span className="text-[#64748B]">·</span>
+            <span className="text-[#FF4655] font-bold">{losses.totalLosses} Kalah</span>
           </div>
         </div>
       </CardHeader>
 
       <CardContent className="p-4 sm:p-5 space-y-6">
         {!hasData ? (
-          <div className="py-8 text-center font-mono text-xs text-[#64748B]">
-            // NO_TELEMETRY_DATA: Rekam scrim pertama untuk membuka visualisasi timeline taktis.
+          <div className="py-8 text-center text-xs text-[#64748B]">
+            Belum ada data ronde. Rekam scrim pertama untuk melihat analisis.
           </div>
         ) : (
           <>
@@ -138,19 +134,19 @@ export function TacticalWinBreakdownWidget({
               <div className="p-3.5 sm:p-4 rounded-lg bg-[#090C10] border border-[#1C2433] space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#1C2433] pb-2.5">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-[11px] font-bold text-white tracking-wider uppercase">
-                      // SEQUENCE MATCH TERAKHIR: VS {latestMatch.opponentName} ({latestMatch.map})
+                    <span className="text-xs font-bold text-white">
+                      Kronologi Match Terakhir: vs {latestMatch.opponentName} ({latestMatch.map})
                     </span>
                   </div>
-                  <div className="font-mono text-xs font-bold text-[#94A3B8]">
-                    SKOR AKHIR:{" "}
-                    <span className={latestMatch.result === "WIN" ? "text-emerald-400" : "text-[#FF4655]"}>
+                  <div className="text-xs font-medium text-[#94A3B8]">
+                    Skor Akhir:{" "}
+                    <span className={latestMatch.result === "WIN" ? "text-emerald-400 font-bold" : "text-[#FF4655] font-bold"}>
                       {latestMatch.scoreTeam} - {latestMatch.scoreOpponent} ({latestMatch.result})
                     </span>
                   </div>
                 </div>
 
-                {/* Tactical Round Strip (Valorant Combat Report Style) */}
+                {/* Tactical Round Strip */}
                 <div className="space-y-2 overflow-x-auto pb-1">
                   <div className="flex items-center gap-1.5 min-w-max">
                     {latestRounds.map((r) => {
@@ -181,9 +177,9 @@ export function TacticalWinBreakdownWidget({
                     })}
                   </div>
 
-                  <div className="flex items-center justify-between text-[10px] font-mono text-[#64748B] pt-1">
-                    <span>* Hijau = Menang (W), Merah = Kalah (L)</span>
-                    <span>Sisi Awal: {latestMatch.startSide}</span>
+                  <div className="flex items-center justify-between text-[11px] text-[#64748B] pt-1">
+                    <span>Hijau = Menang (W), Merah = Kalah (L)</span>
+                    <span>Sisi Awal: {latestMatch.startSide === "ATTACK" ? "Attack" : "Defense"}</span>
                   </div>
                 </div>
               </div>
@@ -191,12 +187,12 @@ export function TacticalWinBreakdownWidget({
 
             {/* 1. WIN CONDITIONS: Segmented Telemetry Strip */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-[11px] font-bold text-emerald-400 uppercase tracking-wider">
-                  // DISTRIBUSI CARA MENANG ({wins.totalWins} RONDE)
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-emerald-400">
+                  Cara Menang ({wins.totalWins} Ronde)
                 </span>
-                <span className="font-mono text-[10px] text-[#94A3B8]">
-                  SUCCESS_VECTORS
+                <span className="text-[11px] text-[#94A3B8]">
+                  Distribusi Objektif Menang
                 </span>
               </div>
 
@@ -235,42 +231,42 @@ export function TacticalWinBreakdownWidget({
               {/* 4 Inline Telemetry Stat Elements for Wins */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 <div className="p-3 rounded-lg bg-[#090C10] border border-sky-500/30 border-l-2 border-l-sky-400 space-y-1">
-                  <span className="font-mono text-[10px] text-[#94A3B8] font-semibold block uppercase">
+                  <span className="text-xs text-[#94A3B8] font-medium block">
                     Retake & Defuse
                   </span>
                   <div className="flex items-baseline justify-between">
                     <span className="font-tactical text-2xl font-black text-white">{wins.defuses}</span>
-                    <span className="font-mono text-xs font-bold text-sky-400">{wins.defuseRate}%</span>
+                    <span className="text-xs font-bold text-sky-400">{wins.defuseRate}%</span>
                   </div>
                 </div>
 
                 <div className="p-3 rounded-lg bg-[#090C10] border border-emerald-500/30 border-l-2 border-l-emerald-500 space-y-1">
-                  <span className="font-mono text-[10px] text-[#94A3B8] font-semibold block uppercase">
+                  <span className="text-xs text-[#94A3B8] font-medium block">
                     Post-Plant Boom
                   </span>
                   <div className="flex items-baseline justify-between">
                     <span className="font-tactical text-2xl font-black text-white">{wins.detonations}</span>
-                    <span className="font-mono text-xs font-bold text-emerald-400">{wins.detonationRate}%</span>
+                    <span className="text-xs font-bold text-emerald-400">{wins.detonationRate}%</span>
                   </div>
                 </div>
 
                 <div className="p-3 rounded-lg bg-[#090C10] border border-emerald-400/30 border-l-2 border-l-emerald-400 space-y-1">
-                  <span className="font-mono text-[10px] text-[#94A3B8] font-semibold block uppercase">
+                  <span className="text-xs text-[#94A3B8] font-medium block">
                     Musuh Eliminasi
                   </span>
                   <div className="flex items-baseline justify-between">
                     <span className="font-tactical text-2xl font-black text-white">{wins.eliminations}</span>
-                    <span className="font-mono text-xs font-bold text-emerald-400">{wins.eliminationRate}%</span>
+                    <span className="text-xs font-bold text-emerald-400">{wins.eliminationRate}%</span>
                   </div>
                 </div>
 
                 <div className="p-3 rounded-lg bg-[#090C10] border border-teal-500/30 border-l-2 border-l-teal-400 space-y-1">
-                  <span className="font-mono text-[10px] text-[#94A3B8] font-semibold block uppercase">
+                  <span className="text-xs text-[#94A3B8] font-medium block">
                     Waktu Habis (Stall)
                   </span>
                   <div className="flex items-baseline justify-between">
                     <span className="font-tactical text-2xl font-black text-white">{wins.timeouts}</span>
-                    <span className="font-mono text-xs font-bold text-teal-400">{wins.timeoutRate}%</span>
+                    <span className="text-xs font-bold text-teal-400">{wins.timeoutRate}%</span>
                   </div>
                 </div>
               </div>
@@ -278,16 +274,16 @@ export function TacticalWinBreakdownWidget({
 
             {/* 2. LOSS CONDITIONS: Segmented Telemetry Strip in Strict Red Palettes */}
             <div className="space-y-3 pt-2 border-t border-[#1C2433]">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-[11px] font-bold text-[#FF4655] uppercase tracking-wider">
-                  // DISTRIBUSI CARA KALAH ({losses.totalLosses} RONDE)
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-[#FF4655]">
+                  Cara Kalah ({losses.totalLosses} Ronde)
                 </span>
-                <span className="font-mono text-[10px] text-[#94A3B8]">
-                  THREAT_VECTORS
+                <span className="text-[11px] text-[#94A3B8]">
+                  Distribusi Celah Kekalahan
                 </span>
               </div>
 
-              {/* Segmented Bar for Losses (Strictly Danger Red/Rose Spectrum) */}
+              {/* Segmented Bar for Losses */}
               <div className="w-full bg-[#090C10] h-3 rounded overflow-hidden flex border border-[#1C2433]">
                 {losses.defusedLossRate > 0 && (
                   <div
@@ -322,42 +318,42 @@ export function TacticalWinBreakdownWidget({
               {/* 4 Inline Telemetry Stat Elements for Losses */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 <div className="p-3 rounded-lg bg-[#090C10] border border-[#FF4655]/30 border-l-2 border-l-[#FF4655] space-y-1">
-                  <span className="font-mono text-[10px] text-[#94A3B8] font-semibold block uppercase">
+                  <span className="text-xs text-[#94A3B8] font-medium block">
                     Musuh Retake Spike
                   </span>
                   <div className="flex items-baseline justify-between">
                     <span className="font-tactical text-2xl font-black text-white">{losses.defusedLosses}</span>
-                    <span className="font-mono text-xs font-bold text-[#FF4655]">{losses.defusedLossRate}%</span>
+                    <span className="text-xs font-bold text-[#FF4655]">{losses.defusedLossRate}%</span>
                   </div>
                 </div>
 
                 <div className="p-3 rounded-lg bg-[#090C10] border border-[#FF4655]/30 border-l-2 border-l-[#E11D48] space-y-1">
-                  <span className="font-mono text-[10px] text-[#94A3B8] font-semibold block uppercase">
+                  <span className="text-xs text-[#94A3B8] font-medium block">
                     Spike Musuh Meledak
                   </span>
                   <div className="flex items-baseline justify-between">
                     <span className="font-tactical text-2xl font-black text-white">{losses.detonationLosses}</span>
-                    <span className="font-mono text-xs font-bold text-[#FF4655]">{losses.detonationLossRate}%</span>
+                    <span className="text-xs font-bold text-[#FF4655]">{losses.detonationLossRate}%</span>
                   </div>
                 </div>
 
                 <div className="p-3 rounded-lg bg-[#090C10] border border-[#FF4655]/30 border-l-2 border-l-[#BE123C] space-y-1">
-                  <span className="font-mono text-[10px] text-[#94A3B8] font-semibold block uppercase">
+                  <span className="text-xs text-[#94A3B8] font-medium block">
                     Tim Tereliminasi
                   </span>
                   <div className="flex items-baseline justify-between">
                     <span className="font-tactical text-2xl font-black text-white">{losses.eliminations}</span>
-                    <span className="font-mono text-xs font-bold text-[#FF4655]">{losses.eliminationRate}%</span>
+                    <span className="text-xs font-bold text-[#FF4655]">{losses.eliminationRate}%</span>
                   </div>
                 </div>
 
                 <div className="p-3 rounded-lg bg-[#090C10] border border-[#FF4655]/30 border-l-2 border-l-[#9F1239] space-y-1">
-                  <span className="font-mono text-[10px] text-[#94A3B8] font-semibold block uppercase">
+                  <span className="text-xs text-[#94A3B8] font-medium block">
                     Gagal Plant (0:00)
                   </span>
                   <div className="flex items-baseline justify-between">
                     <span className="font-tactical text-2xl font-black text-white">{losses.timeoutLosses}</span>
-                    <span className="font-mono text-xs font-bold text-[#FF4655]">{losses.timeoutLossRate}%</span>
+                    <span className="text-xs font-bold text-[#FF4655]">{losses.timeoutLossRate}%</span>
                   </div>
                 </div>
               </div>
@@ -365,36 +361,36 @@ export function TacticalWinBreakdownWidget({
 
             {/* 3. TRADING KILLS & SPACING TELEMETRY GAUGE */}
             <div className="p-3.5 sm:p-4 rounded-lg bg-[#090C10] border border-[#1C2433] space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-[11px] font-bold text-white uppercase tracking-wider">
-                  // EFISIENSI TRADE & SPACING REFRAG
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-white">
+                  Efisiensi Trading Kills & Spacing
                 </span>
-                <span className="font-mono text-xs font-bold text-sky-400">
-                  {trade.tradeEfficiency}% TRADE RATE
+                <span className="font-bold text-sky-400">
+                  {trade.tradeEfficiency}% Trade Rate
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                <div className="p-3 rounded bg-[#0C1017] border border-emerald-500/30 border-l-2 border-l-emerald-400">
-                  <span className="font-mono text-[10px] text-emerald-400 font-semibold block uppercase">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-center">
+                <div className="p-3 rounded bg-[#0C1017] border border-emerald-500/30">
+                  <span className="text-xs text-emerald-400 font-semibold block">
                     Kematian Di-Trade
                   </span>
                   <span className="font-tactical text-2xl font-black text-emerald-400">{trade.tradedDeaths}</span>
-                  <span className="font-mono text-[10px] text-[#94A3B8] block">Dibalas cepat rekan</span>
+                  <span className="text-[11px] text-[#94A3B8] block">Dibalas cepat rekan</span>
                 </div>
-                <div className="p-3 rounded bg-[#0C1017] border border-sky-500/30 border-l-2 border-l-sky-400">
-                  <span className="font-mono text-[10px] text-sky-400 font-semibold block uppercase">
+                <div className="p-3 rounded bg-[#0C1017] border border-sky-500/30">
+                  <span className="text-xs text-sky-400 font-semibold block">
                     Refrag Kills
                   </span>
                   <span className="font-tactical text-2xl font-black text-sky-400">{trade.tradesWon}</span>
-                  <span className="font-mono text-[10px] text-[#94A3B8] block">Kill balasan didapat</span>
+                  <span className="text-[11px] text-[#94A3B8] block">Kill balasan didapat</span>
                 </div>
-                <div className="p-3 rounded bg-[#0C1017] border border-[#FF4655]/30 border-l-2 border-l-[#FF4655]">
-                  <span className="font-mono text-[10px] text-[#FF4655] font-semibold block uppercase">
+                <div className="p-3 rounded bg-[#0C1017] border border-[#FF4655]/30">
+                  <span className="text-xs text-[#FF4655] font-semibold block">
                     Dry Deaths (Terisolasi)
                   </span>
                   <span className="font-tactical text-2xl font-black text-[#FF4655]">{trade.untradedDeaths}</span>
-                  <span className="font-mono text-[10px] text-[#94A3B8] block">Mati tanpa refrag</span>
+                  <span className="text-[11px] text-[#94A3B8] block">Mati tanpa refrag</span>
                 </div>
               </div>
 

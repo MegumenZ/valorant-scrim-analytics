@@ -16,7 +16,6 @@ export function KpiCard({
   value,
   subtitle,
   detail,
-  code,
   variant = "default",
 }: KpiCardProps) {
   const getVariantClasses = () => {
@@ -35,11 +34,6 @@ export function KpiCard({
         };
       case "trade":
       case "neutral":
-        return {
-          borderAccent: "border-l-2 border-l-sky-400",
-          valColor: "text-white",
-          statusDot: "bg-sky-400",
-        };
       case "highlight":
         return {
           borderAccent: "border-l-2 border-l-sky-400",
@@ -70,22 +64,16 @@ export function KpiCard({
         style.borderAccent
       )}
     >
-      {/* Top Header: Monospace Technical Tag */}
+      {/* Top Header: Clean, High-Legibility Title */}
       <div className="flex items-center justify-between gap-2">
-        <span className="font-mono text-[11px] font-semibold tracking-wider text-[#94A3B8] uppercase">
-          // {title}
+        <span className="text-xs font-semibold tracking-wider text-[#94A3B8] uppercase">
+          {title}
         </span>
-        {code ? (
-          <span className="font-mono text-[10px] text-[#64748B] tracking-widest font-bold">
-            [{code}]
-          </span>
-        ) : (
-          <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", style.statusDot)} />
-        )}
+        <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", style.statusDot)} />
       </div>
 
       {/* Hero Metric Number in Game-Native Tactical Typography */}
-      <div className="mt-3.5">
+      <div className="mt-3">
         <div
           className={cn(
             "font-tactical text-3xl sm:text-4xl font-extrabold uppercase tracking-tight tabular-nums",
@@ -95,14 +83,14 @@ export function KpiCard({
           {value}
         </div>
 
-        {/* Inline Monospace Telemetry Subtitle */}
+        {/* Clean Context Subtitle */}
         {subtitle && (
-          <div className="mt-1 font-mono text-xs text-[#94A3B8] tracking-tight truncate">
+          <div className="mt-1 text-xs font-medium text-[#CBD5E1] tracking-normal truncate">
             {subtitle}
           </div>
         )}
         {detail && (
-          <div className="mt-0.5 font-mono text-[10px] text-[#64748B] tracking-tight truncate">
+          <div className="mt-0.5 text-[11px] text-[#64748B] tracking-normal truncate">
             {detail}
           </div>
         )}

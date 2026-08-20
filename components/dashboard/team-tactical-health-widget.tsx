@@ -25,32 +25,26 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
 
   return (
     <Card className="bg-[#0C1017] border-[#1C2433] overflow-hidden shadow-sm">
-      {/* Tactical Telemetry Header */}
+      {/* Clean Tactical Header */}
       <CardHeader className="py-3.5 px-5 border-b border-[#1C2433] bg-[#090C10]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <div className="font-mono text-[10px] font-bold tracking-widest text-emerald-400 uppercase">
-              // UNIT HEALTH REPORT
-            </div>
-            <div className="flex items-center gap-2.5 mt-0.5">
-              <CardTitle className="text-sm sm:text-base font-bold text-white tracking-tight">
-                Kesehatan Taktis Tim
-              </CardTitle>
-              <span className="font-mono text-[10px] text-[#94A3B8] font-medium hidden sm:inline">
-                [{overview.totalMatchesAnalyzed} SCRIMS ANALYZED]
-              </span>
-            </div>
+            <CardTitle className="text-sm sm:text-base font-bold text-white tracking-tight">
+              Kesehatan Taktis Tim
+            </CardTitle>
+            <p className="text-xs text-[#94A3B8] mt-0.5">
+              Evaluasi performa dari {overview.totalMatchesAnalyzed} pertandingan scrim
+            </p>
           </div>
 
-          {/* Inline Combat Grade Display */}
+          {/* Inline Grade Display */}
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <div className="font-mono text-[10px] text-[#94A3B8] uppercase tracking-wider">
-                Nilai Kolektif
+              <div className="text-[11px] text-[#94A3B8] font-medium">
+                Skor Fundamental
               </div>
-              <div className="flex items-center gap-1.5 font-mono text-xs text-[#94A3B8]">
-                <span>SKOR:</span>
-                <span className="text-white font-bold">{overview.averageScore}/100</span>
+              <div className="text-xs text-white font-bold tabular-nums">
+                {overview.averageScore} / 100
               </div>
             </div>
             <div
@@ -68,11 +62,11 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
           {/* 1. Spacing & Trade Trend */}
           <div className="p-3.5 rounded-lg bg-[#090C10] border border-[#1C2433] flex flex-col justify-between space-y-2 border-l-2 border-l-sky-400">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-mono text-[10px] font-semibold text-[#94A3B8] uppercase tracking-wider">
-                // TREN SPACING TIM
+              <span className="text-xs font-semibold text-[#94A3B8]">
+                Tren Spacing Tim
               </span>
               <span
-                className={`font-mono text-xs font-bold ${
+                className={`text-xs font-bold ${
                   overview.tradeRateTrend.isImproving
                     ? "text-emerald-400"
                     : "text-[#FF4655]"
@@ -87,32 +81,32 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
               <div className="font-tactical text-2xl sm:text-3xl font-extrabold text-white tracking-tight tabular-nums">
                 {overview.tradeRateTrend.current}%
               </div>
-              <div className="font-mono text-[11px] text-[#94A3B8] mt-0.5">
-                BASELINE: {overview.tradeRateTrend.baseline}%
+              <div className="text-[11px] text-[#94A3B8] mt-0.5">
+                Baseline: {overview.tradeRateTrend.baseline}%
               </div>
             </div>
           </div>
 
-          {/* 2. Strongest Map (with Map Silhouette / Tactical Icon) */}
+          {/* 2. Strongest Map */}
           <div className="p-3.5 rounded-lg bg-[#090C10] border border-[#1C2433] flex flex-col justify-between space-y-2 border-l-2 border-l-emerald-400">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-mono text-[10px] font-semibold text-emerald-400 uppercase tracking-wider">
-                // MAP TERKUAT
+              <span className="text-xs font-semibold text-emerald-400">
+                Map Terkuat
               </span>
-              <span className="font-mono text-[10px] text-[#94A3B8]">
+              <span className="text-[11px] text-[#94A3B8]">
                 {overview.strongestMap
-                  ? `${overview.strongestMap.matchCount} GAME`
+                  ? `${overview.strongestMap.matchCount} Game`
                   : "-"}
               </span>
             </div>
             <div className="flex items-center justify-between gap-2">
               <div>
                 <div className="font-tactical text-2xl sm:text-3xl font-extrabold text-white tracking-wide uppercase">
-                  {overview.strongestMap ? overview.strongestMap.map : "N/A"}
+                  {overview.strongestMap ? overview.strongestMap.map : "-"}
                 </div>
-                <div className="font-mono text-[11px] font-bold text-emerald-400 mt-0.5">
+                <div className="text-[11px] font-bold text-emerald-400 mt-0.5">
                   {overview.strongestMap
-                    ? `${overview.strongestMap.winrate}% WIN RATE`
+                    ? `${overview.strongestMap.winrate}% Win Rate`
                     : "Belum ada data"}
                 </div>
               </div>
@@ -126,26 +120,26 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
             </div>
           </div>
 
-          {/* 3. Weakest Map / Focus Evaluation (Danger Red Semantics) */}
+          {/* 3. Weakest Map / Focus Evaluation */}
           <div className="p-3.5 rounded-lg bg-[#090C10] border border-[#1C2433] flex flex-col justify-between space-y-2 border-l-2 border-l-[#FF4655]">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-mono text-[10px] font-semibold text-[#FF4655] uppercase tracking-wider">
-                // FOKUS EVALUASI MAP
+              <span className="text-xs font-semibold text-[#FF4655]">
+                Fokus Evaluasi Map
               </span>
-              <span className="font-mono text-[10px] text-[#94A3B8]">
+              <span className="text-[11px] text-[#94A3B8]">
                 {overview.weakestMap
-                  ? `${overview.weakestMap.matchCount} GAME`
+                  ? `${overview.weakestMap.matchCount} Game`
                   : "-"}
               </span>
             </div>
             <div className="flex items-center justify-between gap-2">
               <div>
                 <div className="font-tactical text-2xl sm:text-3xl font-extrabold text-white tracking-wide uppercase">
-                  {overview.weakestMap ? overview.weakestMap.map : "N/A"}
+                  {overview.weakestMap ? overview.weakestMap.map : "-"}
                 </div>
-                <div className="font-mono text-[11px] font-bold text-[#FF4655] mt-0.5">
+                <div className="text-[11px] font-bold text-[#FF4655] mt-0.5">
                   {overview.weakestMap
-                    ? `${overview.weakestMap.winrate}% WIN RATE`
+                    ? `${overview.weakestMap.winrate}% Win Rate`
                     : "Belum ada data"}
                 </div>
               </div>
@@ -162,16 +156,16 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
           {/* 4. Collective Tactical Health Score */}
           <div className="p-3.5 rounded-lg bg-[#090C10] border border-[#1C2433] flex flex-col justify-between space-y-2 border-l-2 border-l-sky-400">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-mono text-[10px] font-semibold text-[#94A3B8] uppercase tracking-wider">
-                // SKOR FUNDAMENTAL
+              <span className="text-xs font-semibold text-[#94A3B8]">
+                Rata-rata Skor Taktis
               </span>
             </div>
             <div>
               <div className="font-tactical text-2xl sm:text-3xl font-extrabold text-sky-400 tracking-tight tabular-nums">
-                {overview.averageScore} <span className="text-base text-[#94A3B8] font-mono">/ 100</span>
+                {overview.averageScore} <span className="text-base text-[#94A3B8] font-normal">/ 100</span>
               </div>
-              <div className="font-mono text-[11px] text-[#94A3B8] mt-0.5">
-                DISIPLIN TAKTIS TIM
+              <div className="text-[11px] text-[#94A3B8] mt-0.5">
+                Fundamental Tim
               </div>
             </div>
           </div>
@@ -180,8 +174,8 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
         {/* Actionable Coach Focus Box with Subtle Danger Glow on High Priority */}
         <div className="p-3.5 sm:p-4 rounded-lg bg-[#090C10] border border-[#1C2433] space-y-3">
           <div className="flex items-center justify-between border-b border-[#1C2433] pb-2">
-            <span className="font-mono text-xs font-bold text-white uppercase tracking-wider">
-              // PRIORITAS EVALUASI COACH (MINGGU INI)
+            <span className="text-xs font-bold text-white">
+              Prioritas Evaluasi Coach (Minggu Ini)
             </span>
           </div>
 
@@ -199,20 +193,20 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-bold text-white tracking-tight">
+                    <span className="text-xs font-bold text-white">
                       {item.title}
                     </span>
                     <span
-                      className={`font-mono text-[9px] font-extrabold px-1.5 py-0.5 rounded border uppercase tracking-wider ${
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
                         isHighUrgency
                           ? "text-[#FF4655] border-[#FF4655]/40 bg-[#FF4655]/10"
                           : "text-sky-400 border-sky-500/30 bg-sky-500/10"
                       }`}
                     >
-                      {isHighUrgency ? "PRIORITAS TINGGI" : "PENGEMBANGAN"}
+                      {isHighUrgency ? "Prioritas Tinggi" : "Pengembangan"}
                     </span>
                   </div>
-                  <p className="font-mono text-[11px] text-[#94A3B8] leading-relaxed">
+                  <p className="text-[11px] text-[#94A3B8] leading-relaxed">
                     {item.desc}
                   </p>
                 </div>
