@@ -37,6 +37,7 @@ import { RoundOutcomeType, RoundWinType } from "@/lib/validations/match";
 import { getOutcomeConfig } from "@/components/matches/match-entry-form";
 import { evaluateMatchTactics } from "@/lib/utils/tactical-expert-engine";
 import { TacticalExpertCard } from "@/components/matches/tactical-expert-card";
+import { ConfirmModal } from "@/components/ui/confirm-modal";
 
 interface MatchDetailViewProps {
   match: MatchWithStats;
@@ -47,6 +48,7 @@ export function MatchDetailView({ match, pastMatches = [] }: MatchDetailViewProp
   const router = useRouter();
   const { isAdmin } = useUserRole();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<MatchAttachment | null>(null);
   const [selectedPdf, setSelectedPdf] = useState<MatchAttachment | null>(null);
 
@@ -62,7 +64,6 @@ export function MatchDetailView({ match, pastMatches = [] }: MatchDetailViewProp
   };
 
   const handleDelete = async () => {
-    if (!confirm("Apakah Anda yakin ingin menghapus data pertandingan scrim ini?")) return;
     try {
       setIsDeleting(true);
       await deleteMatch(match.id);
@@ -108,7 +109,7 @@ export function MatchDetailView({ match, pastMatches = [] }: MatchDetailViewProp
             <Button
               variant="destructive"
               size="sm"
-              onClick={handleDelete}
+              onClick={() => setShowDeleteModal(true)}
               disabled={isDeleting}
               className="gap-1.5 text-xs"
             >
@@ -915,6 +916,19 @@ export function MatchDetailView({ match, pastMatches = [] }: MatchDetailViewProp
           </div>
         </div>
       )}
+
+      {/* Custom Tactical Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDelete}
+        title="Konfirmasi Hapus Scrim"
+        description="Apakah Anda yakin ingin menghapus data pertandingan scrim ini? Seluruh riwayat ronde, statistik pemain, dan lampiran catatan strategi akan dihapus permanen."
+        confirmText="Hapus Match"
+        cancelText="Batal"
+        variant="danger"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }
