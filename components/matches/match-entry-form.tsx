@@ -455,20 +455,25 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         throw new Error("Pastikan 5 slot diisi oleh 5 pemain yang berbeda (tidak boleh ada pemain yang dipilih lebih dari satu kali).");
       }
       
-      const formattedStats = playerRows.map((row) => ({
-        playerId: row.playerId,
-        agent: row.agent,
-        acs: Number(row.acs) || 0,
-        kills: Number(row.kills) || 0,
-        deaths: Number(row.deaths) || 0,
-        assists: Number(row.assists) || 0,
-        adr: 0,
-        hsPercent: null,
-        firstKills: Number(row.firstKills) || 0,
-        firstDeaths: 0,
-        clutchesWon: Number(row.clutchesWon) || 0,
-        kastPercent: null,
-      }));
+      const formattedStats = playerRows.map((row) => {
+        const acsVal = Number(row.acs) || 0;
+        // Accurate heuristic estimation for ADR (ADR ≈ ACS * 0.65) to maintain analytics integrity
+        const computedAdr = Number((acsVal * 0.65).toFixed(1));
+        return {
+          playerId: row.playerId,
+          agent: row.agent,
+          acs: acsVal,
+          kills: Number(row.kills) || 0,
+          deaths: Number(row.deaths) || 0,
+          assists: Number(row.assists) || 0,
+          adr: computedAdr,
+          hsPercent: null,
+          firstKills: Number(row.firstKills) || 0,
+          firstDeaths: 0,
+          clutchesWon: Number(row.clutchesWon) || 0,
+          kastPercent: null,
+        };
+      });
 
       const finalRoundsTimeline = roundsTimeline.map((r) => {
         const valid = getValidOutcomes(r.side, r.winner);

@@ -3,14 +3,15 @@
 import { db, ensureDbInitialized } from "../db";
 import { matches, matchPlayerStats, players, Match, Player, MatchPlayerStat, MatchAttachment } from "../db/schema";
 import { eq, desc, asc, sql } from "drizzle-orm";
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { createId } from "@paralleldrive/cuid2";
 import { matchSchema, matchInputSchema, MatchInput, RoundItem } from "../validations/match";
 import { calculateKD, calculateOpeningDuelRatio, calculateMatchResult, DashboardSummary, MapAggregateStats } from "../utils/analytics";
 import { VALORANT_MAPS, ValorantMap } from "../data/valorant";
 import { ActionResponse } from "../types/action";
 
-export interface MatchWithStats extends Match {
+export interface MatchWithStats extends Omit<Match, "attachments"> {
+  attachments?: string | null;
   playerStats: Array<MatchPlayerStat & { player: Player }>;
   parsedAttachments?: MatchAttachment[];
   parsedRoundTimeline?: RoundItem[];
@@ -34,8 +35,11 @@ export async function getDashboardSummary(): Promise<{
 }> {
   await ensureDbInitialized();
 
-  // Fetch all matches
+  // Fetch all matches (omit heavy attachments column for dashboard aggregate)
   const allMatches = await db.query.matches.findMany({
+    columns: {
+      attachments: false,
+    },
     orderBy: [desc(matches.matchDate), desc(matches.createdAt)],
     with: {
       playerStats: {
@@ -406,6 +410,9 @@ export async function getAllMatches(params?: {
   await ensureDbInitialized();
 
   const all = await db.query.matches.findMany({
+    columns: {
+      attachments: false,
+    },
     orderBy: [desc(matches.matchDate), desc(matches.createdAt)],
     with: {
       playerStats: {
@@ -559,7 +566,7 @@ export async function createMatchAction(
   }
 
   // 3. Invalidate Cache Analitik & Paths
-  revalidateTag("scrim-analytics", "max");
+  updateTag("scrim-analytics");
   revalidatePath("/");
   revalidatePath("/matches");
   revalidatePath("/maps");
@@ -660,7 +667,7 @@ export async function updateMatch(
     };
   }
 
-  revalidateTag("scrim-analytics", "max");
+  updateTag("scrim-analytics");
   revalidatePath("/");
   revalidatePath("/matches");
   revalidatePath(`/matches/${id}`);
@@ -694,7 +701,7 @@ export async function deleteMatch(id: string): Promise<ActionResponse<{ id: stri
     };
   }
 
-  revalidateTag("scrim-analytics", "max");
+  updateTag("scrim-analytics");
   revalidatePath("/");
   revalidatePath("/matches");
   revalidatePath("/maps");
@@ -706,7 +713,11 @@ export async function deleteMatch(id: string): Promise<ActionResponse<{ id: stri
 export async function getMapAnalyticsData(): Promise<MapAggregateStats[]> {
   await ensureDbInitialized();
 
-  const allMatches = await db.query.matches.findMany();
+  const allMatches = await db.query.matches.findMany({
+    columns: {
+      attachments: false,
+    },
+  });
 
   return VALORANT_MAPS.map((mapName) => {
     const mapMatches = allMatches.filter((m) => m.map === mapName);

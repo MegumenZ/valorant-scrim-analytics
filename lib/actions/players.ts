@@ -3,7 +3,7 @@
 import { db, ensureDbInitialized } from "../db";
 import { players, matchPlayerStats, matches, Player, MatchPlayerStat } from "../db/schema";
 import { eq, desc } from "drizzle-orm";
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { createId } from "@paralleldrive/cuid2";
 import { playerSchema, PlayerInput } from "../validations/player";
 import { calculateKD, calculateOpeningDuelRatio, AgentStatSummary, PlayerAggregateStats } from "../utils/analytics";
@@ -253,7 +253,7 @@ export async function createPlayer(
     };
   }
 
-  revalidateTag("scrim-analytics", "max");
+  updateTag("scrim-analytics");
   revalidatePath("/roster");
   revalidatePath("/matches/new");
   revalidatePath("/");
@@ -305,7 +305,7 @@ export async function updatePlayer(
     };
   }
 
-  revalidateTag("scrim-analytics", "max");
+  updateTag("scrim-analytics");
   revalidatePath("/roster");
   revalidatePath(`/players/${id}`);
   revalidatePath("/matches/new");
@@ -341,7 +341,7 @@ export async function togglePlayerActive(
     };
   }
 
-  revalidateTag("scrim-analytics", "max");
+  updateTag("scrim-analytics");
   revalidatePath("/roster");
   revalidatePath("/matches/new");
   revalidatePath("/");
@@ -375,7 +375,7 @@ export async function deletePlayer(
     };
   }
 
-  revalidateTag("scrim-analytics", "max");
+  updateTag("scrim-analytics");
   revalidatePath("/roster");
   revalidatePath("/matches/new");
   revalidatePath("/matches");

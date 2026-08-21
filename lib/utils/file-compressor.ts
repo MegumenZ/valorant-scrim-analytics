@@ -134,13 +134,13 @@ export async function processAndCompressPdf(file: File): Promise<CompressionResu
       addDefaultPage: false,
     });
 
-    // Convert to Base64 Data URL
-    let binary = "";
-    const len = compressedBytes.byteLength;
-    for (let i = 0; i < len; i++) {
-      binary += String.fromCharCode(compressedBytes[i]);
+    // Convert to Base64 Data URL using chunking to prevent memory fragmentation & callstack limits
+    const CHUNK_SIZE = 0x8000; // 32768
+    const chunks: string[] = [];
+    for (let i = 0; i < compressedBytes.length; i += CHUNK_SIZE) {
+      chunks.push(String.fromCharCode.apply(null, compressedBytes.subarray(i, i + CHUNK_SIZE) as unknown as number[]));
     }
-    const base64 = btoa(binary);
+    const base64 = btoa(chunks.join(""));
     const dataUrl = `data:application/pdf;base64,${base64}`;
 
     const compressedSize = compressedBytes.byteLength;

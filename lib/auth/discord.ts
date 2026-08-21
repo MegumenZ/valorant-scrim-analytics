@@ -25,7 +25,7 @@ export interface DiscordUser {
 }
 
 /**
- * Get avatar URL for a Discord user
+ * Get avatar URL for a Discord user with safe BigInt fallback
  */
 export function getDiscordAvatarUrl(
   discordId: string,
@@ -37,7 +37,16 @@ export function getDiscordAvatarUrl(
     const ext = isAnimated ? "gif" : "png";
     return `https://cdn.discordapp.com/avatars/${discordId}/${avatarHash}.${ext}?size=${size}`;
   }
-  // Default discord avatar based on user ID modulo 6
-  const defaultIndex = (BigInt(discordId) >> 22n) % 6n;
+  
+  // Safe default discord avatar calculation based on user ID modulo 6
+  let defaultIndex = 0n;
+  try {
+    if (discordId && /^\d+$/.test(discordId)) {
+      defaultIndex = (BigInt(discordId) >> 22n) % 6n;
+    }
+  } catch {
+    defaultIndex = 0n;
+  }
+
   return `https://cdn.discordapp.com/embed/avatars/${defaultIndex}.png`;
 }
