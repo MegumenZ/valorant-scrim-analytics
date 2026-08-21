@@ -23,6 +23,8 @@ import {
   ShieldCheck,
   Timer,
   Sparkles,
+  Share2,
+  Check,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -78,8 +80,28 @@ export function MatchDetailView({ match, pastMatches = [] }: MatchDetailViewProp
     }
   };
 
+  const [isCopiedSummary, setIsCopiedSummary] = useState(false);
+
   const sortedStats = [...match.playerStats].sort((a, b) => b.acs - a.acs);
   const topFragger = sortedStats[0];
+
+  const handleCopyMatchSummary = () => {
+    const topFraggerKd = topFragger ? calculateKD(topFragger.kills, topFragger.deaths) : 0;
+    const resultEmoji = match.result === "WIN" ? "✅ WIN" : match.result === "LOSS" ? "❌ LOSS" : "⚖️ DRAW";
+
+    const text = `🎮 **SCRIM MATCH SUMMARY - TEAM SC**
+🗺️ **Map:** ${match.map} (${match.startSide === "ATTACK" ? "Attack" : "Defense"} Start) | 📅 ${match.matchDate}
+🏆 **Hasil:** Team SC **${match.scoreTeam} - ${match.scoreOpponent}** ${match.opponentName} (${resultEmoji})
+
+👑 **MVP / Top Fragger:** ${topFragger?.player?.name || "Player"} (${topFragger?.agent}) - ${topFragger?.acs} ACS | ${topFragger?.kills}/${topFragger?.deaths}/${topFragger?.assists} (${topFraggerKd.toFixed(2)} KD)
+
+📊 **Scoreboard Tim SC:**
+${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔ **${p.acs} ACS** | ${p.kills}/${p.deaths}/${p.assists} | ${p.firstKills} FK${p.clutchesWon > 0 ? ` | ${p.clutchesWon} Clutch` : ""}`).join("\n")}`;
+
+    navigator.clipboard.writeText(text.trim());
+    setIsCopiedSummary(true);
+    setTimeout(() => setIsCopiedSummary(false), 2500);
+  };
 
   const handleDownload = (attachment: MatchAttachment) => {
     const link = document.createElement("a");
@@ -93,34 +115,58 @@ export function MatchDetailView({ match, pastMatches = [] }: MatchDetailViewProp
   return (
     <div className="space-y-6 select-none">
       {/* Top Bar Actions */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <Link href="/matches">
-          <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-slate-400 hover:text-slate-200">
+          <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-[#94A3B8] hover:text-white">
             <ArrowLeft className="w-4 h-4" />
             <span>Kembali ke Riwayat</span>
           </Button>
         </Link>
 
-        {isAdmin && (
-          <div className="flex items-center gap-2">
-            <Link href={`/matches/${match.id}/edit`}>
-              <Button variant="outline" size="sm" className="gap-1.5 text-xs">
-                <Edit className="w-3.5 h-3.5" />
-                <span>Edit Match</span>
+        <div className="flex items-center gap-2">
+          {/* One-Click Share to Discord / WhatsApp */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleCopyMatchSummary}
+            className="gap-1.5 text-xs text-[#94A3B8] hover:text-white"
+            title="Salin ringkasan match ke format Discord/WhatsApp"
+          >
+            {isCopiedSummary ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="text-emerald-400 font-bold">Tersalin ke Clipboard!</span>
+              </>
+            ) : (
+              <>
+                <Share2 className="w-3.5 h-3.5 text-sky-400" />
+                <span>Bagikan ke Discord</span>
+              </>
+            )}
+          </Button>
+
+          {isAdmin && (
+            <>
+              <Link href={`/matches/${match.id}/edit`}>
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+                  <Edit className="w-3.5 h-3.5" />
+                  <span>Edit Match</span>
+                </Button>
+              </Link>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowDeleteModal(true)}
+                disabled={isDeleting}
+                className="gap-1.5 text-xs"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Hapus</span>
               </Button>
-            </Link>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setShowDeleteModal(true)}
-              disabled={isDeleting}
-              className="gap-1.5 text-xs"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Hapus</span>
-            </Button>
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* MATCH HERO BANNER WITH MAP BANNER */}

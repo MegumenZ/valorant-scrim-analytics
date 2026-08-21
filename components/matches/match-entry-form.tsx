@@ -299,6 +299,48 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
     );
   };
 
+  const handleMatrixKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    rowIndex: number,
+    colIndex: number
+  ) => {
+    if (e.key === "ArrowDown" || e.key === "Enter") {
+      e.preventDefault();
+      const target = document.getElementById(`stat-matrix-${rowIndex + 1}-${colIndex}`);
+      if (target) {
+        target.focus();
+        (target as HTMLInputElement).select?.();
+      }
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      const target = document.getElementById(`stat-matrix-${rowIndex - 1}-${colIndex}`);
+      if (target) {
+        target.focus();
+        (target as HTMLInputElement).select?.();
+      }
+    } else if (e.key === "ArrowRight") {
+      const input = e.currentTarget;
+      if (input.selectionEnd === input.value.length) {
+        const target = document.getElementById(`stat-matrix-${rowIndex}-${colIndex + 1}`);
+        if (target) {
+          e.preventDefault();
+          target.focus();
+          (target as HTMLInputElement).select?.();
+        }
+      }
+    } else if (e.key === "ArrowLeft") {
+      const input = e.currentTarget;
+      if (input.selectionStart === 0) {
+        const target = document.getElementById(`stat-matrix-${rowIndex}-${colIndex - 1}`);
+        if (target) {
+          e.preventDefault();
+          target.focus();
+          (target as HTMLInputElement).select?.();
+        }
+      }
+    }
+  };
+
   const handleAutoFillTimeline = () => {
     const sTeam = Number(scoreTeam) || 0;
     const sOpp = Number(scoreOpponent) || 0;
@@ -1296,11 +1338,13 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                       {/* ACS */}
                       <td className="p-1.5">
                         <Input
+                          id={`stat-matrix-${index}-0`}
                           type="number"
                           min="0"
                           placeholder="240"
                           value={row.acs}
                           onChange={(e) => handleRowChange(index, "acs", e.target.value)}
+                          onKeyDown={(e) => handleMatrixKeyDown(e, index, 0)}
                           onFocus={(e) => e.target.select()}
                           required
                           className="h-8 text-center font-bold text-sky-400 px-1"
@@ -1310,11 +1354,13 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                       {/* Kills */}
                       <td className="p-1.5">
                         <Input
+                          id={`stat-matrix-${index}-1`}
                           type="number"
                           min="0"
                           placeholder="18"
                           value={row.kills}
                           onChange={(e) => handleRowChange(index, "kills", e.target.value)}
+                          onKeyDown={(e) => handleMatrixKeyDown(e, index, 1)}
                           onFocus={(e) => e.target.select()}
                           required
                           className="h-8 text-center font-bold text-emerald-400 px-1"
@@ -1324,11 +1370,13 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                       {/* Deaths */}
                       <td className="p-1.5">
                         <Input
+                          id={`stat-matrix-${index}-2`}
                           type="number"
                           min="0"
                           placeholder="12"
                           value={row.deaths}
                           onChange={(e) => handleRowChange(index, "deaths", e.target.value)}
+                          onKeyDown={(e) => handleMatrixKeyDown(e, index, 2)}
                           onFocus={(e) => e.target.select()}
                           required
                           className="h-8 text-center font-bold text-rose-400 px-1"
@@ -1338,38 +1386,44 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                       {/* Assists */}
                       <td className="p-1.5">
                         <Input
+                          id={`stat-matrix-${index}-3`}
                           type="number"
                           min="0"
                           placeholder="5"
                           value={row.assists}
                           onChange={(e) => handleRowChange(index, "assists", e.target.value)}
+                          onKeyDown={(e) => handleMatrixKeyDown(e, index, 3)}
                           onFocus={(e) => e.target.select()}
                           required
-                          className="h-8 text-center text-slate-200 px-1"
+                          className="h-8 text-center text-[#F1F5F9] px-1 font-semibold"
                         />
                       </td>
 
                       {/* First Kills */}
                       <td className="p-1.5">
                         <Input
+                          id={`stat-matrix-${index}-4`}
                           type="number"
                           min="0"
                           placeholder="2"
                           value={row.firstKills}
                           onChange={(e) => handleRowChange(index, "firstKills", e.target.value)}
+                          onKeyDown={(e) => handleMatrixKeyDown(e, index, 4)}
                           onFocus={(e) => e.target.select()}
-                          className="h-8 text-center text-emerald-400 px-1"
+                          className="h-8 text-center text-emerald-400 px-1 font-semibold"
                         />
                       </td>
 
                       {/* Clutches */}
                       <td className="p-1.5">
                         <Input
+                          id={`stat-matrix-${index}-5`}
                           type="number"
                           min="0"
                           placeholder="0"
                           value={row.clutchesWon}
                           onChange={(e) => handleRowChange(index, "clutchesWon", e.target.value)}
+                          onKeyDown={(e) => handleMatrixKeyDown(e, index, 5)}
                           onFocus={(e) => e.target.select()}
                           className="h-8 text-center text-amber-400 font-bold px-1"
                         />
