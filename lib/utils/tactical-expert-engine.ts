@@ -482,3 +482,6 @@ export function evaluateTeamTacticalHealth(matches: MatchWithStats[]): TeamTacti
     topTeamPriorities,
   };
 }
+
+export const calculateTacticalMetrics = evaluateTeamTacticalHealth;
+

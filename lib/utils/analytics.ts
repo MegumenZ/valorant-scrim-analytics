@@ -1,19 +1,12 @@
-import { Match, MatchPlayerStat, Player } from "../db/schema";
+import { Match, MatchPlayerStat, Player, matches } from "../db/schema";
 import { ValorantMap } from "../data/valorant";
+import { unstable_cache } from "next/cache";
+import { db, ensureDbInitialized } from "../db";
+import { calculateTacticalMetrics, TeamTacticalOverview } from "./tactical-expert-engine";
+import { desc } from "drizzle-orm";
+import { RoundItem } from "../validations/match";
 
-export function calculateKD(kills: number, deaths: number): number {
-  return Number((kills / Math.max(1, deaths)).toFixed(2));
-}
-
-export function calculateOpeningDuelRatio(fk: number, fd: number): number {
-  return Number((fk / Math.max(1, fd)).toFixed(2));
-}
-
-export function calculateMatchResult(scoreTeam: number, scoreOpponent: number): "WIN" | "LOSS" | "DRAW" {
-  if (scoreTeam > scoreOpponent) return "WIN";
-  if (scoreTeam < scoreOpponent) return "LOSS";
-  return "DRAW";
-}
+export { calculateKD, calculateOpeningDuelRatio, calculateMatchResult } from "./calculations";
 
 export interface PlayerAggregateStats {
   player: Player;
@@ -134,3 +127,43 @@ export interface DashboardSummary {
     teamAvgAcs: number;
   }>;
 }
+
+export const getCachedTeamAnalytics = unstable_cache(
+  async (): Promise<TeamTacticalOverview> => {
+    await ensureDbInitialized();
+    // Single relational query untuk mencegah query loop N+1
+    const rawMatches = await db.query.matches.findMany({
+      with: {
+        playerStats: {
+          with: {
+            player: true,
+          },
+        },
+      },
+      orderBy: (matches, { desc }) => [desc(matches.createdAt)],
+    });
+
+    const formattedMatches = rawMatches.map((m) => {
+      let parsedRoundTimeline: RoundItem[] | undefined;
+      if (m.roundTimeline) {
+        try {
+          parsedRoundTimeline = JSON.parse(m.roundTimeline);
+        } catch {}
+      }
+      return {
+        ...m,
+        parsedRoundTimeline,
+        playerStats: [...m.playerStats].sort((a, b) => b.acs - a.acs),
+      };
+    });
+
+    // Jalankan engine kalkulasi analitik
+    return calculateTacticalMetrics(formattedMatches);
+  },
+  ["team-scrim-analytics-cache"],
+  {
+    revalidate: 300, // Revalidate background setiap 5 menit
+    tags: ["scrim-analytics"],
+  }
+);
+

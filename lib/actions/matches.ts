@@ -2,11 +2,13 @@
 
 import { db, ensureDbInitialized } from "../db";
 import { matches, matchPlayerStats, players, Match, Player, MatchPlayerStat, MatchAttachment } from "../db/schema";
-import { eq, desc, asc } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
-import { matchSchema, MatchInput, RoundItem } from "../validations/match";
+import { eq, desc, asc, sql } from "drizzle-orm";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { createId } from "@paralleldrive/cuid2";
+import { matchSchema, matchInputSchema, MatchInput, RoundItem } from "../validations/match";
 import { calculateKD, calculateOpeningDuelRatio, calculateMatchResult, DashboardSummary, MapAggregateStats } from "../utils/analytics";
 import { VALORANT_MAPS, ValorantMap } from "../data/valorant";
+import { ActionResponse } from "../types/action";
 
 export interface MatchWithStats extends Match {
   playerStats: Array<MatchPlayerStat & { player: Player }>;
@@ -479,133 +481,226 @@ async function requireAdmin() {
   return user;
 }
 
-export async function createMatch(input: MatchInput) {
+export async function createMatchAction(
+  rawInput: unknown
+): Promise<ActionResponse<{ id: string }>> {
   await ensureDbInitialized();
-  await requireAdmin();
-
-  const validated = matchSchema.parse(input);
-  const result = calculateMatchResult(validated.scoreTeam, validated.scoreOpponent);
-  const matchId = `match-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-
-  // Insert match
-  await db.insert(matches).values({
-    id: matchId,
-    matchDate: validated.matchDate,
-    map: validated.map,
-    opponentName: validated.opponentName,
-    scoreTeam: validated.scoreTeam,
-    scoreOpponent: validated.scoreOpponent,
-    result,
-    startSide: validated.startSide,
-    vodUrl: validated.vodUrl || null,
-    notes: validated.notes || null,
-    attachments: validated.attachments && validated.attachments.length > 0
-      ? JSON.stringify(validated.attachments)
-      : null,
-    roundTimeline: validated.roundsTimeline && validated.roundsTimeline.length > 0
-      ? JSON.stringify(validated.roundsTimeline)
-      : null,
-  });
-
-  // Insert player stats
-  for (const stat of validated.playerStats) {
-    await db.insert(matchPlayerStats).values({
-      id: `stat-${matchId}-${stat.playerId}`,
-      matchId,
-      playerId: stat.playerId,
-      agent: stat.agent,
-      acs: stat.acs,
-      kills: stat.kills,
-      deaths: stat.deaths,
-      assists: stat.assists,
-      adr: stat.adr,
-      hsPercent: stat.hsPercent ?? null,
-      firstKills: stat.firstKills ?? 0,
-      firstDeaths: stat.firstDeaths ?? 0,
-      clutchesWon: stat.clutchesWon ?? 0,
-      kastPercent: stat.kastPercent ?? null,
-    });
+  try {
+    await requireAdmin();
+  } catch (authErr: any) {
+    return {
+      success: false,
+      error: authErr.message || "Akses ditolak.",
+    };
   }
 
+  // 1. Validasi Zod tanpa throw exception fatal
+  const parsed = matchSchema.safeParse(rawInput);
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: "Validasi form gagal. Periksa kembali input Anda.",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+
+  const validated = parsed.data;
+  const matchId = createId();
+  const result = calculateMatchResult(validated.scoreTeam, validated.scoreOpponent);
+
+  // 2. Eksekusi Atomic Batch Insert ke Turso (1 Single HTTP Roundtrip)
+  try {
+    await db.batch([
+      // Insert Match Entity
+      db.insert(matches).values({
+        id: matchId,
+        matchDate: validated.matchDate,
+        map: validated.map,
+        opponentName: validated.opponentName,
+        scoreTeam: validated.scoreTeam,
+        scoreOpponent: validated.scoreOpponent,
+        result,
+        startSide: validated.startSide,
+        vodUrl: validated.vodUrl || null,
+        notes: validated.notes || null,
+        attachments: validated.attachments && validated.attachments.length > 0
+          ? JSON.stringify(validated.attachments)
+          : null,
+        roundTimeline: validated.roundsTimeline && validated.roundsTimeline.length > 0
+          ? JSON.stringify(validated.roundsTimeline)
+          : null,
+      }),
+      // Insert Player Stats via .map()
+      ...validated.playerStats.map((stat) =>
+        db.insert(matchPlayerStats).values({
+          id: createId(),
+          matchId,
+          playerId: stat.playerId,
+          agent: stat.agent,
+          acs: stat.acs,
+          kills: stat.kills,
+          deaths: stat.deaths,
+          assists: stat.assists,
+          adr: stat.adr,
+          hsPercent: stat.hsPercent ?? null,
+          firstKills: stat.firstKills ?? 0,
+          firstDeaths: stat.firstDeaths ?? 0,
+          clutchesWon: stat.clutchesWon ?? 0,
+          kastPercent: stat.kastPercent ?? null,
+        })
+      ),
+    ]);
+  } catch (err) {
+    console.error("[DATABASE_ERROR] Batch insert match failed:", err);
+    return {
+      success: false,
+      error: "Terjadi kegagalan saat menyimpan data match ke database. Silakan coba lagi.",
+    };
+  }
+
+  // 3. Invalidate Cache Analitik & Paths
+  revalidateTag("scrim-analytics", "max");
   revalidatePath("/");
   revalidatePath("/matches");
   revalidatePath("/maps");
   revalidatePath("/roster");
 
-  return { success: true, matchId };
+  return {
+    success: true,
+    data: { id: matchId },
+  };
 }
 
-export async function updateMatch(id: string, input: MatchInput) {
+export async function createMatch(
+  input: MatchInput
+): Promise<ActionResponse<{ id: string }> & { matchId?: string }> {
+  const res = await createMatchAction(input);
+  if (res.success) {
+    return {
+      ...res,
+      matchId: res.data.id,
+    };
+  }
+  return res;
+}
+
+export async function updateMatch(
+  id: string,
+  rawInput: unknown
+): Promise<ActionResponse<{ id: string }>> {
   await ensureDbInitialized();
-  await requireAdmin();
-
-  const validated = matchSchema.parse(input);
-  const result = calculateMatchResult(validated.scoreTeam, validated.scoreOpponent);
-
-  await db
-    .update(matches)
-    .set({
-      matchDate: validated.matchDate,
-      map: validated.map,
-      opponentName: validated.opponentName,
-      scoreTeam: validated.scoreTeam,
-      scoreOpponent: validated.scoreOpponent,
-      result,
-      startSide: validated.startSide,
-      vodUrl: validated.vodUrl || null,
-      notes: validated.notes || null,
-      attachments: validated.attachments && validated.attachments.length > 0
-        ? JSON.stringify(validated.attachments)
-        : null,
-      roundTimeline: validated.roundsTimeline && validated.roundsTimeline.length > 0
-        ? JSON.stringify(validated.roundsTimeline)
-        : null,
-    })
-    .where(eq(matches.id, id));
-
-  // Delete previous stats and reinsert
-  await db.delete(matchPlayerStats).where(eq(matchPlayerStats.matchId, id));
-
-  for (const stat of validated.playerStats) {
-    await db.insert(matchPlayerStats).values({
-      id: `stat-${id}-${stat.playerId}`,
-      matchId: id,
-      playerId: stat.playerId,
-      agent: stat.agent,
-      acs: stat.acs,
-      kills: stat.kills,
-      deaths: stat.deaths,
-      assists: stat.assists,
-      adr: stat.adr,
-      hsPercent: stat.hsPercent ?? null,
-      firstKills: stat.firstKills ?? 0,
-      firstDeaths: stat.firstDeaths ?? 0,
-      clutchesWon: stat.clutchesWon ?? 0,
-      kastPercent: stat.kastPercent ?? null,
-    });
+  try {
+    await requireAdmin();
+  } catch (authErr: any) {
+    return {
+      success: false,
+      error: authErr.message || "Akses ditolak.",
+    };
   }
 
+  const parsed = matchSchema.safeParse(rawInput);
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: "Validasi form gagal. Periksa kembali input Anda.",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+
+  const validated = parsed.data;
+  const result = calculateMatchResult(validated.scoreTeam, validated.scoreOpponent);
+
+  try {
+    await db.batch([
+      db
+        .update(matches)
+        .set({
+          matchDate: validated.matchDate,
+          map: validated.map,
+          opponentName: validated.opponentName,
+          scoreTeam: validated.scoreTeam,
+          scoreOpponent: validated.scoreOpponent,
+          result,
+          startSide: validated.startSide,
+          vodUrl: validated.vodUrl || null,
+          notes: validated.notes || null,
+          attachments: validated.attachments && validated.attachments.length > 0
+            ? JSON.stringify(validated.attachments)
+            : null,
+          roundTimeline: validated.roundsTimeline && validated.roundsTimeline.length > 0
+            ? JSON.stringify(validated.roundsTimeline)
+            : null,
+        })
+        .where(eq(matches.id, id)),
+      db.delete(matchPlayerStats).where(eq(matchPlayerStats.matchId, id)),
+      ...validated.playerStats.map((stat) =>
+        db.insert(matchPlayerStats).values({
+          id: createId(),
+          matchId: id,
+          playerId: stat.playerId,
+          agent: stat.agent,
+          acs: stat.acs,
+          kills: stat.kills,
+          deaths: stat.deaths,
+          assists: stat.assists,
+          adr: stat.adr,
+          hsPercent: stat.hsPercent ?? null,
+          firstKills: stat.firstKills ?? 0,
+          firstDeaths: stat.firstDeaths ?? 0,
+          clutchesWon: stat.clutchesWon ?? 0,
+          kastPercent: stat.kastPercent ?? null,
+        })
+      ),
+    ]);
+  } catch (err) {
+    console.error("[DATABASE_ERROR] Batch update match failed:", err);
+    return {
+      success: false,
+      error: "Terjadi kegagalan saat memperbarui data match di database. Silakan coba lagi.",
+    };
+  }
+
+  revalidateTag("scrim-analytics", "max");
   revalidatePath("/");
   revalidatePath("/matches");
   revalidatePath(`/matches/${id}`);
   revalidatePath("/maps");
   revalidatePath("/roster");
 
-  return { success: true };
+  return {
+    success: true,
+    data: { id },
+  };
 }
 
-export async function deleteMatch(id: string) {
+export async function deleteMatch(id: string): Promise<ActionResponse<{ id: string }>> {
   await ensureDbInitialized();
-  await requireAdmin();
+  try {
+    await requireAdmin();
+  } catch (authErr: any) {
+    return {
+      success: false,
+      error: authErr.message || "Akses ditolak.",
+    };
+  }
 
-  await db.delete(matches).where(eq(matches.id, id));
+  try {
+    await db.delete(matches).where(eq(matches.id, id));
+  } catch (err) {
+    console.error("[DATABASE_ERROR] Delete match failed:", err);
+    return {
+      success: false,
+      error: "Terjadi kegagalan saat menghapus data match dari database.",
+    };
+  }
 
+  revalidateTag("scrim-analytics", "max");
   revalidatePath("/");
   revalidatePath("/matches");
   revalidatePath("/maps");
   revalidatePath("/roster");
 
-  return { success: true };
+  return { success: true, data: { id } };
 }
 
 export async function getMapAnalyticsData(): Promise<MapAggregateStats[]> {

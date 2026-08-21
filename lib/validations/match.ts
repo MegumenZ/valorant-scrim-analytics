@@ -75,3 +75,7 @@ export type MatchInput = z.infer<typeof matchSchema>;
 export type PlayerStatInput = z.infer<typeof playerStatSchema>;
 export type AttachmentInput = z.infer<typeof attachmentSchema>;
 export type RoundItem = z.infer<typeof roundItemSchema>;
+
+export const matchInputSchema = matchSchema;
+export const createMatchSchema = matchSchema;
+

@@ -9,7 +9,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { TacticalWinBreakdown, TacticalLossBreakdown, TradingKillStats } from "@/lib/utils/analytics";
+import type { TacticalWinBreakdown, TacticalLossBreakdown, TradingKillStats } from "@/lib/utils/analytics";
 import { MatchWithStats } from "@/lib/actions/matches";
 import { RoundItem } from "@/lib/validations/match";
 

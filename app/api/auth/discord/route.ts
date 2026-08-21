@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   // 1. Anti-Brute Force Rate Limiter Check
   const clientIp = getClientIp(request);
-  const rateLimit = checkRateLimit(clientIp, 6, 60 * 1000); // 6 attempts per minute
+  const rateLimit = await checkRateLimit(clientIp, 6, 60 * 1000); // 6 attempts per minute
 
   if (!rateLimit.allowed) {
     return NextResponse.json(

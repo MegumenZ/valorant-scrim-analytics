@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { VALORANT_MAPS, VALORANT_AGENTS, ValorantMap, getAgentIcon } from "@/lib/data/valorant";
 import { Player, MatchAttachment } from "@/lib/db/schema";
 import { createMatch, updateMatch } from "@/lib/actions/matches";
-import { calculateKD, calculateMatchResult } from "@/lib/utils/analytics";
+import { calculateKD, calculateMatchResult } from "@/lib/utils/calculations";
 import { compressImageToWebP, processAndCompressPdf, formatFileSize } from "@/lib/utils/file-compressor";
 import { RoundItem, RoundOutcomeType, RoundWinType } from "@/lib/validations/match";
 
@@ -505,11 +505,18 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
       };
 
       if (initialData?.id) {
-        await updateMatch(initialData.id, payload);
+        const res = await updateMatch(initialData.id, payload);
+        if (!res.success) {
+          throw new Error(res.error || "Gagal memperbarui match data.");
+        }
         router.push(`/matches/${initialData.id}`);
       } else {
         const res = await createMatch(payload);
-        router.push(`/matches/${res.matchId}`);
+        if (!res.success) {
+          throw new Error(res.error || "Gagal menyimpan match data.");
+        }
+        const matchId = res.data?.id || res.matchId;
+        router.push(`/matches/${matchId}`);
       }
       router.refresh();
     } catch (err: any) {

@@ -3,9 +3,11 @@
 import { db, ensureDbInitialized } from "../db";
 import { players, matchPlayerStats, matches, Player, MatchPlayerStat } from "../db/schema";
 import { eq, desc } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { createId } from "@paralleldrive/cuid2";
 import { playerSchema, PlayerInput } from "../validations/player";
 import { calculateKD, calculateOpeningDuelRatio, AgentStatSummary, PlayerAggregateStats } from "../utils/analytics";
+import { ActionResponse } from "../types/action";
 
 export async function getAllPlayers(): Promise<Player[]> {
   await ensureDbInitialized();
@@ -209,83 +211,176 @@ async function requireAdmin() {
   return user;
 }
 
-export async function createPlayer(input: PlayerInput) {
+export async function createPlayer(
+  input: PlayerInput
+): Promise<ActionResponse<{ id: string }> & { id?: string }> {
   await ensureDbInitialized();
-  await requireAdmin();
+  try {
+    await requireAdmin();
+  } catch (authErr: any) {
+    return {
+      success: false,
+      error: authErr.message || "Akses ditolak.",
+    };
+  }
 
-  const validated = playerSchema.parse(input);
-  const id = `player-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+  const parsed = playerSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: "Validasi pemain gagal. Periksa kembali input Anda.",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
 
-  await db.insert(players).values({
-    id,
-    name: validated.name,
-    riotId: validated.riotId || null,
-    primaryRole: validated.primaryRole,
-    discordId: validated.discordId || null,
-    isActive: validated.isActive,
-  });
+  const validated = parsed.data;
+  const id = createId();
 
-  revalidatePath("/roster");
-  revalidatePath("/matches/new");
-  revalidatePath("/");
-
-  return { success: true, id };
-}
-
-export async function updatePlayer(id: string, input: PlayerInput) {
-  await ensureDbInitialized();
-  await requireAdmin();
-
-  const validated = playerSchema.parse(input);
-
-  await db
-    .update(players)
-    .set({
+  try {
+    await db.insert(players).values({
+      id,
       name: validated.name,
       riotId: validated.riotId || null,
       primaryRole: validated.primaryRole,
       discordId: validated.discordId || null,
       isActive: validated.isActive,
-    })
-    .where(eq(players.id, id));
+    });
+  } catch (err) {
+    console.error("[DATABASE_ERROR] Create player failed:", err);
+    return {
+      success: false,
+      error: "Gagal menyimpan data pemain ke database.",
+    };
+  }
 
+  revalidateTag("scrim-analytics", "max");
+  revalidatePath("/roster");
+  revalidatePath("/matches/new");
+  revalidatePath("/");
+
+  return { success: true, data: { id }, id };
+}
+
+export async function updatePlayer(
+  id: string,
+  input: PlayerInput
+): Promise<ActionResponse<{ id: string }>> {
+  await ensureDbInitialized();
+  try {
+    await requireAdmin();
+  } catch (authErr: any) {
+    return {
+      success: false,
+      error: authErr.message || "Akses ditolak.",
+    };
+  }
+
+  const parsed = playerSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: "Validasi pemain gagal. Periksa kembali input Anda.",
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+
+  const validated = parsed.data;
+
+  try {
+    await db
+      .update(players)
+      .set({
+        name: validated.name,
+        riotId: validated.riotId || null,
+        primaryRole: validated.primaryRole,
+        discordId: validated.discordId || null,
+        isActive: validated.isActive,
+      })
+      .where(eq(players.id, id));
+  } catch (err) {
+    console.error("[DATABASE_ERROR] Update player failed:", err);
+    return {
+      success: false,
+      error: "Gagal memperbarui data pemain di database.",
+    };
+  }
+
+  revalidateTag("scrim-analytics", "max");
   revalidatePath("/roster");
   revalidatePath(`/players/${id}`);
   revalidatePath("/matches/new");
   revalidatePath("/");
 
-  return { success: true };
+  return { success: true, data: { id } };
 }
 
-export async function togglePlayerActive(id: string, currentStatus: boolean) {
+export async function togglePlayerActive(
+  id: string,
+  currentStatus: boolean
+): Promise<ActionResponse<{ id: string }>> {
   await ensureDbInitialized();
-  await requireAdmin();
+  try {
+    await requireAdmin();
+  } catch (authErr: any) {
+    return {
+      success: false,
+      error: authErr.message || "Akses ditolak.",
+    };
+  }
 
-  await db
-    .update(players)
-    .set({ isActive: !currentStatus })
-    .where(eq(players.id, id));
+  try {
+    await db
+      .update(players)
+      .set({ isActive: !currentStatus })
+      .where(eq(players.id, id));
+  } catch (err) {
+    console.error("[DATABASE_ERROR] Toggle player active failed:", err);
+    return {
+      success: false,
+      error: "Gagal mengubah status aktif pemain.",
+    };
+  }
 
+  revalidateTag("scrim-analytics", "max");
   revalidatePath("/roster");
   revalidatePath("/matches/new");
   revalidatePath("/");
 
-  return { success: true };
+  return { success: true, data: { id } };
 }
 
-export async function deletePlayer(id: string) {
+export async function deletePlayer(
+  id: string
+): Promise<ActionResponse<{ id: string }>> {
   await ensureDbInitialized();
-  await requireAdmin();
+  try {
+    await requireAdmin();
+  } catch (authErr: any) {
+    return {
+      success: false,
+      error: authErr.message || "Akses ditolak.",
+    };
+  }
 
-  // Delete any associated player stats first to maintain DB integrity
-  await db.delete(matchPlayerStats).where(eq(matchPlayerStats.playerId, id));
-  await db.delete(players).where(eq(players.id, id));
+  try {
+    await db.batch([
+      db.delete(matchPlayerStats).where(eq(matchPlayerStats.playerId, id)),
+      db.delete(players).where(eq(players.id, id)),
+    ]);
+  } catch (err) {
+    console.error("[DATABASE_ERROR] Delete player failed:", err);
+    return {
+      success: false,
+      error: "Gagal menghapus data pemain dari database.",
+    };
+  }
 
+  revalidateTag("scrim-analytics", "max");
   revalidatePath("/roster");
   revalidatePath("/matches/new");
   revalidatePath("/matches");
   revalidatePath("/maps");
   revalidatePath("/");
 
-  return { success: true };
+  return { success: true, data: { id } };
 }

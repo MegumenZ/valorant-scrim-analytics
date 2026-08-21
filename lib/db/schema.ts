@@ -1,9 +1,10 @@
 import { sqliteTable, text, integer, real, uniqueIndex, index } from "drizzle-orm/sqlite-core";
 import { relations, sql } from "drizzle-orm";
+import { createId } from "@paralleldrive/cuid2";
 
 // 1. PLAYERS TABLE (Roster Tracked Players)
 export const players = sqliteTable("players", {
-  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text("id").primaryKey().$defaultFn(() => createId()),
   name: text("name").notNull(),
   riotId: text("riot_id"),
   primaryRole: text("primary_role", {
@@ -16,7 +17,7 @@ export const players = sqliteTable("players", {
 
 // 2. MATCHES TABLE
 export const matches = sqliteTable("matches", {
-  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text("id").primaryKey().$defaultFn(() => createId()),
   matchDate: text("match_date").notNull(),
   map: text("map", {
     enum: [
@@ -51,7 +52,7 @@ export const matches = sqliteTable("matches", {
 
 // 3. MATCH_PLAYER_STATS TABLE
 export const matchPlayerStats = sqliteTable("match_player_stats", {
-  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text("id").primaryKey().$defaultFn(() => createId()),
   matchId: text("match_id").notNull().references(() => matches.id, { onDelete: "cascade" }),
   playerId: text("player_id").notNull().references(() => players.id, { onDelete: "cascade" }),
   agent: text("agent").notNull(),
@@ -71,9 +72,12 @@ export const matchPlayerStats = sqliteTable("match_player_stats", {
   index("stats_player_idx").on(table.playerId),
 ]);
 
+// Spec compatibility aliases
+export const playerStats = matchPlayerStats;
+
 // 4. USERS TABLE (Authenticated Discord OAuth Users)
 export const users = sqliteTable("users", {
-  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  id: text("id").primaryKey().$defaultFn(() => createId()),
   discordId: text("discord_id").notNull().unique(),
   username: text("username").notNull(),
   globalName: text("global_name"),
@@ -87,7 +91,7 @@ export const users = sqliteTable("users", {
 
 // 5. SESSIONS TABLE
 export const sessions = sqliteTable("sessions", {
-  id: text("id").primaryKey(),
+  id: text("id").primaryKey().$defaultFn(() => createId()),
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
   ipAddress: text("ip_address"),
@@ -116,6 +120,8 @@ export const matchPlayerStatsRelations = relations(matchPlayerStats, ({ one }) =
     references: [players.id],
   }),
 }));
+
+export const playerStatsRelations = matchPlayerStatsRelations;
 
 export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),

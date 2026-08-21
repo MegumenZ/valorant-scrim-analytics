@@ -1,6 +1,6 @@
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { AgentStatSummary } from "@/lib/utils/analytics";
+import type { AgentStatSummary } from "@/lib/utils/analytics";
 import { VALORANT_AGENTS, getAgentIcon } from "@/lib/data/valorant";
 
 interface AgentPoolTableProps {

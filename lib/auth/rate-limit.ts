@@ -1,27 +1,36 @@
-interface RateLimitRecord {
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+
+// Check if Upstash Redis credentials are configured in environment
+const isUpstashConfigured = Boolean(
+  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+);
+
+let redisInstance: Redis | null = null;
+let ratelimiterInstance: Ratelimit | null = null;
+
+if (isUpstashConfigured) {
+  try {
+    redisInstance = Redis.fromEnv();
+    ratelimiterInstance = new Ratelimit({
+      redis: redisInstance,
+      limiter: Ratelimit.slidingWindow(10, "60 s"), // 10 requests per 60 seconds
+      analytics: false,
+      prefix: "scrim_auth_ratelimit",
+    });
+  } catch (err) {
+    console.warn("[RateLimit] Failed to initialize Upstash Redis, falling back to in-memory:", err);
+  }
+}
+
+// In-memory fallback store for local development without Upstash credentials
+interface MemoryRateRecord {
   timestamps: number[];
   blockedUntil?: number;
 }
+const localMemoryStore = new Map<string, MemoryRateRecord>();
 
-// In-memory store for rate limiting by IP
-const rateLimitStore = new Map<string, RateLimitRecord>();
-
-// Cleanup stale entries every 5 minutes
-if (typeof setInterval !== "undefined") {
-  setInterval(() => {
-    const now = Date.now();
-    for (const [ip, record] of rateLimitStore.entries()) {
-      if (record.blockedUntil && record.blockedUntil > now) {
-        continue;
-      }
-      // Remove timestamps older than 15 minutes
-      record.timestamps = record.timestamps.filter((ts) => now - ts < 15 * 60 * 1000);
-      if (record.timestamps.length === 0 && !record.blockedUntil) {
-        rateLimitStore.delete(ip);
-      }
-    }
-  }, 5 * 60 * 1000);
-}
+export const authRateLimiter = ratelimiterInstance;
 
 export interface RateLimitResult {
   allowed: boolean;
@@ -31,28 +40,39 @@ export interface RateLimitResult {
 }
 
 /**
- * Sliding window rate limiter to protect authentication endpoints from brute force and automated spam.
- * 
- * @param ip Client IP address or identifier
- * @param maxRequests Maximum requests allowed within windowMs
- * @param windowMs Time window in milliseconds (default: 60s)
- * @param blockDurationMs Duration to block IP if abuse threshold is breached (default: 15m)
+ * Distributed sliding window rate limiter for auth endpoints.
+ * Uses Upstash Redis in serverless production, and in-memory sliding window as local fallback.
  */
-export function checkRateLimit(
+export async function checkRateLimit(
   ip: string,
-  maxRequests: number = 5,
+  maxRequests: number = 10,
   windowMs: number = 60 * 1000,
   blockDurationMs: number = 15 * 60 * 1000
-): RateLimitResult {
+): Promise<RateLimitResult> {
+  if (ratelimiterInstance) {
+    try {
+      const result = await ratelimiterInstance.limit(ip);
+      const resetInSeconds = Math.max(1, Math.ceil((result.reset - Date.now()) / 1000));
+      return {
+        allowed: result.success,
+        remaining: result.remaining,
+        resetInSeconds,
+        blocked: !result.success && result.remaining === 0,
+      };
+    } catch (err) {
+      console.warn("[RateLimit] Upstash limit check failed, using fallback:", err);
+    }
+  }
+
+  // Local In-Memory Fallback
   const now = Date.now();
-  let record = rateLimitStore.get(ip);
+  let record = localMemoryStore.get(ip);
 
   if (!record) {
     record = { timestamps: [] };
-    rateLimitStore.set(ip, record);
+    localMemoryStore.set(ip, record);
   }
 
-  // Check if currently under penalty block
   if (record.blockedUntil && record.blockedUntil > now) {
     return {
       allowed: false,
@@ -62,11 +82,9 @@ export function checkRateLimit(
     };
   }
 
-  // Filter timestamps within current sliding window
   record.timestamps = record.timestamps.filter((ts) => now - ts < windowMs);
 
   if (record.timestamps.length >= maxRequests * 2) {
-    // Severe abuse threshold reached -> trigger temporary ban
     record.blockedUntil = now + blockDurationMs;
     return {
       allowed: false,
@@ -77,7 +95,6 @@ export function checkRateLimit(
   }
 
   if (record.timestamps.length >= maxRequests) {
-    // Normal rate limit exceeded
     const oldest = record.timestamps[0];
     const resetInSeconds = Math.ceil((oldest + windowMs - now) / 1000);
     return {
@@ -88,7 +105,6 @@ export function checkRateLimit(
     };
   }
 
-  // Record new request timestamp
   record.timestamps.push(now);
 
   return {

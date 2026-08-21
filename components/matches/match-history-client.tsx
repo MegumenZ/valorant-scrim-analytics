@@ -49,7 +49,10 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
 
     try {
       setIsDeleting(deleteTargetId);
-      await deleteMatch(deleteTargetId);
+      const res = await deleteMatch(deleteTargetId);
+      if (!res.success) {
+        throw new Error(res.error || "Gagal menghapus match");
+      }
       setDeleteTargetId(null);
       router.refresh();
     } catch (err: any) {

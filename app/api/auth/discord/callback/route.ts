@@ -16,7 +16,7 @@ export async function GET(request: Request) {
 
   // 1. Anti-Brute Force Rate Limiter
   const clientIp = getClientIp(request);
-  const rateLimit = checkRateLimit(clientIp, 10, 60 * 1000);
+  const rateLimit = await checkRateLimit(clientIp, 10, 60 * 1000);
   if (!rateLimit.allowed) {
     return NextResponse.redirect(
       new URL("/login?error=rate_limited", request.url)

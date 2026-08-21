@@ -31,7 +31,7 @@ import { MatchWithStats, deleteMatch } from "@/lib/actions/matches";
 import { MAP_METADATA, ValorantMap, VALORANT_AGENTS, getAgentIcon, getMapSplash } from "@/lib/data/valorant";
 import { useUserRole } from "../layout/role-context";
 import { MatchAttachment } from "@/lib/db/schema";
-import { calculateKD } from "@/lib/utils/analytics";
+import { calculateKD } from "@/lib/utils/calculations";
 import { formatFileSize } from "@/lib/utils/file-compressor";
 import { RoundOutcomeType, RoundWinType } from "@/lib/validations/match";
 import { getOutcomeConfig } from "@/components/matches/match-entry-form";
@@ -66,7 +66,10 @@ export function MatchDetailView({ match, pastMatches = [] }: MatchDetailViewProp
   const handleDelete = async () => {
     try {
       setIsDeleting(true);
-      await deleteMatch(match.id);
+      const res = await deleteMatch(match.id);
+      if (!res.success) {
+        throw new Error(res.error || "Gagal menghapus match");
+      }
       router.push("/matches");
       router.refresh();
     } catch (err: any) {

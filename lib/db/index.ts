@@ -1,19 +1,21 @@
 import { drizzle } from "drizzle-orm/libsql";
 import { createClient } from "@libsql/client";
 import * as schema from "./schema";
-import fs from "fs";
-import path from "path";
 
 const url = process.env.TURSO_DATABASE_URL || "file:./data/scrims.db";
 const authToken = process.env.TURSO_AUTH_TOKEN;
 
-// Ensure local data directory exists if using local SQLite file
-if (url.startsWith("file:")) {
-  const filePath = url.replace("file:", "");
-  const dir = path.dirname(path.resolve(filePath));
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
+// Ensure local data directory exists if using local SQLite file in Node environment
+if (typeof window === "undefined" && url.startsWith("file:")) {
+  try {
+    const fs = require("fs");
+    const path = require("path");
+    const filePath = url.replace("file:", "");
+    const dir = path.dirname(path.resolve(filePath));
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  } catch {}
 }
 
 export const client = createClient({

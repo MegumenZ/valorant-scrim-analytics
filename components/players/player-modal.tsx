@@ -62,9 +62,15 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
       };
 
       if (playerToEdit) {
-        await updatePlayer(playerToEdit.id, payload);
+        const res = await updatePlayer(playerToEdit.id, payload);
+        if (!res.success) {
+          throw new Error(res.error || "Gagal memperbarui data pemain.");
+        }
       } else {
-        await createPlayer(payload);
+        const res = await createPlayer(payload);
+        if (!res.success) {
+          throw new Error(res.error || "Gagal menyimpan data pemain.");
+        }
       }
 
       setLoading(false);

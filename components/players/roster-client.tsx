@@ -42,7 +42,10 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
   const handleToggleStatus = async (player: Player) => {
     setIsUpdating(player.id);
     try {
-      await togglePlayerActive(player.id, player.isActive);
+      const res = await togglePlayerActive(player.id, player.isActive);
+      if (!res.success) {
+        throw new Error(res.error || "Gagal mengubah status pemain");
+      }
       router.refresh();
     } catch (err: any) {
       alert("Gagal mengubah status pemain: " + (err.message || "Unknown error"));
@@ -55,7 +58,10 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
     if (!playerToDelete) return;
     setIsDeleting(playerToDelete.id);
     try {
-      await deletePlayer(playerToDelete.id);
+      const res = await deletePlayer(playerToDelete.id);
+      if (!res.success) {
+        throw new Error(res.error || "Gagal menghapus pemain");
+      }
       setPlayerToDelete(null);
       router.refresh();
     } catch (err: any) {
