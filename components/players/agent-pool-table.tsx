@@ -22,7 +22,7 @@ export function AgentPoolTable({ agentPool }: AgentPoolTableProps) {
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="border-b border-[#1C2433] bg-[#090C10] text-[#94A3B8] font-semibold text-[11px]">
-              <th className="py-3 px-4">Agent</th>
+              <th className="py-3 px-4 sticky left-0 bg-[#090C10] z-10">Agent</th>
               <th className="py-3 px-4 text-center">Match</th>
               <th className="py-3 px-4 text-center">Rekor (W-L)</th>
               <th className="py-3 px-4 text-center">Win Rate</th>
@@ -33,7 +33,7 @@ export function AgentPoolTable({ agentPool }: AgentPoolTableProps) {
           <tbody className="divide-y divide-[#1C2433]">
             {agentPool.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-8 text-center text-[#64748B]">
+                <td colSpan={6} className="py-8 text-center text-[#94A3B8]">
                   Belum ada data pertandingan untuk pemain ini.
                 </td>
               </tr>
@@ -42,8 +42,8 @@ export function AgentPoolTable({ agentPool }: AgentPoolTableProps) {
                 const agentInfo = VALORANT_AGENTS.find((a) => a.name === stat.agent);
 
                 return (
-                  <tr key={stat.agent} className="hover:bg-[#141A24] transition-colors">
-                    <td className="py-3 px-4 font-semibold text-white">
+                  <tr key={stat.agent} className="hover:bg-[#141A24] transition-colors group">
+                    <td className="py-3 px-4 font-semibold text-white sticky left-0 bg-[#0C1017] group-hover:bg-[#141A24] z-10 transition-colors">
                       <div className="flex items-center gap-2.5">
                         <img
                           src={getAgentIcon(stat.agent)}

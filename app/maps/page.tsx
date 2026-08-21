@@ -44,6 +44,22 @@ export default async function MapsAnalyticsPage() {
               ? Math.round((stat.defenseStartWins / stat.defenseStartMatches) * 100)
               : 0;
 
+          const tacticalStatus = (() => {
+            if (!hasMatches) {
+              return { label: "Belum Dimainkan", color: "text-[#94A3B8]", bg: "bg-black/60", border: "border-[#1C2433]" };
+            }
+            if (stat.totalMatches === 1) {
+              return { label: "Perlu Data", color: "text-[#94A3B8]", bg: "bg-[#161D28]", border: "border-[#2A364F]" };
+            }
+            if (stat.winRate >= 70) {
+              return { label: "Auto-Pick", color: "text-emerald-400", bg: "bg-emerald-500/15", border: "border-emerald-500/40" };
+            }
+            if (stat.winRate >= 50) {
+              return { label: "Comfort Pick", color: "text-sky-400", bg: "bg-sky-500/15", border: "border-sky-500/30" };
+            }
+            return { label: "Perma-Ban", color: "text-[#FF4655]", bg: "bg-[#FF4655]/15", border: "border-[#FF4655]/40" };
+          })();
+
           return (
             <Card
               key={stat.map}
@@ -68,21 +84,22 @@ export default async function MapsAnalyticsPage() {
                       {meta.location}
                     </p>
                   </div>
-                  {hasMatches ? (
-                    <div
-                      className={`px-2.5 py-0.5 rounded border font-tactical text-lg font-black tracking-wider uppercase ${
-                        stat.winRate >= 50
-                          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                          : "bg-[#FF4655]/10 text-[#FF4655] border-[#FF4655]/40"
-                      }`}
-                    >
-                      {stat.winRate}% WIN
-                    </div>
-                  ) : (
-                    <span className="text-[10px] text-[#94A3B8] font-medium bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded border border-[#1C2433]">
-                      Belum Dimainkan
+                  <div className="flex flex-col items-end gap-1">
+                    {hasMatches ? (
+                      <div
+                        className={`px-2.5 py-0.5 rounded border font-tactical text-base font-black tracking-wider uppercase ${
+                          stat.winRate >= 50
+                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                            : "bg-[#FF4655]/10 text-[#FF4655] border-[#FF4655]/40"
+                        }`}
+                      >
+                        {stat.winRate}% WIN
+                      </div>
+                    ) : null}
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded border backdrop-blur-sm ${tacticalStatus.bg} ${tacticalStatus.border} ${tacticalStatus.color}`}>
+                      {tacticalStatus.label}
                     </span>
-                  )}
+                  </div>
                 </div>
               </div>
 

@@ -301,8 +301,8 @@ export function MatchDetailView({ match, pastMatches = [] }: MatchDetailViewProp
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-[#242e40] bg-[#0e131b] text-slate-400 font-semibold uppercase text-[11px]">
-                  <th className="py-3 px-4">Pemain</th>
+                <tr className="border-b border-[#1C2433] bg-[#090C10] text-[#94A3B8] font-semibold text-[11px]">
+                  <th className="py-3 px-4 sticky left-0 bg-[#090C10] z-10">Pemain</th>
                   <th className="py-3 px-4">Agent</th>
                   <th className="py-3 px-4 text-right">ACS</th>
                   <th className="py-3 px-4 text-center">K / D / A</th>
@@ -311,7 +311,7 @@ export function MatchDetailView({ match, pastMatches = [] }: MatchDetailViewProp
                   <th className="py-3 px-4 text-center">Clutch (1vX)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#242e40]/70">
+              <tbody className="divide-y divide-[#1C2433]">
                 {match.playerStats.map((stat, idx) => {
                   const kd = calculateKD(stat.kills, stat.deaths);
                   const isMVP = idx === 0;
@@ -319,11 +319,11 @@ export function MatchDetailView({ match, pastMatches = [] }: MatchDetailViewProp
                   return (
                     <tr
                       key={stat.id}
-                      className={`hover:bg-[#1c2432]/50 transition-colors ${
+                      className={`hover:bg-[#141A24] transition-colors group ${
                         isMVP ? "bg-amber-500/5 font-medium" : ""
                       }`}
                     >
-                      <td className="py-3.5 px-4 font-bold text-slate-100">
+                      <td className="py-3.5 px-4 font-bold text-[#F1F5F9] sticky left-0 bg-[#0C1017] group-hover:bg-[#141A24] z-10 transition-colors">
                         <div className="flex items-center gap-2">
                           {isMVP && <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
                           <Link
@@ -340,26 +340,26 @@ export function MatchDetailView({ match, pastMatches = [] }: MatchDetailViewProp
                           <img
                             src={getAgentIcon(stat.agent)}
                             alt={stat.agent}
-                            className="w-7 h-7 rounded-full bg-[#141a24] border border-[#242e40] shrink-0 object-cover"
+                            className="w-7 h-7 rounded-full bg-[#161D28] border border-[#2A364F] shrink-0 object-cover"
                           />
-                          <span className="font-semibold text-slate-200">{stat.agent}</span>
+                          <span className="font-semibold text-[#F1F5F9]">{stat.agent}</span>
                         </div>
                       </td>
 
-                      <td className="py-3.5 px-4 text-right font-black text-rose-400 text-sm tabular-nums">
+                      <td className="py-3.5 px-4 text-right font-black text-rose-400 text-sm tabular-nums font-tactical">
                         {stat.acs}
                       </td>
 
-                      <td className="py-3.5 px-4 text-center font-bold text-slate-200 tabular-nums">
+                      <td className="py-3.5 px-4 text-center font-bold text-[#F1F5F9] tabular-nums">
                         <span className="text-emerald-400">{stat.kills}</span>
-                        <span className="text-slate-500 mx-1">/</span>
+                        <span className="text-[#64748B] mx-1">/</span>
                         <span className="text-rose-400">{stat.deaths}</span>
-                        <span className="text-slate-500 mx-1">/</span>
+                        <span className="text-[#64748B] mx-1">/</span>
                         <span className="text-sky-400">{stat.assists}</span>
                       </td>
 
                       <td className="py-3.5 px-4 text-center font-bold tabular-nums">
-                        <span className={kd >= 1.2 ? "text-emerald-400" : kd >= 1.0 ? "text-slate-200" : "text-rose-400"}>
+                        <span className={kd >= 1.2 ? "text-emerald-400" : kd >= 1.0 ? "text-[#F1F5F9]" : "text-rose-400"}>
                           {kd.toFixed(2)}
                         </span>
                       </td>

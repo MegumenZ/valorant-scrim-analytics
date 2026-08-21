@@ -140,7 +140,7 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
             <thead>
               <tr className="border-b border-[#1C2433] bg-[#090C10] text-[#94A3B8] font-semibold text-[11px]">
                 <th className="py-3 px-4 text-center w-10">#</th>
-                <th className="py-3 px-4">Pemain</th>
+                <th className="py-3 px-4 sticky left-0 bg-[#090C10] z-10">Pemain</th>
                 <th className="py-3 px-4">Role</th>
                 <th className="py-3 px-4 text-center">Match</th>
                 <th className="py-3 px-4 text-center">Avg ACS</th>
@@ -153,7 +153,7 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
             <tbody className="divide-y divide-[#1C2433]">
               {leaderboard.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-8 text-center text-[#64748B]">
+                  <td colSpan={9} className="py-8 text-center text-[#94A3B8]">
                     Belum ada data pemain.
                   </td>
                 </tr>
@@ -182,10 +182,10 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
                             3
                           </span>
                         ) : (
-                          <span className="text-[#64748B] text-xs font-semibold">{idx + 1}</span>
+                          <span className="text-[#94A3B8] text-xs font-semibold">{idx + 1}</span>
                         )}
                       </td>
-                      <td className="py-3.5 px-4 font-bold text-white whitespace-nowrap">
+                      <td className="py-3.5 px-4 font-bold text-white whitespace-nowrap sticky left-0 bg-[#0C1017] group-hover:bg-[#141A24] z-10 transition-colors">
                         <div className="text-xs">{item.player.name}</div>
                         {item.player.riotId && (
                           <div className="text-[11px] text-[#94A3B8] font-normal">

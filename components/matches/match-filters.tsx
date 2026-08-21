@@ -105,85 +105,125 @@ export function MatchFilters({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-[#0F141C] border border-[#1C2433] rounded-xl shadow-sm">
-      <div className="flex flex-wrap items-center gap-2.5 flex-1">
-        {/* Search Opponent */}
-        <div className="relative min-w-[200px] flex-1 max-w-xs">
-          <Search className="w-4 h-4 absolute left-3 top-2.5 text-[#94A3B8]" />
-          <Input
-            placeholder="Cari tim lawan..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-9 h-9 text-xs"
-          />
+    <div className="flex flex-col gap-3 p-4 bg-[#0F141C] border border-[#1C2433] rounded-xl shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2.5 flex-1">
+          {/* Search Opponent */}
+          <div className="relative min-w-[200px] flex-1 max-w-xs">
+            <Search className="w-4 h-4 absolute left-3 top-2.5 text-[#94A3B8]" />
+            <Input
+              placeholder="Cari tim lawan..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="pl-9 h-9 text-xs"
+            />
+          </div>
+
+          {/* Filter Map */}
+          <div className="w-36">
+            <Select
+              value={selectedMap}
+              onChange={(e) => onMapChange(e.target.value)}
+              className="h-9 text-xs font-semibold"
+            >
+              <option value="ALL" className="bg-[#090C10] text-[#F1F5F9]">Semua Map</option>
+              {VALORANT_MAPS.map((m) => (
+                <option key={m} value={m} className="bg-[#090C10] text-[#F1F5F9]">
+                  {m}
+                </option>
+              ))}
+            </Select>
+          </div>
+
+          {/* Filter Result */}
+          <div className="w-32">
+            <Select
+              value={selectedResult}
+              onChange={(e) => onResultChange(e.target.value)}
+              className="h-9 text-xs font-semibold"
+            >
+              <option value="ALL" className="bg-[#090C10] text-[#F1F5F9]">Semua Hasil</option>
+              <option value="WIN" className="bg-[#090C10] text-emerald-400">Menang (WIN)</option>
+              <option value="LOSS" className="bg-[#090C10] text-rose-400">Kalah (LOSS)</option>
+              <option value="DRAW" className="bg-[#090C10] text-amber-400">Seri (DRAW)</option>
+            </Select>
+          </div>
+
+          {/* Reset Filter Button */}
+          {(selectedMap !== "ALL" || selectedResult !== "ALL" || searchQuery) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onReset}
+              className="h-9 text-xs text-[#94A3B8] hover:text-[#F1F5F9] gap-1"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Reset</span>
+            </Button>
+          )}
         </div>
 
-        {/* Filter Map */}
-        <div className="w-36">
-          <Select
-            value={selectedMap}
-            onChange={(e) => onMapChange(e.target.value)}
-            className="h-9 text-xs font-semibold"
-          >
-            <option value="ALL" className="bg-[#090C10] text-[#F1F5F9]">Semua Map</option>
-            {VALORANT_MAPS.map((m) => (
-              <option key={m} value={m} className="bg-[#090C10] text-[#F1F5F9]">
-                {m}
-              </option>
-            ))}
-          </Select>
-        </div>
-
-        {/* Filter Result */}
-        <div className="w-32">
-          <Select
-            value={selectedResult}
-            onChange={(e) => onResultChange(e.target.value)}
-            className="h-9 text-xs font-semibold"
-          >
-            <option value="ALL" className="bg-[#090C10] text-[#F1F5F9]">Semua Hasil</option>
-            <option value="WIN" className="bg-[#090C10] text-emerald-400">Menang (WIN)</option>
-            <option value="LOSS" className="bg-[#090C10] text-rose-400">Kalah (LOSS)</option>
-            <option value="DRAW" className="bg-[#090C10] text-amber-400">Seri (DRAW)</option>
-          </Select>
-        </div>
-
-        {/* Reset Filter Button */}
-        {(selectedMap !== "ALL" || selectedResult !== "ALL" || searchQuery) && (
+        {/* Export Buttons */}
+        <div className="flex items-center gap-2">
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            onClick={onReset}
-            className="h-9 text-xs text-[#94A3B8] hover:text-[#F1F5F9] gap-1"
+            onClick={handleExportCSV}
+            className="text-xs gap-1.5 h-9"
+            title="Ekspor data match ke spreadsheet CSV"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Reset</span>
+            <Download className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Ekspor CSV</span>
           </Button>
-        )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportJSON}
+            className="text-xs gap-1.5 h-9"
+            title="Ekspor data match ke JSON"
+          >
+            <Download className="w-3.5 h-3.5 text-sky-400" />
+            <span>JSON</span>
+          </Button>
+        </div>
       </div>
 
-      {/* Export Buttons */}
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleExportCSV}
-          className="text-xs gap-1.5 h-9"
-          title="Ekspor data match ke spreadsheet CSV"
+      {/* Quick Filter Presets */}
+      <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-[#1C2433] w-full text-xs">
+        <span className="text-[11px] text-[#94A3B8] font-medium mr-1">Filter Cepat:</span>
+        <button
+          type="button"
+          onClick={() => { onResultChange("ALL"); onMapChange("ALL"); }}
+          className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
+            selectedResult === "ALL" && selectedMap === "ALL"
+              ? "bg-[#161D28] text-white border border-[#2A364F]"
+              : "bg-transparent text-[#94A3B8] hover:text-white hover:bg-[#161D28]/50"
+          }`}
         >
-          <Download className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Ekspor CSV</span>
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleExportJSON}
-          className="text-xs gap-1.5 h-9"
-          title="Ekspor data match ke JSON"
+          Semua
+        </button>
+        <button
+          type="button"
+          onClick={() => onResultChange("WIN")}
+          className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
+            selectedResult === "WIN"
+              ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+              : "bg-transparent text-[#94A3B8] hover:text-emerald-400 hover:bg-emerald-500/10"
+          }`}
         >
-          <Download className="w-3.5 h-3.5 text-sky-400" />
-          <span>JSON</span>
-        </Button>
+          Menang (W)
+        </button>
+        <button
+          type="button"
+          onClick={() => onResultChange("LOSS")}
+          className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors ${
+            selectedResult === "LOSS"
+              ? "bg-[#FF4655]/20 text-[#FF4655] border border-[#FF4655]/40"
+              : "bg-transparent text-[#94A3B8] hover:text-[#FF4655] hover:bg-[#FF4655]/10"
+          }`}
+        >
+          Kalah (L)
+        </button>
       </div>
     </div>
   );

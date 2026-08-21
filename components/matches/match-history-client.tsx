@@ -234,7 +234,7 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
             <thead>
               <tr className="border-b border-[#1C2433] bg-[#090C10] text-[#94A3B8] font-semibold text-[11px]">
                 <th className="py-3 px-4">Tanggal</th>
-                <th className="py-3 px-4">Map</th>
+                <th className="py-3 px-4 sticky left-0 bg-[#090C10] z-10">Map</th>
                 <th className="py-3 px-4">Lawan</th>
                 <th className="py-3 px-4 text-center">Skor</th>
                 <th className="py-3 px-4 text-center">Hasil</th>
@@ -276,7 +276,7 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                       <td className="py-3.5 px-4 text-[#94A3B8] whitespace-nowrap">
                         {m.matchDate}
                       </td>
-                      <td className="py-3.5 px-4 font-tactical text-base font-black text-white uppercase tracking-wide">
+                      <td className="py-3.5 px-4 font-tactical text-base font-black text-white uppercase tracking-wide sticky left-0 bg-[#0C1017] group-hover:bg-[#141A24] z-10 transition-colors">
                         <div className="flex items-center gap-2.5">
                           <img
                             src={getMapListViewIcon(m.map)}
@@ -298,7 +298,7 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                       </td>
                       <td className="py-3.5 px-4 text-center">
                         <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase ${
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase inline-flex items-center gap-1 ${
                             m.result === "WIN"
                               ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
                               : m.result === "LOSS"
@@ -306,7 +306,8 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                               : "bg-amber-500/10 text-amber-400 border-amber-500/30"
                           }`}
                         >
-                          {m.result}
+                          <span>{m.result === "WIN" ? "✓" : m.result === "LOSS" ? "✕" : "−"}</span>
+                          <span>{m.result}</span>
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-center">
