@@ -1,15 +1,26 @@
-"use client";
-
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { TeamTacticalOverview } from "@/lib/utils/tactical-expert-engine";
+import { TeamTacticalOverview, evaluateTeamTacticalHealth } from "@/lib/utils/tactical-expert-engine";
 import { getMapListViewIcon } from "@/lib/data/valorant";
+import { useTranslation } from "@/lib/i18n/context";
+import { MatchWithStats } from "@/lib/actions/matches";
 
 interface TeamTacticalHealthWidgetProps {
-  overview: TeamTacticalOverview;
+  overview?: TeamTacticalOverview;
+  allMatches?: MatchWithStats[];
 }
 
-export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetProps) {
+export function TeamTacticalHealthWidget({ overview: initialOverview, allMatches }: TeamTacticalHealthWidgetProps) {
+  const { t, language } = useTranslation();
+  const isEn = language === "en";
+
+  const overview = React.useMemo(() => {
+    if (allMatches && allMatches.length > 0) {
+      return evaluateTeamTacticalHealth(allMatches, language);
+    }
+    return initialOverview || evaluateTeamTacticalHealth([], language);
+  }, [allMatches, initialOverview, language]);
+
   const isHighGrade =
     overview.overallGrade === "S" ||
     overview.overallGrade === "A+" ||
@@ -30,10 +41,10 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <CardTitle className="text-sm sm:text-base font-bold text-white tracking-tight">
-              Kesehatan Taktis Tim
+              {t.dashboard.tacticalHealthTitle}
             </CardTitle>
             <p className="text-xs text-[#94A3B8] mt-0.5">
-              Evaluasi performa dari {overview.totalMatchesAnalyzed} pertandingan scrim
+              {isEn ? `Performance evaluated from ${overview.totalMatchesAnalyzed} scrim matches` : `Evaluasi performa dari ${overview.totalMatchesAnalyzed} pertandingan scrim`}
             </p>
           </div>
 
@@ -41,7 +52,7 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
           <div className="flex items-center gap-3">
             <div className="text-right">
               <div className="text-[11px] text-[#94A3B8] font-medium">
-                Skor Fundamental
+                {isEn ? "Fundamental Score" : "Skor Fundamental"}
               </div>
               <div className="text-xs text-white font-bold tabular-nums">
                 {overview.averageScore} / 100
@@ -63,7 +74,7 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
           <div className="p-3.5 rounded-lg bg-[#090C10] border border-[#1C2433] flex flex-col justify-between space-y-2 border-l-2 border-l-sky-400">
             <div className="flex items-center justify-between text-xs">
               <span className="text-xs font-semibold text-[#94A3B8]">
-                Tren Spacing Tim
+                {isEn ? "Team Spacing Trend" : "Tren Spacing Tim"}
               </span>
               <span
                 className={`text-xs font-bold ${
@@ -91,11 +102,11 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
           <div className="p-3.5 rounded-lg bg-[#090C10] border border-[#1C2433] flex flex-col justify-between space-y-2 border-l-2 border-l-emerald-400">
             <div className="flex items-center justify-between text-xs">
               <span className="text-xs font-semibold text-emerald-400">
-                Map Terkuat
+                {isEn ? "Strongest Map" : "Map Terkuat"}
               </span>
               <span className="text-[11px] text-[#94A3B8]">
                 {overview.strongestMap
-                  ? `${overview.strongestMap.matchCount} Game`
+                  ? `${overview.strongestMap.matchCount} ${isEn ? "Games" : "Game"}`
                   : "-"}
               </span>
             </div>
@@ -107,7 +118,7 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
                 <div className="text-[11px] font-bold text-emerald-400 mt-0.5">
                   {overview.strongestMap
                     ? `${overview.strongestMap.winrate}% Win Rate`
-                    : "Belum ada data"}
+                    : (isEn ? "No data" : "Belum ada data")}
                 </div>
               </div>
               {overview.strongestMap && (
@@ -124,11 +135,11 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
           <div className="p-3.5 rounded-lg bg-[#090C10] border border-[#1C2433] flex flex-col justify-between space-y-2 border-l-2 border-l-[#FF4655]">
             <div className="flex items-center justify-between text-xs">
               <span className="text-xs font-semibold text-[#FF4655]">
-                Fokus Evaluasi Map
+                {isEn ? "Map Focus Area" : "Fokus Evaluasi Map"}
               </span>
               <span className="text-[11px] text-[#94A3B8]">
                 {overview.weakestMap
-                  ? `${overview.weakestMap.matchCount} Game`
+                  ? `${overview.weakestMap.matchCount} ${isEn ? "Games" : "Game"}`
                   : "-"}
               </span>
             </div>
@@ -140,7 +151,7 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
                 <div className="text-[11px] font-bold text-[#FF4655] mt-0.5">
                   {overview.weakestMap
                     ? `${overview.weakestMap.winrate}% Win Rate`
-                    : "Belum ada data"}
+                    : (isEn ? "No data" : "Belum ada data")}
                 </div>
               </div>
               {overview.weakestMap && (
@@ -157,7 +168,7 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
           <div className="p-3.5 rounded-lg bg-[#090C10] border border-[#1C2433] flex flex-col justify-between space-y-2 border-l-2 border-l-sky-400">
             <div className="flex items-center justify-between text-xs">
               <span className="text-xs font-semibold text-[#94A3B8]">
-                Rata-rata Skor Taktis
+                {isEn ? "Average Tactical Score" : "Rata-rata Skor Taktis"}
               </span>
             </div>
             <div>
@@ -165,7 +176,7 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
                 {overview.averageScore} <span className="text-base text-[#94A3B8] font-normal">/ 100</span>
               </div>
               <div className="text-[11px] text-[#94A3B8] mt-0.5">
-                Fundamental Tim
+                {isEn ? "Team Fundamentals" : "Fundamental Tim"}
               </div>
             </div>
           </div>
@@ -175,7 +186,7 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
         <div className="p-3.5 sm:p-4 rounded-lg bg-[#090C10] border border-[#1C2433] space-y-3">
           <div className="flex items-center justify-between border-b border-[#1C2433] pb-2">
             <span className="text-xs font-bold text-white">
-              Prioritas Evaluasi Coach (Minggu Ini)
+              {isEn ? "Coach Weekly Tactical Priorities" : "Prioritas Evaluasi Coach (Minggu Ini)"}
             </span>
           </div>
 
@@ -203,7 +214,7 @@ export function TeamTacticalHealthWidget({ overview }: TeamTacticalHealthWidgetP
                           : "text-sky-400 border-sky-500/30 bg-sky-500/10"
                       }`}
                     >
-                      {isHighUrgency ? "Prioritas Tinggi" : "Pengembangan"}
+                      {isHighUrgency ? (isEn ? "High Priority" : "Prioritas Tinggi") : (isEn ? "Development" : "Pengembangan")}
                     </span>
                   </div>
                   <p className="text-[11px] text-[#94A3B8] leading-relaxed">

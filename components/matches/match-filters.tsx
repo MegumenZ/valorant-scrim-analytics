@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { VALORANT_MAPS } from "@/lib/data/valorant";
 import { MatchWithStats } from "@/lib/actions/matches";
 
+import { useTranslation } from "@/lib/i18n/context";
+
 interface MatchFiltersProps {
   selectedMap: string;
   onMapChange: (val: string) => void;
@@ -29,6 +31,9 @@ export function MatchFilters({
   onReset,
   matches,
 }: MatchFiltersProps) {
+  const { t, language } = useTranslation();
+  const isEn = language === "en";
+
   const handleExportCSV = () => {
     if (matches.length === 0) return;
 
@@ -112,7 +117,7 @@ export function MatchFilters({
           <div className="relative min-w-[200px] flex-1 max-w-xs">
             <Search className="w-4 h-4 absolute left-3 top-2.5 text-[#94A3B8]" />
             <Input
-              placeholder="Cari tim lawan..."
+              placeholder={t.matches.searchPlaceholder}
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               className="pl-9 h-9 text-xs"
@@ -126,7 +131,7 @@ export function MatchFilters({
               onChange={(e) => onMapChange(e.target.value)}
               className="h-9 text-xs font-semibold"
             >
-              <option value="ALL" className="bg-[#090C10] text-[#F1F5F9]">Semua Map</option>
+              <option value="ALL" className="bg-[#090C10] text-[#F1F5F9]">{t.matches.allMaps}</option>
               {VALORANT_MAPS.map((m) => (
                 <option key={m} value={m} className="bg-[#090C10] text-[#F1F5F9]">
                   {m}
@@ -142,10 +147,10 @@ export function MatchFilters({
               onChange={(e) => onResultChange(e.target.value)}
               className="h-9 text-xs font-semibold"
             >
-              <option value="ALL" className="bg-[#090C10] text-[#F1F5F9]">Semua Hasil</option>
-              <option value="WIN" className="bg-[#090C10] text-emerald-400">Menang (WIN)</option>
-              <option value="LOSS" className="bg-[#090C10] text-rose-400">Kalah (LOSS)</option>
-              <option value="DRAW" className="bg-[#090C10] text-amber-400">Seri (DRAW)</option>
+              <option value="ALL" className="bg-[#090C10] text-[#F1F5F9]">{t.matches.allResults}</option>
+              <option value="WIN" className="bg-[#090C10] text-emerald-400">{t.common.win} (WIN)</option>
+              <option value="LOSS" className="bg-[#090C10] text-rose-400">{t.common.loss} (LOSS)</option>
+              <option value="DRAW" className="bg-[#090C10] text-amber-400">{t.common.draw} (DRAW)</option>
             </Select>
           </div>
 
@@ -158,7 +163,7 @@ export function MatchFilters({
               className="h-9 text-xs text-[#94A3B8] hover:text-[#F1F5F9] gap-1"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset</span>
+              <span>{t.common.reset}</span>
             </Button>
           )}
         </div>
@@ -170,17 +175,17 @@ export function MatchFilters({
             size="sm"
             onClick={handleExportCSV}
             className="text-xs gap-1.5 h-9"
-            title="Ekspor data match ke spreadsheet CSV"
+            title={isEn ? "Export match data to CSV spreadsheet" : "Ekspor data match ke spreadsheet CSV"}
           >
             <Download className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Ekspor CSV</span>
+            <span>{t.matches.exportCsv}</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={handleExportJSON}
             className="text-xs gap-1.5 h-9"
-            title="Ekspor data match ke JSON"
+            title={isEn ? "Export match data to JSON" : "Ekspor data match ke JSON"}
           >
             <Download className="w-3.5 h-3.5 text-sky-400" />
             <span>JSON</span>
@@ -190,7 +195,7 @@ export function MatchFilters({
 
       {/* Quick Filter Presets */}
       <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-[#1C2433] w-full text-xs">
-        <span className="text-[11px] text-[#94A3B8] font-medium mr-1">Filter Cepat:</span>
+        <span className="text-[11px] text-[#94A3B8] font-medium mr-1">{t.matches.quickFilter}:</span>
         <button
           type="button"
           onClick={() => { onResultChange("ALL"); onMapChange("ALL"); }}
@@ -200,7 +205,7 @@ export function MatchFilters({
               : "bg-transparent text-[#94A3B8] hover:text-white hover:bg-[#161D28]/50"
           }`}
         >
-          Semua
+          {t.common.all}
         </button>
         <button
           type="button"
@@ -211,7 +216,7 @@ export function MatchFilters({
               : "bg-transparent text-[#94A3B8] hover:text-emerald-400 hover:bg-emerald-500/10"
           }`}
         >
-          Menang (W)
+          {t.common.win} (W)
         </button>
         <button
           type="button"
@@ -222,7 +227,7 @@ export function MatchFilters({
               : "bg-transparent text-[#94A3B8] hover:text-[#FF4655] hover:bg-[#FF4655]/10"
           }`}
         >
-          Kalah (L)
+          {t.common.loss} (L)
         </button>
       </div>
     </div>

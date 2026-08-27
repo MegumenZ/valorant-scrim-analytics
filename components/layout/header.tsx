@@ -2,25 +2,27 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, LogIn } from "lucide-react";
+import { LogOut, LogIn, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUserRole } from "./role-context";
+import { useTranslation } from "@/lib/i18n/context";
 
 export function Header() {
   const pathname = usePathname();
   const { user, isAdmin, logout, isLoading } = useUserRole();
+  const { t, language, setLanguage } = useTranslation();
 
   const getPageTitle = () => {
-    if (pathname === "/") return "Dashboard";
-    if (pathname.startsWith("/matches/new")) return "Catat Scrim";
-    if (pathname.includes("/edit")) return "Edit Scrim";
-    if (pathname.startsWith("/matches/")) return "Detail Match";
-    if (pathname.startsWith("/matches")) return "Riwayat Match";
-    if (pathname.startsWith("/roster")) return "Roster Pemain";
-    if (pathname.startsWith("/players/")) return "Profil Pemain";
-    if (pathname.startsWith("/maps")) return "Statistik Map";
-    if (pathname.startsWith("/login")) return "Masuk Akun";
-    return "Scrim Analytics";
+    if (pathname === "/") return t.header.dashboardTitle;
+    if (pathname.startsWith("/matches/new")) return t.header.newMatchTitle;
+    if (pathname.includes("/edit")) return t.header.editMatchTitle;
+    if (pathname.startsWith("/matches/")) return t.header.matchDetailTitle;
+    if (pathname.startsWith("/matches")) return t.header.matchHistoryTitle;
+    if (pathname.startsWith("/roster")) return t.header.rosterTitle;
+    if (pathname.startsWith("/players/")) return t.header.playerProfileTitle;
+    if (pathname.startsWith("/maps")) return t.header.mapAnalyticsTitle;
+    if (pathname.startsWith("/login")) return t.header.loginTitle;
+    return t.header.defaultTitle;
   };
 
   return (
@@ -43,8 +45,38 @@ export function Header() {
         </span>
       </div>
 
-      {/* Right Section: User Profile & Actions */}
+      {/* Right Section: Language Switcher, User Profile & Actions */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        {/* Tactical Language Switcher Pill */}
+        <div className="flex items-center bg-[#0F141C] border border-[#1C2433] rounded-lg p-0.5 shadow-sm text-xs">
+          <button
+            type="button"
+            onClick={() => setLanguage("id")}
+            className={`px-2 py-1 rounded text-[11px] font-bold transition-all flex items-center gap-1 ${
+              language === "id"
+                ? "bg-[#161D28] text-white shadow-xs border border-[#2A364F]"
+                : "text-[#94A3B8] hover:text-white"
+            }`}
+            title="Bahasa Indonesia"
+          >
+            <span>🇮🇩</span>
+            <span className="hidden sm:inline">ID</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setLanguage("en")}
+            className={`px-2 py-1 rounded text-[11px] font-bold transition-all flex items-center gap-1 ${
+              language === "en"
+                ? "bg-[#161D28] text-white shadow-xs border border-[#2A364F]"
+                : "text-[#94A3B8] hover:text-white"
+            }`}
+            title="English (US/PH)"
+          >
+            <span>🇺🇸</span>
+            <span className="hidden sm:inline">EN</span>
+          </button>
+        </div>
+
         {!isLoading && user ? (
           <div className="flex items-center gap-2 bg-[#0F141C] border border-[#1C2433] pl-2 pr-1.5 py-1 rounded-lg">
             {/* Avatar */}
@@ -68,7 +100,7 @@ export function Header() {
               <span className={`text-[10px] font-medium leading-tight ${
                 isAdmin ? "text-rose-400" : "text-sky-400"
               }`}>
-                {isAdmin ? "Admin / IGL" : "Member"}
+                {isAdmin ? t.common.admin : t.common.member}
               </span>
             </div>
 
@@ -83,7 +115,7 @@ export function Header() {
             <button
               onClick={logout}
               className="p-1 text-[#94A3B8] hover:text-rose-400 hover:bg-[#161D28] rounded-md transition-colors cursor-pointer"
-              title="Keluar (Logout)"
+              title={t.common.logout}
             >
               <LogOut className="w-3.5 h-3.5" />
             </button>
@@ -92,7 +124,7 @@ export function Header() {
           <Link href="/login">
             <Button variant="secondary" size="sm" className="gap-1.5 text-xs h-8">
               <LogIn className="w-3.5 h-3.5 text-[#5865F2]" />
-              <span>Login</span>
+              <span>{t.common.login}</span>
             </Button>
           </Link>
         )}

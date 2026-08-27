@@ -12,6 +12,7 @@ import { PlayerModal } from "./player-modal";
 import { togglePlayerActive, deletePlayer } from "@/lib/actions/players";
 import { useUserRole } from "@/components/layout/role-context";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "@/lib/i18n/context";
 
 interface RosterClientProps {
   initialPlayers: Player[];
@@ -20,6 +21,9 @@ interface RosterClientProps {
 export function RosterClient({ initialPlayers }: RosterClientProps) {
   const router = useRouter();
   const { isAdmin } = useUserRole();
+  const { t, language } = useTranslation();
+  const isEn = language === "en";
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
@@ -44,11 +48,11 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
     try {
       const res = await togglePlayerActive(player.id, player.isActive);
       if (!res.success) {
-        throw new Error(res.error || "Gagal mengubah status pemain");
+        throw new Error(res.error || (isEn ? "Failed to toggle player status" : "Gagal mengubah status pemain"));
       }
       router.refresh();
     } catch (err: any) {
-      alert("Gagal mengubah status pemain: " + (err.message || "Unknown error"));
+      alert((isEn ? "Failed to toggle player status: " : "Gagal mengubah status pemain: ") + (err.message || "Unknown error"));
     } finally {
       setIsUpdating(null);
     }
@@ -60,12 +64,12 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
     try {
       const res = await deletePlayer(playerToDelete.id);
       if (!res.success) {
-        throw new Error(res.error || "Gagal menghapus pemain");
+        throw new Error(res.error || (isEn ? "Failed to delete player" : "Gagal menghapus pemain"));
       }
       setPlayerToDelete(null);
       router.refresh();
     } catch (err: any) {
-      alert("Gagal menghapus pemain: " + (err.message || "Unknown error"));
+      alert((isEn ? "Failed to delete player: " : "Gagal menghapus pemain: ") + (err.message || "Unknown error"));
     } finally {
       setIsDeleting(null);
     }
@@ -77,17 +81,17 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1C2433] pb-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-            Roster & Skuad Pemain
+            {isEn ? "Roster & Player Squad" : "Roster & Skuad Pemain"}
           </h1>
           <p className="text-xs text-[#94A3B8] mt-0.5">
-            Manajemen pemain inti, cadangan, dan peran taktis tim
+            {isEn ? "Manage starters, substitutes, and tactical roles" : "Manajemen pemain inti, cadangan, dan peran taktis tim"}
           </p>
         </div>
 
         {isAdmin && (
           <Button onClick={handleOpenAdd} size="sm" className="gap-1.5 font-semibold shadow-sm text-xs">
             <UserPlus className="w-4 h-4" />
-            <span>Tambah Pemain</span>
+            <span>{isEn ? "Add Player" : "Tambah Pemain"}</span>
           </Button>
         )}
       </div>
@@ -98,11 +102,13 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400" />
             <h2 className="text-xs font-bold text-white uppercase tracking-wider">
-              Pemain Inti ({activeStarters.length})
+              {isEn ? `Starters (${activeStarters.length})` : `Pemain Inti (${activeStarters.length})`}
             </h2>
           </div>
           <span className="text-xs text-[#94A3B8]">
-            {activeStarters.length === 5 ? "Slot Penuh (5/5)" : `Slot: ${activeStarters.length}/5`}
+            {activeStarters.length === 5
+              ? (isEn ? "Slot Full (5/5)" : "Slot Penuh (5/5)")
+              : `${isEn ? "Slot" : "Slot"}: ${activeStarters.length}/5`}
           </span>
         </div>
 
@@ -151,14 +157,14 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
                   </div>
                   <div className="flex justify-between">
                     <span>Status:</span>
-                    <span className="text-emerald-400 font-semibold">Starter Aktif</span>
+                    <span className="text-emerald-400 font-semibold">{isEn ? "Active Starter" : "Starter Aktif"}</span>
                   </div>
                 </CardContent>
 
                 <div className="p-3 border-t border-[#1C2433] flex items-center justify-between gap-2 bg-[#090C10]/40">
                   <Link href={`/players/${player.id}`} className="flex-1">
                     <Button variant="ghost" size="sm" className="w-full text-xs gap-1 h-7 text-[#94A3B8] hover:text-white hover:bg-[#1C2433]">
-                      <span>Lihat Statistik</span>
+                      <span>{isEn ? "View Stats" : "Lihat Statistik"}</span>
                       <ExternalLink className="w-3 h-3" />
                     </Button>
                   </Link>
@@ -171,7 +177,7 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
                         onClick={() => handleToggleStatus(player)}
                         disabled={isUpdating === player.id || isDeleting === player.id}
                         className="h-7 px-2 text-xs text-[#94A3B8] hover:text-amber-400 hover:bg-[#1C2433]"
-                        title="Pindahkan ke Cadangan"
+                        title={isEn ? "Move to Bench" : "Pindahkan ke Cadangan"}
                       >
                         {isUpdating === player.id ? (
                           <RefreshCw className="w-3 h-3 animate-spin" />
@@ -185,7 +191,7 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
                         onClick={() => handleOpenEdit(player)}
                         disabled={isUpdating === player.id || isDeleting === player.id}
                         className="h-7 w-7 p-0 text-[#94A3B8] hover:text-white hover:bg-[#1C2433]"
-                        title="Edit Data Pemain"
+                        title={isEn ? "Edit Player" : "Edit Data Pemain"}
                       >
                         <Edit className="w-3.5 h-3.5" />
                       </Button>
@@ -195,7 +201,7 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
                         onClick={() => setPlayerToDelete(player)}
                         disabled={isUpdating === player.id || isDeleting === player.id}
                         className="h-7 w-7 p-0 text-[#FF4655] hover:text-[#FF4655] hover:bg-[#FF4655]/10"
-                        title="Hapus Pemain"
+                        title={isEn ? "Delete Player" : "Hapus Pemain"}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
@@ -214,14 +220,14 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#64748B]" />
             <h2 className="text-xs font-bold text-[#94A3B8] uppercase tracking-wider">
-              Pemain Cadangan ({substitutes.length})
+              {isEn ? `Substitutes (${substitutes.length})` : `Pemain Cadangan (${substitutes.length})`}
             </h2>
           </div>
         </div>
 
         {substitutes.length === 0 ? (
           <div className="p-6 rounded-lg border border-dashed border-[#1C2433] text-center text-[#64748B] text-xs">
-            Belum ada pemain cadangan yang terdaftar.
+            {isEn ? "No substitute players registered yet." : "Belum ada pemain cadangan yang terdaftar."}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -265,7 +271,7 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
                   <div className="p-3 border-t border-[#1C2433] flex items-center justify-between gap-2 bg-[#090C10]/40">
                     <Link href={`/players/${player.id}`} className="flex-1">
                       <Button variant="ghost" size="sm" className="w-full text-xs h-7 text-[#94A3B8] hover:text-white hover:bg-[#1C2433]">
-                        <span>Statistik</span>
+                        <span>{isEn ? "Stats" : "Statistik"}</span>
                       </Button>
                     </Link>
 
@@ -324,10 +330,10 @@ export function RosterClient({ initialPlayers }: RosterClientProps) {
         isOpen={Boolean(playerToDelete)}
         onClose={() => setPlayerToDelete(null)}
         onConfirm={confirmDeletePlayer}
-        title="Konfirmasi Hapus Pemain"
-        description={`Apakah Anda yakin ingin menghapus pemain "${playerToDelete?.name}" dari skuad tim? Seluruh relasi data roster pemain akan diperbarui.`}
-        confirmText="Hapus Pemain"
-        cancelText="Batal"
+        title={isEn ? "Confirm Player Deletion" : "Konfirmasi Hapus Pemain"}
+        description={isEn ? `Are you sure you want to delete player "${playerToDelete?.name}" from the team squad? All roster references will be updated.` : `Apakah Anda yakin ingin menghapus pemain "${playerToDelete?.name}" dari skuad tim? Seluruh relasi data roster pemain akan diperbarui.`}
+        confirmText={isEn ? "Delete Player" : "Hapus Pemain"}
+        cancelText={t.common.cancel}
         variant="danger"
         isLoading={Boolean(isDeleting)}
       />

@@ -13,6 +13,8 @@ import type { TacticalWinBreakdown, TacticalLossBreakdown, TradingKillStats } fr
 import { MatchWithStats } from "@/lib/actions/matches";
 import { RoundItem } from "@/lib/validations/match";
 
+import { useTranslation } from "@/lib/i18n/context";
+
 interface TacticalWinBreakdownProps {
   winData?: TacticalWinBreakdown;
   lossData?: TacticalLossBreakdown;
@@ -26,6 +28,8 @@ export function TacticalWinBreakdownWidget({
   tradingStats,
   latestMatch,
 }: TacticalWinBreakdownProps) {
+  const { t, language } = useTranslation();
+  const isEn = language === "en";
   const defaultWins: TacticalWinBreakdown = {
     totalWins: 0,
     eliminations: 0,
@@ -95,9 +99,9 @@ export function TacticalWinBreakdownWidget({
 
   const getConditionLabel = (outcome?: string | null) => {
     if (outcome === "DEFUSE") return "DEFUSE";
-    if (outcome === "DETONATION") return "PLANT";
-    if (outcome === "TIME") return "STALL";
-    return "ELIM";
+    if (outcome === "DETONATION") return isEn ? "DETONATE" : "PLANT";
+    if (outcome === "TIME") return isEn ? "TIME OUT" : "STALL";
+    return isEn ? "ELIM" : "ELIM";
   };
 
   return (
@@ -107,17 +111,17 @@ export function TacticalWinBreakdownWidget({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <CardTitle className="text-sm sm:text-base font-bold text-white tracking-tight">
-              Analisis Taktis Ronde & Efisiensi Trade
+              {t.dashboard.tacticalWinBreakdownTitle}
             </CardTitle>
             <p className="text-xs text-[#94A3B8] mt-0.5">
-              Distribusi kondisi menang, penyebab kalah, dan disiplin spacing
+              {t.dashboard.tacticalWinBreakdownSubtitle}
             </p>
           </div>
 
           <div className="flex items-center gap-2 text-xs font-semibold">
-            <span className="text-emerald-400 font-bold">{wins.totalWins} Menang</span>
+            <span className="text-emerald-400 font-bold">{wins.totalWins} {t.common.win}</span>
             <span className="text-[#64748B]">·</span>
-            <span className="text-[#FF4655] font-bold">{losses.totalLosses} Kalah</span>
+            <span className="text-[#FF4655] font-bold">{losses.totalLosses} {t.common.loss}</span>
           </div>
         </div>
       </CardHeader>
@@ -125,7 +129,7 @@ export function TacticalWinBreakdownWidget({
       <CardContent className="p-4 sm:p-5 space-y-6">
         {!hasData ? (
           <div className="py-8 text-center text-xs text-[#64748B]">
-            Belum ada data ronde. Rekam scrim pertama untuk melihat analisis.
+            {isEn ? "No round data recorded yet. Record your first scrim to view analytics." : "Belum ada data ronde. Rekam scrim pertama untuk melihat analisis."}
           </div>
         ) : (
           <>
@@ -135,11 +139,11 @@ export function TacticalWinBreakdownWidget({
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#1C2433] pb-2.5">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-white">
-                      Kronologi Match Terakhir: vs {latestMatch.opponentName} ({latestMatch.map})
+                      {isEn ? `Latest Match Sequence: vs ${latestMatch.opponentName} (${latestMatch.map})` : `Kronologi Match Terakhir: vs ${latestMatch.opponentName} (${latestMatch.map})`}
                     </span>
                   </div>
                   <div className="text-xs font-medium text-[#94A3B8]">
-                    Skor Akhir:{" "}
+                    {isEn ? "Final Score: " : "Skor Akhir: "}
                     <span className={latestMatch.result === "WIN" ? "text-emerald-400 font-bold" : "text-[#FF4655] font-bold"}>
                       {latestMatch.scoreTeam} - {latestMatch.scoreOpponent} ({latestMatch.result})
                     </span>
@@ -178,8 +182,8 @@ export function TacticalWinBreakdownWidget({
                   </div>
 
                   <div className="flex items-center justify-between text-[11px] text-[#64748B] pt-1">
-                    <span>Hijau = Menang (W), Merah = Kalah (L)</span>
-                    <span>Sisi Awal: {latestMatch.startSide === "ATTACK" ? "Attack" : "Defense"}</span>
+                    <span>{isEn ? "Green = Win (W), Red = Loss (L)" : "Hijau = Menang (W), Merah = Kalah (L)"}</span>
+                    <span>{isEn ? `Starting Side: ${latestMatch.startSide === "ATTACK" ? "Attack" : "Defense"}` : `Sisi Awal: ${latestMatch.startSide === "ATTACK" ? "Attack" : "Defense"}`}</span>
                   </div>
                 </div>
               </div>
@@ -189,10 +193,10 @@ export function TacticalWinBreakdownWidget({
             <div className="space-y-3">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-bold text-emerald-400">
-                  Cara Menang ({wins.totalWins} Ronde)
+                  {isEn ? `Win Conditions (${wins.totalWins} Rounds)` : `Cara Menang (${wins.totalWins} Ronde)`}
                 </span>
                 <span className="text-[11px] text-[#94A3B8]">
-                  Distribusi Objektif Menang
+                  {isEn ? "Win Objective Distribution" : "Distribusi Objektif Menang"}
                 </span>
               </div>
 
@@ -202,28 +206,28 @@ export function TacticalWinBreakdownWidget({
                   <div
                     className="bg-sky-400 h-full border-r border-[#090C10]"
                     style={{ width: `${wins.defuseRate}%` }}
-                    title={`Retake & Defuse: ${wins.defuseRate}% (${wins.defuses} Ronde)`}
+                    title={`Retake & Defuse: ${wins.defuseRate}% (${wins.defuses} ${isEn ? "Rounds" : "Ronde"})`}
                   />
                 )}
                 {wins.detonationRate > 0 && (
                   <div
                     className="bg-emerald-500 h-full border-r border-[#090C10]"
                     style={{ width: `${wins.detonationRate}%` }}
-                    title={`Post-Plant Boom: ${wins.detonationRate}% (${wins.detonations} Ronde)`}
+                    title={`Post-Plant Detonation: ${wins.detonationRate}% (${wins.detonations} ${isEn ? "Rounds" : "Ronde"})`}
                   />
                 )}
                 {wins.eliminationRate > 0 && (
                   <div
                     className="bg-emerald-400 h-full border-r border-[#090C10]"
                     style={{ width: `${wins.eliminationRate}%` }}
-                    title={`Musuh Eliminasi: ${wins.eliminationRate}% (${wins.eliminations} Ronde)`}
+                    title={`Enemy Elimination: ${wins.eliminationRate}% (${wins.eliminations} ${isEn ? "Rounds" : "Ronde"})`}
                   />
                 )}
                 {wins.timeoutRate > 0 && (
                   <div
                     className="bg-teal-400 h-full"
                     style={{ width: `${wins.timeoutRate}%` }}
-                    title={`Waktu Habis Stall: ${wins.timeoutRate}% (${wins.timeouts} Ronde)`}
+                    title={`Time Expired (Stall): ${wins.timeoutRate}% (${wins.timeouts} ${isEn ? "Rounds" : "Ronde"})`}
                   />
                 )}
               </div>
@@ -232,7 +236,7 @@ export function TacticalWinBreakdownWidget({
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 <div className="p-3 rounded-lg bg-[#090C10] border border-sky-500/30 border-l-2 border-l-sky-400 space-y-1">
                   <span className="text-xs text-[#94A3B8] font-medium block">
-                    Retake & Defuse
+                    {isEn ? "Retake & Defuse" : "Retake & Defuse"}
                   </span>
                   <div className="flex items-baseline justify-between">
                     <span className="font-tactical text-2xl font-black text-white">{wins.defuses}</span>
@@ -242,7 +246,7 @@ export function TacticalWinBreakdownWidget({
 
                 <div className="p-3 rounded-lg bg-[#090C10] border border-emerald-500/30 border-l-2 border-l-emerald-500 space-y-1">
                   <span className="text-xs text-[#94A3B8] font-medium block">
-                    Post-Plant Boom
+                    {isEn ? "Post-Plant Boom" : "Post-Plant Boom"}
                   </span>
                   <div className="flex items-baseline justify-between">
                     <span className="font-tactical text-2xl font-black text-white">{wins.detonations}</span>
@@ -252,7 +256,7 @@ export function TacticalWinBreakdownWidget({
 
                 <div className="p-3 rounded-lg bg-[#090C10] border border-emerald-400/30 border-l-2 border-l-emerald-400 space-y-1">
                   <span className="text-xs text-[#94A3B8] font-medium block">
-                    Musuh Eliminasi
+                    {isEn ? "Enemies Eliminated" : "Musuh Eliminasi"}
                   </span>
                   <div className="flex items-baseline justify-between">
                     <span className="font-tactical text-2xl font-black text-white">{wins.eliminations}</span>
@@ -262,7 +266,7 @@ export function TacticalWinBreakdownWidget({
 
                 <div className="p-3 rounded-lg bg-[#090C10] border border-teal-500/30 border-l-2 border-l-teal-400 space-y-1">
                   <span className="text-xs text-[#94A3B8] font-medium block">
-                    Waktu Habis (Stall)
+                    {isEn ? "Time Expired (Stall)" : "Waktu Habis (Stall)"}
                   </span>
                   <div className="flex items-baseline justify-between">
                     <span className="font-tactical text-2xl font-black text-white">{wins.timeouts}</span>
@@ -276,10 +280,10 @@ export function TacticalWinBreakdownWidget({
             <div className="space-y-3 pt-2 border-t border-[#1C2433]">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-bold text-[#FF4655]">
-                  Cara Kalah ({losses.totalLosses} Ronde)
+                  {isEn ? `Loss Conditions (${losses.totalLosses} Rounds)` : `Cara Kalah (${losses.totalLosses} Ronde)`}
                 </span>
                 <span className="text-[11px] text-[#94A3B8]">
-                  Distribusi Celah Kekalahan
+                  {isEn ? "Loss Cause Distribution" : "Distribusi Celah Kekalahan"}
                 </span>
               </div>
 
@@ -289,28 +293,28 @@ export function TacticalWinBreakdownWidget({
                   <div
                     className="bg-[#FF4655] h-full border-r border-[#090C10]"
                     style={{ width: `${losses.defusedLossRate}%` }}
-                    title={`Musuh Retake Spike: ${losses.defusedLossRate}% (${losses.defusedLosses} Ronde)`}
+                    title={`Enemy Spike Retake: ${losses.defusedLossRate}% (${losses.defusedLosses} ${isEn ? "Rounds" : "Ronde"})`}
                   />
                 )}
                 {losses.detonationLossRate > 0 && (
                   <div
                     className="bg-[#E11D48] h-full border-r border-[#090C10]"
                     style={{ width: `${losses.detonationLossRate}%` }}
-                    title={`Spike Musuh Meledak: ${losses.detonationLossRate}% (${losses.detonationLosses} Ronde)`}
+                    title={`Enemy Spike Detonated: ${losses.detonationLossRate}% (${losses.detonationLosses} ${isEn ? "Rounds" : "Ronde"})`}
                   />
                 )}
                 {losses.eliminationRate > 0 && (
                   <div
                     className="bg-[#BE123C] h-full border-r border-[#090C10]"
                     style={{ width: `${losses.eliminationRate}%` }}
-                    title={`Tim Tereliminasi: ${losses.eliminationRate}% (${losses.eliminations} Ronde)`}
+                    title={`Team Eliminated: ${losses.eliminationRate}% (${losses.eliminations} ${isEn ? "Rounds" : "Ronde"})`}
                   />
                 )}
                 {losses.timeoutLossRate > 0 && (
                   <div
                     className="bg-[#9F1239] h-full"
                     style={{ width: `${losses.timeoutLossRate}%` }}
-                    title={`Gagal Plant 0:00: ${losses.timeoutLossRate}% (${losses.timeoutLosses} Ronde)`}
+                    title={`Failed Plant 0:00: ${losses.timeoutLossRate}% (${losses.timeoutLosses} ${isEn ? "Rounds" : "Ronde"})`}
                   />
                 )}
               </div>
@@ -319,7 +323,7 @@ export function TacticalWinBreakdownWidget({
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 <div className="p-3 rounded-lg bg-[#090C10] border border-[#FF4655]/30 border-l-2 border-l-[#FF4655] space-y-1">
                   <span className="text-xs text-[#94A3B8] font-medium block">
-                    Musuh Retake Spike
+                    {isEn ? "Enemy Spike Retake" : "Musuh Retake Spike"}
                   </span>
                   <div className="flex items-baseline justify-between">
                     <span className="font-tactical text-2xl font-black text-white">{losses.defusedLosses}</span>
@@ -329,7 +333,7 @@ export function TacticalWinBreakdownWidget({
 
                 <div className="p-3 rounded-lg bg-[#090C10] border border-[#FF4655]/30 border-l-2 border-l-[#E11D48] space-y-1">
                   <span className="text-xs text-[#94A3B8] font-medium block">
-                    Spike Musuh Meledak
+                    {isEn ? "Spike Detonated" : "Spike Musuh Meledak"}
                   </span>
                   <div className="flex items-baseline justify-between">
                     <span className="font-tactical text-2xl font-black text-white">{losses.detonationLosses}</span>
@@ -339,7 +343,7 @@ export function TacticalWinBreakdownWidget({
 
                 <div className="p-3 rounded-lg bg-[#090C10] border border-[#FF4655]/30 border-l-2 border-l-[#BE123C] space-y-1">
                   <span className="text-xs text-[#94A3B8] font-medium block">
-                    Tim Tereliminasi
+                    {isEn ? "Team Eliminated" : "Tim Tereliminasi"}
                   </span>
                   <div className="flex items-baseline justify-between">
                     <span className="font-tactical text-2xl font-black text-white">{losses.eliminations}</span>
@@ -349,7 +353,7 @@ export function TacticalWinBreakdownWidget({
 
                 <div className="p-3 rounded-lg bg-[#090C10] border border-[#FF4655]/30 border-l-2 border-l-[#9F1239] space-y-1">
                   <span className="text-xs text-[#94A3B8] font-medium block">
-                    Gagal Plant (0:00)
+                    {isEn ? "Time Expired (0:00)" : "Gagal Plant (0:00)"}
                   </span>
                   <div className="flex items-baseline justify-between">
                     <span className="font-tactical text-2xl font-black text-white">{losses.timeoutLosses}</span>
@@ -363,7 +367,7 @@ export function TacticalWinBreakdownWidget({
             <div className="p-3.5 sm:p-4 rounded-lg bg-[#090C10] border border-[#1C2433] space-y-3">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-bold text-white">
-                  Efisiensi Trading Kills & Spacing
+                  {isEn ? "Trading Kills & Spacing Efficiency" : "Efisiensi Trading Kills & Spacing"}
                 </span>
                 <span className="font-bold text-sky-400">
                   {trade.tradeEfficiency}% Trade Rate
@@ -373,24 +377,24 @@ export function TacticalWinBreakdownWidget({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-center">
                 <div className="p-3 rounded bg-[#0C1017] border border-emerald-500/30">
                   <span className="text-xs text-emerald-400 font-semibold block">
-                    Kematian Di-Trade
+                    {isEn ? "Traded Deaths" : "Kematian Di-Trade"}
                   </span>
                   <span className="font-tactical text-2xl font-black text-emerald-400">{trade.tradedDeaths}</span>
-                  <span className="text-[11px] text-[#94A3B8] block">Dibalas cepat rekan</span>
+                  <span className="text-[11px] text-[#94A3B8] block">{isEn ? "Quickly avenged by teammate" : "Dibalas cepat rekan"}</span>
                 </div>
                 <div className="p-3 rounded bg-[#0C1017] border border-sky-500/30">
                   <span className="text-xs text-sky-400 font-semibold block">
-                    Refrag Kills
+                    {isEn ? "Refrag Kills" : "Refrag Kills"}
                   </span>
                   <span className="font-tactical text-2xl font-black text-sky-400">{trade.tradesWon}</span>
-                  <span className="text-[11px] text-[#94A3B8] block">Kill balasan didapat</span>
+                  <span className="text-[11px] text-[#94A3B8] block">{isEn ? "Revenge kills secured" : "Kill balasan didapat"}</span>
                 </div>
                 <div className="p-3 rounded bg-[#0C1017] border border-[#FF4655]/30">
                   <span className="text-xs text-[#FF4655] font-semibold block">
-                    Dry Deaths (Terisolasi)
+                    {isEn ? "Dry Deaths (Isolated)" : "Dry Deaths (Terisolasi)"}
                   </span>
                   <span className="font-tactical text-2xl font-black text-[#FF4655]">{trade.untradedDeaths}</span>
-                  <span className="text-[11px] text-[#94A3B8] block">Mati tanpa refrag</span>
+                  <span className="text-[11px] text-[#94A3B8] block">{isEn ? "Died without a trade" : "Mati tanpa refrag"}</span>
                 </div>
               </div>
 

@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
@@ -5,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Player } from "@/lib/db/schema";
 import { AGENT_ROLE_COLORS, ValorantRole } from "@/lib/data/valorant";
+import { useTranslation } from "@/lib/i18n/context";
 
 interface LeaderboardPlayerItem {
   player: Player;
@@ -23,20 +26,23 @@ interface RosterLeaderboardProps {
 }
 
 export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
+  const { t, language } = useTranslation();
+  const isEn = language === "en";
+
   return (
     <Card className="bg-[#0C1017] border-[#1C2433] overflow-hidden shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between py-3.5 px-5 border-b border-[#1C2433] bg-[#090C10]">
         <div>
           <CardTitle className="text-sm sm:text-base font-bold text-white tracking-tight">
-            Leaderboard Roster
+            {t.dashboard.leaderboardTitle}
           </CardTitle>
           <p className="text-xs text-[#94A3B8] mt-0.5">
-            Akumulasi statistik performa individu seluruh pemain
+            {t.dashboard.leaderboardSubtitle}
           </p>
         </div>
         <Link href="/roster">
           <Button variant="outline" size="sm" className="text-xs gap-1.5 h-7 px-2.5 font-medium">
-            <span>Kelola Roster</span>
+            <span>{isEn ? "Manage Roster" : "Kelola Roster"}</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </Button>
         </Link>
@@ -47,7 +53,7 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
         <div className="md:hidden divide-y divide-[#1C2433]">
           {leaderboard.length === 0 ? (
             <div className="py-8 text-center text-[#64748B] text-xs">
-              Belum ada data pemain.
+              {isEn ? "No player performance data available." : "Belum ada data pemain."}
             </div>
           ) : (
             leaderboard.map((item, idx) => {
@@ -101,20 +107,20 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
 
                     {/* Matches Count */}
                     <div className="text-xs text-[#94A3B8] shrink-0 font-medium">
-                      {item.matches} Match
+                      {item.matches} {isEn ? "Matches" : "Match"}
                     </div>
                   </div>
 
                   {/* 3-Stat Metric Inline Grid */}
                   <div className="grid grid-cols-3 gap-2 pt-2.5 border-t border-[#1C2433] text-center">
                     <div className="p-2 rounded bg-[#090C10] border border-[#1C2433]">
-                      <div className="text-[10px] text-[#94A3B8] font-medium">Avg ACS</div>
+                      <div className="text-[10px] text-[#94A3B8] font-medium">{isEn ? "ACS" : "ACS"}</div>
                       <div className="font-tactical font-black text-base text-sky-400 tabular-nums">
                         {item.avgAcs}
                       </div>
                     </div>
                     <div className="p-2 rounded bg-[#090C10] border border-[#1C2433]">
-                      <div className="text-[10px] text-[#94A3B8] font-medium">K/D Ratio</div>
+                      <div className="text-[10px] text-[#94A3B8] font-medium">{isEn ? "K/D Ratio" : "K/D Ratio"}</div>
                       <div className={`font-tactical font-black text-base tabular-nums ${
                         item.kdRatio >= 1.2 ? "text-emerald-400" : item.kdRatio >= 1.0 ? "text-white" : "text-[#FF4655]"
                       }`}>
@@ -122,7 +128,7 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
                       </div>
                     </div>
                     <div className="p-2 rounded bg-[#090C10] border border-[#1C2433]">
-                      <div className="text-[10px] text-[#94A3B8] font-medium">First Blood</div>
+                      <div className="text-[10px] text-[#94A3B8] font-medium">{t.matchForm.firstKills}</div>
                       <div className="font-tactical font-black text-base text-emerald-400 tabular-nums">
                         {item.firstKills} FK
                       </div>
@@ -140,13 +146,13 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
             <thead>
               <tr className="border-b border-[#1C2433] bg-[#090C10] text-[#94A3B8] font-semibold text-[11px]">
                 <th className="py-3 px-4 text-center w-10">#</th>
-                <th className="py-3 px-4 sticky left-0 bg-[#090C10] z-10">Pemain</th>
+                <th className="py-3 px-4 sticky left-0 bg-[#090C10] z-10">{isEn ? "Player" : "Pemain"}</th>
                 <th className="py-3 px-4">Role</th>
-                <th className="py-3 px-4 text-center">Match</th>
-                <th className="py-3 px-4 text-center">Avg ACS</th>
-                <th className="py-3 px-4 text-center">K/D Ratio</th>
-                <th className="py-3 px-4 text-center">First Blood (FK)</th>
-                <th className="py-3 px-4 text-center">Clutch (1vX)</th>
+                <th className="py-3 px-4 text-center">{isEn ? "Matches" : "Match"}</th>
+                <th className="py-3 px-4 text-center">{isEn ? "ACS" : "ACS"}</th>
+                <th className="py-3 px-4 text-center">{isEn ? "K/D Ratio" : "K/D Ratio"}</th>
+                <th className="py-3 px-4 text-center">{t.matchForm.firstKills}</th>
+                <th className="py-3 px-4 text-center">{isEn ? "Clutches" : "Clutches"}</th>
                 <th className="py-3 px-4 text-right"></th>
               </tr>
             </thead>
@@ -154,7 +160,7 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
               {leaderboard.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="py-8 text-center text-[#94A3B8]">
-                    Belum ada data pemain.
+                    {isEn ? "No player performance data available." : "Belum ada data pemain."}
                   </td>
                 </tr>
               ) : (
@@ -232,7 +238,7 @@ export function RosterLeaderboard({ leaderboard }: RosterLeaderboardProps) {
                             size="sm"
                             className="h-7 px-2 text-xs text-[#94A3B8] hover:text-white hover:bg-[#1C2433]"
                           >
-                            <span>Profil</span>
+                            <span>{isEn ? "Profile" : "Profil"}</span>
                             <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
                           </Button>
                         </Link>

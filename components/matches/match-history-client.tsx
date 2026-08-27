@@ -10,6 +10,7 @@ import { ConfirmModal } from "@/components/ui/confirm-modal";
 import { useUserRole } from "@/components/layout/role-context";
 import { useRouter } from "next/navigation";
 import { getAgentIcon, getMapListViewIcon } from "@/lib/data/valorant";
+import { useTranslation } from "@/lib/i18n/context";
 
 interface MatchHistoryClientProps {
   initialMatches: MatchWithStats[];
@@ -18,6 +19,9 @@ interface MatchHistoryClientProps {
 export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) {
   const router = useRouter();
   const { isAdmin } = useUserRole();
+  const { t, language } = useTranslation();
+  const isEn = language === "en";
+
   const [selectedMap, setSelectedMap] = useState("ALL");
   const [selectedResult, setSelectedResult] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
@@ -51,19 +55,28 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
       setIsDeleting(deleteTargetId);
       const res = await deleteMatch(deleteTargetId);
       if (!res.success) {
-        throw new Error(res.error || "Gagal menghapus match");
+        throw new Error(res.error || (isEn ? "Failed to delete match" : "Gagal menghapus match"));
       }
       setDeleteTargetId(null);
       router.refresh();
     } catch (err: any) {
-      alert("Gagal menghapus match: " + (err.message || "Unknown error"));
+      alert((isEn ? "Failed to delete match: " : "Gagal menghapus match: ") + (err.message || "Unknown error"));
     } finally {
       setIsDeleting(null);
     }
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex items-center justify-between border-b border-[#1C2433] pb-5">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+            {t.nav.matchHistory}
+          </h1>
+        </div>
+      </div>
+
       {/* Top Bar Filters */}
       <MatchFilters
         selectedMap={selectedMap}
@@ -81,11 +94,11 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
         <div className="px-5 py-3.5 border-b border-[#1C2433] bg-[#090C10] flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-white uppercase tracking-wider">
-              Daftar Scrim ({filteredMatches.length})
+              {isEn ? `Scrim List (${filteredMatches.length})` : `Daftar Scrim (${filteredMatches.length})`}
             </span>
           </div>
           <span className="text-xs text-[#94A3B8]">
-            Terurut dari yang terbaru
+            {isEn ? "Sorted newest first" : "Terurut dari yang terbaru"}
           </span>
         </div>
 
@@ -94,7 +107,7 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
           {filteredMatches.length === 0 ? (
             <div className="py-12 px-4 text-center space-y-3">
               <p className="text-xs text-[#94A3B8]">
-                Tidak ada pertandingan scrim yang sesuai dengan filter.
+                {isEn ? "No scrim matches match the current filter criteria." : "Tidak ada pertandingan scrim yang sesuai dengan filter."}
               </p>
               <Button
                 variant="outline"
@@ -103,7 +116,7 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                 className="text-xs gap-1.5 h-8"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span>Reset Filter</span>
+                <span>{t.common.reset}</span>
               </Button>
             </div>
           ) : (
@@ -167,7 +180,7 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                           : "text-sky-400 border-sky-500/30 bg-sky-500/10"
                       }`}
                     >
-                      {m.startSide === "ATTACK" ? "Attack" : "Defense"}
+                      {m.startSide === "ATTACK" ? (isEn ? "Attack" : "Attack") : (isEn ? "Defense" : "Defense")}
                     </span>
                   </div>
 
@@ -192,7 +205,7 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                           size="sm"
                           className="h-7 px-2 text-xs gap-1 hover:text-white hover:bg-[#1C2433] font-medium"
                         >
-                          <span>Detail</span>
+                          <span>{t.common.detail}</span>
                           <ExternalLink className="w-3 h-3" />
                         </Button>
                       </Link>
@@ -204,7 +217,7 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                               variant="ghost"
                               size="sm"
                               className="h-7 w-7 p-0 text-[#94A3B8] hover:text-white"
-                              title="Edit Match"
+                              title={isEn ? "Edit Match" : "Edit Match"}
                             >
                               <Edit className="w-3.5 h-3.5" />
                             </Button>
@@ -214,7 +227,7 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                             size="sm"
                             onClick={() => setDeleteTargetId(m.id)}
                             className="h-7 w-7 p-0 text-[#FF4655] hover:text-[#FF4655] hover:bg-[#FF4655]/10"
-                            title="Hapus Match"
+                            title={isEn ? "Delete Match" : "Hapus Match"}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
@@ -233,15 +246,15 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-[#1C2433] bg-[#090C10] text-[#94A3B8] font-semibold text-[11px]">
-                <th className="py-3 px-4">Tanggal</th>
-                <th className="py-3 px-4 sticky left-0 bg-[#090C10] z-10">Map</th>
-                <th className="py-3 px-4">Lawan</th>
-                <th className="py-3 px-4 text-center">Skor</th>
-                <th className="py-3 px-4 text-center">Hasil</th>
-                <th className="py-3 px-4 text-center">Sisi Awal</th>
-                <th className="py-3 px-4">Komposisi Agent</th>
+                <th className="py-3 px-4">{isEn ? "Date" : "Tanggal"}</th>
+                <th className="py-3 px-4 sticky left-0 bg-[#090C10] z-10">{t.matches.map}</th>
+                <th className="py-3 px-4">{t.matches.opponent}</th>
+                <th className="py-3 px-4 text-center">{isEn ? "Score" : "Skor"}</th>
+                <th className="py-3 px-4 text-center">{isEn ? "Result" : "Hasil"}</th>
+                <th className="py-3 px-4 text-center">{t.matches.startSide}</th>
+                <th className="py-3 px-4">{isEn ? "Agent Composition" : "Komposisi Agent"}</th>
                 <th className="py-3 px-4">Top Fragger</th>
-                <th className="py-3 px-4 text-right">Aksi</th>
+                <th className="py-3 px-4 text-right">{isEn ? "Actions" : "Aksi"}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#1C2433]">
@@ -250,7 +263,7 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                   <td colSpan={9} className="py-12 text-center">
                     <div className="space-y-3 max-w-sm mx-auto">
                       <p className="text-xs text-[#94A3B8]">
-                        Tidak ada pertandingan scrim yang sesuai dengan filter.
+                        {isEn ? "No scrim matches match the current filter criteria." : "Tidak ada pertandingan scrim yang sesuai dengan filter."}
                       </p>
                       <Button
                         variant="outline"
@@ -259,7 +272,7 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                         className="text-xs gap-1.5 h-8"
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
-                        <span>Reset Filter</span>
+                        <span>{t.common.reset}</span>
                       </Button>
                     </div>
                   </td>
@@ -318,7 +331,7 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                               : "text-sky-400 border-sky-500/30 bg-sky-500/10"
                           }`}
                         >
-                          {m.startSide === "ATTACK" ? "Attack" : "Defense"}
+                          {m.startSide === "ATTACK" ? (isEn ? "Attack" : "Attack") : (isEn ? "Defense" : "Defense")}
                         </span>
                       </td>
                       <td className="py-3.5 px-4">
@@ -361,7 +374,7 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                               size="sm"
                               className="h-7 px-2 text-xs gap-1 hover:text-white hover:bg-[#1C2433]"
                             >
-                              <span>Detail</span>
+                              <span>{t.common.detail}</span>
                               <ExternalLink className="w-3 h-3" />
                             </Button>
                           </Link>
@@ -373,7 +386,7 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                                   variant="ghost"
                                   size="sm"
                                   className="h-7 w-7 p-0 text-[#94A3B8] hover:text-white"
-                                  title="Edit Match"
+                                  title={isEn ? "Edit Match" : "Edit Match"}
                                 >
                                   <Edit className="w-3.5 h-3.5" />
                                 </Button>
@@ -383,7 +396,7 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                                 size="sm"
                                 onClick={() => setDeleteTargetId(m.id)}
                                 className="h-7 w-7 p-0 text-[#FF4655] hover:text-[#FF4655] hover:bg-[#FF4655]/10"
-                                title="Hapus Match"
+                                title={isEn ? "Delete Match" : "Hapus Match"}
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </Button>
@@ -405,10 +418,10 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
         isOpen={Boolean(deleteTargetId)}
         onClose={() => setDeleteTargetId(null)}
         onConfirm={confirmDeleteMatch}
-        title="Konfirmasi Hapus Scrim"
-        description="Apakah Anda yakin ingin menghapus data pertandingan scrim ini? Tindakan ini tidak dapat dibatalkan dan seluruh statistik ronde serta performa pemain akan dihapus permanen."
-        confirmText="Hapus Permanen"
-        cancelText="Batal"
+        title={isEn ? "Confirm Scrim Deletion" : "Konfirmasi Hapus Scrim"}
+        description={isEn ? "Are you sure you want to delete this scrim record? This action cannot be undone and all round statistics and player combat data will be permanently purged." : "Apakah Anda yakin ingin menghapus data pertandingan scrim ini? Tindakan ini tidak dapat dibatalkan dan seluruh statistik ronde serta performa pemain akan dihapus permanen."}
+        confirmText={isEn ? "Delete Permanently" : "Hapus Permanen"}
+        cancelText={t.common.cancel}
         variant="danger"
         isLoading={Boolean(isDeleting)}
       />

@@ -1,40 +1,46 @@
+"use client";
+
 import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import type { AgentStatSummary } from "@/lib/utils/analytics";
 import { VALORANT_AGENTS, getAgentIcon } from "@/lib/data/valorant";
+import { useTranslation } from "@/lib/i18n/context";
 
 interface AgentPoolTableProps {
   agentPool: AgentStatSummary[];
 }
 
 export function AgentPoolTable({ agentPool }: AgentPoolTableProps) {
+  const { t, language } = useTranslation();
+  const isEn = language === "en";
+
   return (
     <Card className="bg-[#0C1017] border-[#1C2433] overflow-hidden shadow-sm">
       <CardHeader className="py-3.5 px-5 border-b border-[#1C2433] bg-[#090C10]">
         <CardTitle className="text-sm sm:text-base font-bold text-white tracking-tight">
-          Statistik Agent Pool
+          {isEn ? "Agent Pool Statistics" : "Statistik Agent Pool"}
         </CardTitle>
         <p className="text-xs text-[#94A3B8] mt-0.5">
-          Efektivitas pemilihan agent dan performa tempur
+          {isEn ? "Agent selection effectiveness and combat performance" : "Efektivitas pemilihan agent dan performa tempur"}
         </p>
       </CardHeader>
       <CardContent className="p-0 overflow-x-auto">
         <table className="w-full text-left text-xs border-collapse">
           <thead>
             <tr className="border-b border-[#1C2433] bg-[#090C10] text-[#94A3B8] font-semibold text-[11px]">
-              <th className="py-3 px-4 sticky left-0 bg-[#090C10] z-10">Agent</th>
-              <th className="py-3 px-4 text-center">Match</th>
-              <th className="py-3 px-4 text-center">Rekor (W-L)</th>
-              <th className="py-3 px-4 text-center">Win Rate</th>
+              <th className="py-3 px-4 sticky left-0 bg-[#090C10] z-10">{t.matchDetail.agent}</th>
+              <th className="py-3 px-4 text-center">{isEn ? "Matches" : "Match"}</th>
+              <th className="py-3 px-4 text-center">{isEn ? "Record (W-L)" : "Rekor (W-L)"}</th>
+              <th className="py-3 px-4 text-center">{t.dashboard.winRate}</th>
               <th className="py-3 px-4 text-center">Avg ACS</th>
-              <th className="py-3 px-4 text-center">K/D Ratio</th>
+              <th className="py-3 px-4 text-center">{isEn ? "K/D Ratio" : "K/D Ratio"}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#1C2433]">
             {agentPool.length === 0 ? (
               <tr>
                 <td colSpan={6} className="py-8 text-center text-[#94A3B8]">
-                  Belum ada data pertandingan untuk pemain ini.
+                  {isEn ? "No match data available for this player." : "Belum ada data pertandingan untuk pemain ini."}
                 </td>
               </tr>
             ) : (

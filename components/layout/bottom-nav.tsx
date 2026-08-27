@@ -11,10 +11,12 @@ import {
   PlusCircle,
 } from "lucide-react";
 import { useUserRole } from "./role-context";
+import { useTranslation } from "@/lib/i18n/context";
 
 export function BottomNav() {
   const pathname = usePathname();
   const { isAdmin } = useUserRole();
+  const { t } = useTranslation();
 
   // Don't show bottom nav on login page
   if (pathname.startsWith("/login")) {
@@ -23,13 +25,13 @@ export function BottomNav() {
 
   const navItems = [
     {
-      label: "Home",
+      label: t.common.dashboard,
       href: "/",
       icon: LayoutDashboard,
       active: pathname === "/",
     },
     {
-      label: "Scrims",
+      label: t.nav.matchHistory,
       href: "/matches",
       icon: Swords,
       active: pathname.startsWith("/matches") && !pathname.startsWith("/matches/new") && !pathname.includes("/edit"),
@@ -37,7 +39,7 @@ export function BottomNav() {
     ...(isAdmin
       ? [
           {
-            label: "Catat",
+            label: t.common.recordScrim,
             href: "/matches/new",
             icon: PlusCircle,
             active: pathname === "/matches/new",
@@ -46,13 +48,13 @@ export function BottomNav() {
         ]
       : []),
     {
-      label: "Roster",
+      label: t.nav.teamRoster,
       href: "/roster",
       icon: Users,
       active: pathname.startsWith("/roster") || pathname.startsWith("/players"),
     },
     {
-      label: "Maps",
+      label: t.nav.mapStats,
       href: "/maps",
       icon: MapIcon,
       active: pathname.startsWith("/maps"),

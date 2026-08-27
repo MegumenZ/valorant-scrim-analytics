@@ -25,46 +25,120 @@ export interface OutcomeConfig {
   border: string;
 }
 
+import { Language } from "@/lib/i18n/types";
+
 export function getOutcomeConfig(
   side: "ATTACK" | "DEFENSE",
   winner: "TEAM" | "OPPONENT",
-  outcome?: RoundOutcomeType | null
+  outcome?: RoundOutcomeType | null,
+  lang: Language = "id"
 ): OutcomeConfig {
+  const isEn = lang === "en";
   const isWin = winner === "TEAM";
 
   if (isWin) {
     if (side === "ATTACK") {
       if (outcome === "DETONATION") {
-        return { label: "Spike Meledak (Post-Plant)", short: "Post-Plant", desc: "Spike berhasil meledak", color: "text-amber-400", bg: "bg-amber-500/15", border: "border-amber-500/30" };
+        return {
+          label: isEn ? "Spike Detonated (Post-Plant)" : "Spike Meledak (Post-Plant)",
+          short: "Post-Plant",
+          desc: isEn ? "Spike successfully detonated" : "Spike berhasil meledak",
+          color: "text-amber-400",
+          bg: "bg-amber-500/15",
+          border: "border-amber-500/30",
+        };
       }
-      return { label: "Musuh Tereliminasi", short: "Eliminasi", desc: "Semua defender tereliminasi", color: "text-rose-400", bg: "bg-rose-500/15", border: "border-rose-500/30" };
+      return {
+        label: isEn ? "Enemies Eliminated" : "Musuh Tereliminasi",
+        short: isEn ? "Elimination" : "Eliminasi",
+        desc: isEn ? "All defending players eliminated" : "Semua defender tereliminasi",
+        color: "text-rose-400",
+        bg: "bg-rose-500/15",
+        border: "border-rose-500/30",
+      };
     } else {
       // DEFENSE WIN
       if (outcome === "DEFUSE") {
-        return { label: "Spike Defused (Retake)", short: "Retake", desc: "Spike berhasil didefuse", color: "text-sky-400", bg: "bg-sky-500/15", border: "border-sky-500/30" };
+        return {
+          label: isEn ? "Spike Defused (Retake)" : "Spike Defused (Retake)",
+          short: "Retake",
+          desc: isEn ? "Spike successfully defused" : "Spike berhasil didefuse",
+          color: "text-sky-400",
+          bg: "bg-sky-500/15",
+          border: "border-sky-500/30",
+        };
       }
       if (outcome === "TIME") {
-        return { label: "Waktu Habis (Stall)", short: "Waktu Habis", desc: "Menahan site hingga 0:00", color: "text-emerald-400", bg: "bg-emerald-500/15", border: "border-emerald-500/30" };
+        return {
+          label: isEn ? "Time Expired (Site Stall)" : "Waktu Habis (Stall)",
+          short: isEn ? "Time Out" : "Waktu Habis",
+          desc: isEn ? "Held site until 0:00 timer expired" : "Menahan site hingga 0:00",
+          color: "text-emerald-400",
+          bg: "bg-emerald-500/15",
+          border: "border-emerald-500/30",
+        };
       }
-      return { label: "Musuh Tereliminasi", short: "Eliminasi", desc: "Semua attacker tereliminasi", color: "text-rose-400", bg: "bg-rose-500/15", border: "border-rose-500/30" };
+      return {
+        label: isEn ? "Enemies Eliminated" : "Musuh Tereliminasi",
+        short: isEn ? "Elimination" : "Eliminasi",
+        desc: isEn ? "All attacking players eliminated" : "Semua attacker tereliminasi",
+        color: "text-rose-400",
+        bg: "bg-rose-500/15",
+        border: "border-rose-500/30",
+      };
     }
   } else {
     // LOSS (L)
     if (side === "ATTACK") {
       // ATTACK LOSS
       if (outcome === "DEFUSE") {
-        return { label: "Musuh Retake Spike", short: "Musuh Retake", desc: "Defender berhasil defuse spike kita", color: "text-sky-400", bg: "bg-sky-500/15", border: "border-sky-500/30" };
+        return {
+          label: isEn ? "Enemy Retake & Defuse" : "Musuh Retake Spike",
+          short: isEn ? "Enemy Retake" : "Musuh Retake",
+          desc: isEn ? "Defenders successfully defused our spike" : "Defender berhasil defuse spike kita",
+          color: "text-sky-400",
+          bg: "bg-sky-500/15",
+          border: "border-sky-500/30",
+        };
       }
       if (outcome === "TIME") {
-        return { label: "Waktu Habis (Gagal Plant)", short: "Waktu Habis", desc: "Kehabisan waktu sebelum plant", color: "text-emerald-400", bg: "bg-emerald-500/15", border: "border-emerald-500/30" };
+        return {
+          label: isEn ? "Time Expired (Plant Failed)" : "Waktu Habis (Gagal Plant)",
+          short: isEn ? "Time Out" : "Waktu Habis",
+          desc: isEn ? "Ran out of time before planting spike" : "Kehabisan waktu sebelum plant",
+          color: "text-emerald-400",
+          bg: "bg-emerald-500/15",
+          border: "border-emerald-500/30",
+        };
       }
-      return { label: "Tim Tereliminasi", short: "Tereliminasi", desc: "Semua anggota tim mati", color: "text-rose-400", bg: "bg-rose-500/15", border: "border-rose-500/30" };
+      return {
+        label: isEn ? "Team Eliminated" : "Tim Tereliminasi",
+        short: isEn ? "Eliminated" : "Tereliminasi",
+        desc: isEn ? "All teammates died in combat" : "Semua anggota tim mati",
+        color: "text-rose-400",
+        bg: "bg-rose-500/15",
+        border: "border-rose-500/30",
+      };
     } else {
       // DEFENSE LOSS
       if (outcome === "DETONATION") {
-        return { label: "Spike Musuh Meledak", short: "Spike Meledak", desc: "Gagal retake spike musuh", color: "text-amber-400", bg: "bg-amber-500/15", border: "border-amber-500/30" };
+        return {
+          label: isEn ? "Enemy Spike Detonated" : "Spike Musuh Meledak",
+          short: isEn ? "Detonated" : "Spike Meledak",
+          desc: isEn ? "Failed to retake and defuse enemy spike" : "Gagal retake spike musuh",
+          color: "text-amber-400",
+          bg: "bg-amber-500/15",
+          border: "border-amber-500/30",
+        };
       }
-      return { label: "Tim Tereliminasi", short: "Tereliminasi", desc: "Semua defender tim mati", color: "text-rose-400", bg: "bg-rose-500/15", border: "border-rose-500/30" };
+      return {
+        label: isEn ? "Team Eliminated" : "Tim Tereliminasi",
+        short: isEn ? "Eliminated" : "Tereliminasi",
+        desc: isEn ? "All team defenders died in combat" : "Semua defender tim mati",
+        color: "text-rose-400",
+        bg: "bg-rose-500/15",
+        border: "border-rose-500/30",
+      };
     }
   }
 }
@@ -121,8 +195,12 @@ interface MatchEntryFormProps {
   };
 }
 
+import { useTranslation } from "@/lib/i18n/context";
+
 export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryFormProps) {
   const router = useRouter();
+  const { t, language } = useTranslation();
+  const isEn = language === "en";
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -483,23 +561,22 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
 
     try {
       if (!opponentName.trim()) {
-        throw new Error("Mohon isi Nama Tim Lawan.");
+        throw new Error(isEn ? "Please enter Opponent Team Name." : "Mohon isi Nama Tim Lawan.");
       }
 
       const emptyPlayerRow = playerRows.find((r) => !r.playerId);
       if (emptyPlayerRow) {
-        throw new Error("Mohon pilih 5 pemain aktif untuk match ini.");
+        throw new Error(isEn ? "Please select 5 active players for this match." : "Mohon pilih 5 pemain aktif untuk match ini.");
       }
 
       const playerIds = playerRows.map((r) => r.playerId).filter(Boolean);
       const uniquePlayerIds = new Set(playerIds);
       if (uniquePlayerIds.size !== 5) {
-        throw new Error("Pastikan 5 slot diisi oleh 5 pemain yang berbeda (tidak boleh ada pemain yang dipilih lebih dari satu kali).");
+        throw new Error(isEn ? "Please ensure 5 distinct players are assigned to all 5 slots." : "Pastikan 5 slot diisi oleh 5 pemain yang berbeda (tidak boleh ada pemain yang dipilih lebih dari satu kali).");
       }
       
       const formattedStats = playerRows.map((row) => {
         const acsVal = Number(row.acs) || 0;
-        // Accurate heuristic estimation for ADR (ADR ≈ ACS * 0.65) to maintain analytics integrity
         const computedAdr = Number((acsVal * 0.65).toFixed(1));
         return {
           playerId: row.playerId,
@@ -531,43 +608,51 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         };
       });
 
-      // Synchronize exact team score from final timeline if timeline exists
-      const timelineTeamWins = finalRoundsTimeline.filter((r) => r.winner === "TEAM").length;
-      const timelineOppWins = finalRoundsTimeline.filter((r) => r.winner === "OPPONENT").length;
-      const finalScoreTeam = finalRoundsTimeline.length > 0 ? timelineTeamWins : (Number(scoreTeam) || 0);
-      const finalScoreOpponent = finalRoundsTimeline.length > 0 ? timelineOppWins : (Number(scoreOpponent) || 0);
-
-      const payload = {
-        matchDate,
-        map,
-        opponentName: opponentName.trim(),
-        scoreTeam: finalScoreTeam,
-        scoreOpponent: finalScoreOpponent,
-        startSide,
-        vodUrl: vodUrl.trim() || undefined,
-        notes: notes.trim() || undefined,
-        attachments,
-        roundsTimeline: finalRoundsTimeline,
-        playerStats: formattedStats,
-      };
-
       if (initialData?.id) {
-        const res = await updateMatch(initialData.id, payload);
+        const res = await updateMatch(initialData.id, {
+          matchDate,
+          map,
+          opponentName,
+          scoreTeam: numTeam,
+          scoreOpponent: numOpp,
+          startSide,
+          vodUrl: vodUrl.trim() || undefined,
+          notes: notes.trim() || undefined,
+          attachments,
+          roundsTimeline: finalRoundsTimeline,
+          playerStats: formattedStats,
+        });
+
         if (!res.success) {
-          throw new Error(res.error || "Gagal memperbarui match data.");
+          throw new Error(res.error || (isEn ? "Failed to update match" : "Gagal memperbarui match"));
         }
+
         router.push(`/matches/${initialData.id}`);
       } else {
-        const res = await createMatch(payload);
+        const res = await createMatch({
+          matchDate,
+          map,
+          opponentName,
+          scoreTeam: numTeam,
+          scoreOpponent: numOpp,
+          startSide,
+          vodUrl: vodUrl.trim() || undefined,
+          notes: notes.trim() || undefined,
+          attachments,
+          roundsTimeline: finalRoundsTimeline,
+          playerStats: formattedStats,
+        });
+
         if (!res.success) {
-          throw new Error(res.error || "Gagal menyimpan match data.");
+          throw new Error(res.error || (isEn ? "Failed to create match" : "Gagal mencatat match"));
         }
-        const matchId = res.data?.id || res.matchId;
+
+        const matchId = (res.data as any)?.id || (res.data as any)?.[0]?.id;
         router.push(`/matches/${matchId}`);
       }
       router.refresh();
     } catch (err: any) {
-      setErrorMsg(err.message || "Gagal menyimpan match data.");
+      setErrorMsg(err.message || (isEn ? "Failed to save match data." : "Gagal menyimpan match data."));
       setLoading(false);
     }
   };
@@ -578,7 +663,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1C2433] pb-5">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-            {initialData ? "Edit Scrim" : "Catat Scrim Baru"}
+            {initialData ? (isEn ? "Edit Scrim" : "Edit Scrim") : (isEn ? "Record New Scrim" : "Catat Scrim Baru")}
           </h1>
         </div>
 
@@ -593,7 +678,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
               title="Khusus mode development lokal"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Isi Contoh Data (Dev)</span>
+              <span>{isEn ? "Fill Demo Data (Dev)" : "Isi Contoh Data (Dev)"}</span>
             </Button>
           </div>
         )}
@@ -610,9 +695,9 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
       <Card>
         <CardHeader className="py-3.5 px-5 border-b border-[#1C2433]">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold">1. Informasi Pertandingan</CardTitle>
+            <CardTitle className="text-sm font-semibold">{t.matchForm.section1Title}</CardTitle>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-[#94A3B8]">Hasil:</span>
+              <span className="text-xs text-[#94A3B8]">{isEn ? "Result:" : "Hasil:"}</span>
               <Badge
                 variant={
                   computedResult === "WIN"
@@ -631,7 +716,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
           {/* Tanggal */}
           <div className="md:col-span-1 space-y-1.5">
             <label className="text-xs font-semibold text-[#94A3B8]">
-              Tanggal Match *
+              {t.matchForm.matchDate} *
             </label>
             <Input
               type="date"
@@ -646,7 +731,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
           {/* Map */}
           <div className="md:col-span-1 space-y-1.5">
             <label className="text-xs font-semibold text-[#94A3B8]">
-              Pilihan Map *
+              {t.matchForm.selectMap} *
             </label>
             <Select
               value={map}
@@ -664,7 +749,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
           {/* Tim Lawan */}
           <div className="md:col-span-2 space-y-1.5">
             <label className="text-xs font-semibold text-[#94A3B8]">
-              Nama Tim Lawan *
+              {t.matchForm.opponentName} *
             </label>
             <Input
               type="text"
@@ -679,7 +764,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
           {/* Skor Tim vs Lawan */}
           <div className="md:col-span-1 space-y-1.5">
             <label className="text-xs font-semibold text-emerald-400">
-              Skor Tim *
+              {t.matchForm.scoreTeam} *
             </label>
             <Input
               type="number"
@@ -695,7 +780,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
 
           <div className="md:col-span-1 space-y-1.5">
             <label className="text-xs font-semibold text-rose-400">
-              Skor Lawan *
+              {t.matchForm.scoreOpponent} *
             </label>
             <Input
               type="number"
@@ -712,7 +797,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
           {/* Sisi Awal */}
           <div className="md:col-span-2 space-y-1.5">
             <label className="text-xs font-semibold text-[#94A3B8]">
-              Sisi Awal (Babak Pertama) *
+              {t.matchForm.startSide} *
             </label>
             <Select
               value={startSide}
@@ -720,10 +805,10 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
               className="text-xs font-medium"
             >
               <option value="ATTACK" className="bg-[#090C10] text-rose-400 font-semibold">
-                Attack Side (Penyerang)
+                {isEn ? "Attack Side (Attacker)" : "Attack Side (Penyerang)"}
               </option>
               <option value="DEFENSE" className="bg-[#090C10] text-sky-400 font-semibold">
-                Defense Side (Bertahan)
+                {isEn ? "Defense Side (Defender)" : "Defense Side (Bertahan)"}
               </option>
             </Select>
           </div>
@@ -731,7 +816,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
           {/* Link VOD */}
           <div className="md:col-span-4 space-y-1.5">
             <label className="text-xs font-semibold text-[#94A3B8]">
-              Link Video VOD (YouTube / Twitch Opsional)
+              {isEn ? "VOD Review URL (YouTube / Twitch)" : "Link Rekaman VOD (YouTube / Twitch)"}
             </label>
             <Input
               type="url"
@@ -751,10 +836,10 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
             <div>
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <Swords className="w-4 h-4 text-[#FF4655]" />
-                <span>2. Kronologi Ronde (Round-by-Round)</span>
+                <span>{t.matchForm.section2Title}</span>
               </CardTitle>
               <CardDescription className="text-xs text-[#94A3B8] mt-0.5">
-                Tandai hasil setiap ronde (W = Menang, L = Kalah). Klik kotak ronde untuk mengganti status.
+                {isEn ? "Individual round progression timeline" : "Rincian urutan jalannya setiap ronde"}
               </CardDescription>
             </div>
 
@@ -767,7 +852,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                 className="text-xs h-7 gap-1 text-[#94A3B8] hover:text-white"
               >
                 <Sparkles className="w-3 h-3 text-amber-400" />
-                <span>Auto-Fill Skor</span>
+                <span>{t.matchForm.autoFillTimeline}</span>
               </Button>
               <Button
                 type="button"
@@ -776,7 +861,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                 onClick={() => handleSetAllRounds("TEAM")}
                 className="text-[11px] h-7 px-2 text-emerald-400 hover:bg-emerald-500/10"
               >
-                Semua W
+                {isEn ? "All Win" : "Semua Menang"}
               </Button>
               <Button
                 type="button"
@@ -785,7 +870,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                 onClick={() => handleSetAllRounds("OPPONENT")}
                 className="text-[11px] h-7 px-2 text-rose-400 hover:bg-rose-500/10"
               >
-                Semua L
+                {isEn ? "All Loss" : "Semua Kalah"}
               </Button>
             </div>
           </div>
@@ -793,7 +878,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         <CardContent className="p-4 sm:p-5 space-y-4">
           {roundsTimeline.length === 0 ? (
             <div className="py-6 text-center text-xs text-[#64748B]">
-              Masukkan Skor Tim & Lawan di atas untuk mengaktifkan kronologi ronde.
+              {isEn ? "Enter Team & Opponent scores above to activate the round timeline." : "Masukkan Skor Tim & Lawan di atas untuk mengaktifkan kronologi ronde."}
             </div>
           ) : (
             <>
@@ -802,24 +887,24 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-1.5 font-bold">
                     <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                    <span className="text-emerald-400">Tim: {roundsTimeline.filter(r => r.winner === "TEAM").length} W</span>
+                    <span className="text-emerald-400">Team: {roundsTimeline.filter(r => r.winner === "TEAM").length} W</span>
                     <span className="text-[#64748B]">/ {scoreTeam}</span>
                   </div>
                   <div className="flex items-center gap-1.5 font-bold">
                     <span className="w-2 h-2 rounded-full bg-rose-400" />
-                    <span className="text-rose-400">Lawan: {roundsTimeline.filter(r => r.winner === "OPPONENT").length} L</span>
+                    <span className="text-rose-400">{isEn ? "Opponent" : "Lawan"}: {roundsTimeline.filter(r => r.winner === "OPPONENT").length} L</span>
                     <span className="text-[#64748B]">/ {scoreOpponent}</span>
                   </div>
                 </div>
 
                 <div className="text-[11px] text-[#94A3B8]">
-                  💡 Klik <strong className="text-white">W/L</strong> untuk ganti hasil, klik <strong className="text-sky-400">Tag Taktik</strong> untuk ganti cara menang / cara kalah
+                  💡 {isEn ? "Click W/L to toggle win/loss, click Tactical Tag to toggle round win/loss condition" : "Klik W/L untuk ganti hasil, klik Tag Taktik untuk ganti cara menang / cara kalah"}
                 </div>
 
                 {roundsTimeline.filter(r => r.winner === "TEAM").length !== Number(scoreTeam) && (
                   <span className="text-[11px] text-amber-400 font-medium flex items-center gap-1">
                     <AlertCircle className="w-3.5 h-3.5" />
-                    Jumlah W belum sesuai dengan skor tim ({scoreTeam})
+                    {isEn ? `Recorded W (${roundsTimeline.filter(r => r.winner === "TEAM").length}) does not match Team Score (${scoreTeam})` : `Jumlah W belum sesuai dengan skor tim (${scoreTeam})`}
                   </span>
                 )}
               </div>
@@ -828,9 +913,9 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-white">Babak 1 (Ronde 1 - 12)</span>
+                    <span className="font-bold text-white">{isEn ? "1st Half (Rounds 1 - 12)" : "Babak 1 (Ronde 1 - 12)"}</span>
                     <Badge variant={startSide === "ATTACK" ? "attack" : "defense"} className="text-[10px] py-0 px-2">
-                      {startSide === "ATTACK" ? "Attack Side" : "Defense Side"}
+                      {startSide === "ATTACK" ? (isEn ? "Attack Side" : "Attack Side") : (isEn ? "Defense Side" : "Defense Side")}
                     </Badge>
                   </div>
                   <span className="text-[11px] text-[#94A3B8]">
@@ -842,7 +927,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                   {roundsTimeline.slice(0, 12).map((item) => {
                     const isWin = item.winner === "TEAM";
                     const isPistol = item.round === 1;
-                    const outcomeConfig = getOutcomeConfig(item.side, item.winner, item.outcomeType || item.winType);
+                    const outcomeConfig = getOutcomeConfig(item.side, item.winner, item.outcomeType || item.winType, language);
 
                     return (
                       <div
@@ -865,7 +950,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                         <button
                           type="button"
                           onClick={() => handleToggleRoundWinner(item.round)}
-                          title="Klik untuk ubah Menang (W) / Kalah (L)"
+                          title={isEn ? "Click to toggle Win (W) / Loss (L)" : "Klik untuk ubah Menang (W) / Kalah (L)"}
                           className="text-lg font-black tracking-wider hover:scale-110 active:scale-95 transition-transform py-0.5"
                         >
                           {isWin ? "W" : "L"}
@@ -875,7 +960,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                         <button
                           type="button"
                           onClick={(e) => handleCycleOutcome(item.round, e)}
-                          title={`${isWin ? "Cara Menang" : "Cara Kalah"}: ${outcomeConfig.label} - ${outcomeConfig.desc}. Klik untuk ganti.`}
+                          title={`${isWin ? (isEn ? "Win Method" : "Cara Menang") : (isEn ? "Loss Reason" : "Cara Kalah")}: ${outcomeConfig.label} - ${outcomeConfig.desc}`}
                           className={`w-full py-1 px-0.5 rounded text-[8px] sm:text-[9px] font-bold border truncate hover:brightness-125 transition-all text-center ${outcomeConfig.bg} ${outcomeConfig.border} ${outcomeConfig.color}`}
                         >
                           {outcomeConfig.short}
@@ -891,9 +976,9 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                 <div className="space-y-2 pt-2 border-t border-[#1C2433]">
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-white">Babak 2 (Ronde 13 - 24)</span>
+                      <span className="font-bold text-white">{isEn ? "2nd Half (Rounds 13 - 24)" : "Babak 2 (Ronde 13 - 24)"}</span>
                       <Badge variant={startSide === "ATTACK" ? "defense" : "attack"} className="text-[10px] py-0 px-2">
-                        {startSide === "ATTACK" ? "Defense Side" : "Attack Side"}
+                        {startSide === "ATTACK" ? (isEn ? "Defense Side" : "Defense Side") : (isEn ? "Attack Side" : "Attack Side")}
                       </Badge>
                     </div>
                     <span className="text-[11px] text-[#94A3B8]">
@@ -905,7 +990,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                     {roundsTimeline.slice(12, 24).map((item) => {
                       const isWin = item.winner === "TEAM";
                       const isPistol = item.round === 13;
-                      const outcomeConfig = getOutcomeConfig(item.side, item.winner, item.outcomeType || item.winType);
+                      const outcomeConfig = getOutcomeConfig(item.side, item.winner, item.outcomeType || item.winType, language);
 
                       return (
                         <div
@@ -928,7 +1013,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           <button
                             type="button"
                             onClick={() => handleToggleRoundWinner(item.round)}
-                            title="Klik untuk ubah Menang (W) / Kalah (L)"
+                            title={isEn ? "Click to toggle Win (W) / Loss (L)" : "Klik untuk ubah Menang (W) / Kalah (L)"}
                             className="text-lg font-black tracking-wider hover:scale-110 active:scale-95 transition-transform py-0.5"
                           >
                             {isWin ? "W" : "L"}
@@ -938,7 +1023,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           <button
                             type="button"
                             onClick={(e) => handleCycleOutcome(item.round, e)}
-                            title={`${isWin ? "Cara Menang" : "Cara Kalah"}: ${outcomeConfig.label} - ${outcomeConfig.desc}. Klik untuk ganti.`}
+                            title={`${isWin ? (isEn ? "Win Method" : "Cara Menang") : (isEn ? "Loss Reason" : "Cara Kalah")}: ${outcomeConfig.label} - ${outcomeConfig.desc}`}
                             className={`w-full py-1 px-0.5 rounded text-[8px] sm:text-[9px] font-bold border truncate hover:brightness-125 transition-all text-center ${outcomeConfig.bg} ${outcomeConfig.border} ${outcomeConfig.color}`}
                           >
                             {outcomeConfig.short}
@@ -955,14 +1040,14 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                 <div className="space-y-2 pt-2 border-t border-[#1C2433]">
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-amber-400">Overtime (Ronde 25+)</span>
+                      <span className="font-bold text-amber-400">{isEn ? "Overtime (Rounds 25+)" : "Overtime (Ronde 25+)"}</span>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-1.5">
                     {roundsTimeline.slice(24).map((item) => {
                       const isWin = item.winner === "TEAM";
-                      const outcomeConfig = getOutcomeConfig(item.side, item.winner, item.outcomeType || item.winType);
+                      const outcomeConfig = getOutcomeConfig(item.side, item.winner, item.outcomeType || item.winType, language);
 
                       return (
                         <div
@@ -980,7 +1065,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           <button
                             type="button"
                             onClick={() => handleToggleRoundWinner(item.round)}
-                            title="Klik untuk ubah Menang (W) / Kalah (L)"
+                            title={isEn ? "Click to toggle Win (W) / Loss (L)" : "Klik untuk ubah Menang (W) / Kalah (L)"}
                             className="text-lg font-black tracking-wider hover:scale-110 active:scale-95 transition-transform py-0.5"
                           >
                             {isWin ? "W" : "L"}
@@ -990,7 +1075,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           <button
                             type="button"
                             onClick={(e) => handleCycleOutcome(item.round, e)}
-                            title={`${isWin ? "Cara Menang" : "Cara Kalah"}: ${outcomeConfig.label} - ${outcomeConfig.desc}. Klik untuk ganti.`}
+                            title={`${isWin ? (isEn ? "Win Method" : "Cara Menang") : (isEn ? "Loss Reason" : "Cara Kalah")}: ${outcomeConfig.label} - ${outcomeConfig.desc}`}
                             className={`w-full py-1 px-0.5 rounded text-[8px] sm:text-[9px] font-bold border truncate hover:brightness-125 transition-all text-center ${outcomeConfig.bg} ${outcomeConfig.border} ${outcomeConfig.color}`}
                           >
                             {outcomeConfig.short}
@@ -1090,9 +1175,9 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
       <Card>
         <CardHeader className="py-3.5 px-5 border-b border-[#1C2433]">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold">3. Statistik 5 Pemain</CardTitle>
+            <CardTitle className="text-sm font-semibold">{t.matchForm.section3Title}</CardTitle>
             <span className="text-xs text-[#94A3B8]">
-              5 Slot Pemain
+              {isEn ? "5 Active Player Slots" : "5 Slot Pemain"}
             </span>
           </div>
         </CardHeader>
@@ -1116,7 +1201,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                         {index + 1}
                       </span>
                       <span className="text-xs font-semibold text-white">
-                        Slot Pemain #{index + 1}
+                        {isEn ? `Player Slot #${index + 1}` : `Slot Pemain #${index + 1}`}
                       </span>
                     </div>
 
@@ -1133,14 +1218,14 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                   {/* Player & Agent Dropdowns */}
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-semibold text-[#94A3B8]">Pemain *</label>
+                      <label className="text-[10px] font-semibold text-[#94A3B8]">{isEn ? "Player *" : "Pemain *"}</label>
                       <Select
                         value={row.playerId}
                         onChange={(e) => handleRowChange(index, "playerId", e.target.value)}
                         className="h-9 text-xs font-semibold"
                         required
                       >
-                        <option value="" disabled>Pilih Pemain</option>
+                        <option value="" disabled>{isEn ? "Select Player..." : "Pilih Pemain..."}</option>
                         {availablePlayers.map((p) => (
                           <option key={p.id} value={p.id} className="bg-[#090C10] text-[#F1F5F9]">
                             {p.name} ({p.primaryRole})
@@ -1150,7 +1235,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[10px] font-semibold text-[#94A3B8]">Agent *</label>
+                      <label className="text-[10px] font-semibold text-[#94A3B8]">{isEn ? "Agent *" : "Agent *"}</label>
                       <div className="flex items-center gap-2">
                         <div className="w-9 h-9 rounded-lg bg-[#090C10] border border-[#1C2433] p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
                           <img
@@ -1179,10 +1264,10 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
 
                   {/* Primary Combat Stats Grid (6 cols) */}
                   <div className="space-y-1 pt-1">
-                    <div className="text-[10px] font-semibold text-[#94A3B8]">Statistik Pertandingan</div>
+                    <div className="text-[10px] font-semibold text-[#94A3B8]">{isEn ? "Match Performance Stats" : "Statistik Pertandingan"}</div>
                     <div className="grid grid-cols-6 gap-1 text-center">
                       <div className="space-y-0.5">
-                        <span className="text-[9px] text-sky-400 font-bold">ACS *</span>
+                        <span className="text-[9px] text-sky-400 font-bold">{isEn ? "ACS *" : "ACS *"}</span>
                         <Input
                           type="number"
                           min="0"
@@ -1195,7 +1280,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                         />
                       </div>
                       <div className="space-y-0.5">
-                        <span className="text-[9px] text-emerald-400 font-bold">K *</span>
+                        <span className="text-[9px] text-emerald-400 font-bold">{t.matchForm.kills} *</span>
                         <Input
                           type="number"
                           min="0"
@@ -1208,7 +1293,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                         />
                       </div>
                       <div className="space-y-0.5">
-                        <span className="text-[9px] text-rose-400 font-bold">D *</span>
+                        <span className="text-[9px] text-rose-400 font-bold">{t.matchForm.deaths} *</span>
                         <Input
                           type="number"
                           min="0"
@@ -1221,7 +1306,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                         />
                       </div>
                       <div className="space-y-0.5">
-                        <span className="text-[9px] text-[#94A3B8] font-bold">A *</span>
+                        <span className="text-[9px] text-[#94A3B8] font-bold">{t.matchForm.assists} *</span>
                         <Input
                           type="number"
                           min="0"
@@ -1234,7 +1319,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                         />
                       </div>
                       <div className="space-y-0.5">
-                        <span className="text-[9px] text-emerald-400 font-medium">FK</span>
+                        <span className="text-[9px] text-emerald-400 font-medium">{t.matchForm.firstKills}</span>
                         <Input
                           type="number"
                           min="0"
@@ -1246,7 +1331,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                         />
                       </div>
                       <div className="space-y-0.5">
-                        <span className="text-[9px] text-amber-400 font-bold">1vX</span>
+                        <span className="text-[9px] text-amber-400 font-bold">{isEn ? "Clutch" : "Clutch"}</span>
                         <Input
                           type="number"
                           min="0"
@@ -1269,15 +1354,15 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-[#1C2433] bg-[#090C10] text-[#94A3B8] font-semibold text-[11px]">
-                  <th className="py-3 px-3.5 min-w-[150px]">Pemain *</th>
-                  <th className="py-3 px-3.5 min-w-[165px]">Agent *</th>
-                  <th className="py-3 px-2 text-center w-20">ACS *</th>
-                  <th className="py-3 px-2 text-center w-16">K *</th>
-                  <th className="py-3 px-2 text-center w-16">D *</th>
-                  <th className="py-3 px-2 text-center w-16">A *</th>
-                  <th className="py-3 px-2 text-center w-20">First Blood (FK)</th>
-                  <th className="py-3 px-2 text-center w-20">Clutch (1vX)</th>
-                  <th className="py-3 px-3 text-center min-w-[90px]">Live K/D</th>
+                  <th className="py-3 px-3.5 min-w-[150px]">{isEn ? "Player *" : "Pemain *"}</th>
+                  <th className="py-3 px-3.5 min-w-[165px]">{isEn ? "Agent *" : "Agent *"}</th>
+                  <th className="py-3 px-2 text-center w-20">{isEn ? "ACS *" : "ACS *"}</th>
+                  <th className="py-3 px-2 text-center w-16">{t.matchForm.kills} *</th>
+                  <th className="py-3 px-2 text-center w-16">{t.matchForm.deaths} *</th>
+                  <th className="py-3 px-2 text-center w-16">{t.matchForm.assists} *</th>
+                  <th className="py-3 px-2 text-center w-20">{t.matchForm.firstKills}</th>
+                  <th className="py-3 px-2 text-center w-20">{isEn ? "Clutches" : "Clutch"}</th>
+                  <th className="py-3 px-3 text-center min-w-[90px]">{isEn ? "Live K/D" : "Live K/D"}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#1C2433]">
@@ -1299,7 +1384,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           className="h-8 text-xs font-semibold"
                           required
                         >
-                          <option value="" disabled>Pilih Pemain</option>
+                          <option value="" disabled>{isEn ? "Select Player..." : "Pilih Pemain..."}</option>
                           {availablePlayers.map((p) => (
                             <option key={p.id} value={p.id} className="bg-[#090C10] text-[#F1F5F9]">
                               {p.name} ({p.primaryRole})
@@ -1347,7 +1432,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           onKeyDown={(e) => handleMatrixKeyDown(e, index, 0)}
                           onFocus={(e) => e.target.select()}
                           required
-                          className="h-8 text-center font-bold text-sky-400 px-1"
+                          className="h-8 text-center font-bold text-sky-400 text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                       </td>
 
@@ -1363,7 +1448,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           onKeyDown={(e) => handleMatrixKeyDown(e, index, 1)}
                           onFocus={(e) => e.target.select()}
                           required
-                          className="h-8 text-center font-bold text-emerald-400 px-1"
+                          className="h-8 text-center font-bold text-emerald-400 text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                       </td>
 
@@ -1379,7 +1464,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           onKeyDown={(e) => handleMatrixKeyDown(e, index, 2)}
                           onFocus={(e) => e.target.select()}
                           required
-                          className="h-8 text-center font-bold text-rose-400 px-1"
+                          className="h-8 text-center font-bold text-rose-400 text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                       </td>
 
@@ -1395,7 +1480,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           onKeyDown={(e) => handleMatrixKeyDown(e, index, 3)}
                           onFocus={(e) => e.target.select()}
                           required
-                          className="h-8 text-center text-[#F1F5F9] px-1 font-semibold"
+                          className="h-8 text-center font-bold text-[#F1F5F9] text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                       </td>
 
@@ -1410,11 +1495,11 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           onChange={(e) => handleRowChange(index, "firstKills", e.target.value)}
                           onKeyDown={(e) => handleMatrixKeyDown(e, index, 4)}
                           onFocus={(e) => e.target.select()}
-                          className="h-8 text-center text-emerald-400 px-1 font-semibold"
+                          className="h-8 text-center text-emerald-400 text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                       </td>
 
-                      {/* Clutches */}
+                      {/* Clutches Won */}
                       <td className="p-1.5">
                         <Input
                           id={`stat-matrix-${index}-5`}
@@ -1425,12 +1510,12 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                           onChange={(e) => handleRowChange(index, "clutchesWon", e.target.value)}
                           onKeyDown={(e) => handleMatrixKeyDown(e, index, 5)}
                           onFocus={(e) => e.target.select()}
-                          className="h-8 text-center text-amber-400 font-bold px-1"
+                          className="h-8 text-center text-amber-400 font-bold text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                       </td>
 
                       {/* Live K/D */}
-                      <td className="p-2.5 text-center font-bold text-xs tabular-nums">
+                      <td className="p-2.5 text-center">
                         <span
                           className={
                             liveKD >= 1.2
@@ -1458,9 +1543,9 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Swords className="w-4 h-4 text-rose-400" />
-              <CardTitle className="text-sm font-semibold">4. Analisis Trading Kills & Crosshair Spacing</CardTitle>
+              <CardTitle className="text-sm font-semibold">{t.matchForm.section4Title}</CardTitle>
               <Badge variant="outline" className="text-[10px] text-amber-400 border-amber-500/30 bg-amber-500/10">
-                Fitur Analisis Coach
+                {isEn ? "Coach Tactical Feature" : "Fitur Analisis Coach"}
               </Badge>
             </div>
             <Badge
@@ -1474,19 +1559,19 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
         <CardContent className="p-5 space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
             <div className="p-3 rounded-xl bg-[#090C10] border border-[#1C2433]">
-              <span className="text-xs font-semibold text-[#94A3B8] block">Total Deaths Tim</span>
+              <span className="text-xs font-semibold text-[#94A3B8] block">{isEn ? "Total Deaths" : "Total Kematian"}</span>
               <span className="text-2xl font-black text-rose-400">{totalTeamDeaths}</span>
-              <span className="text-[10px] text-[#64748B] block mt-0.5">Akumulasi 5 pemain</span>
+              <span className="text-[10px] text-[#64748B] block mt-0.5">{isEn ? "5 players aggregate" : "Akumulasi 5 pemain"}</span>
             </div>
             <div className="p-3 rounded-xl bg-[#090C10] border border-emerald-500/20">
-              <span className="text-xs font-semibold text-emerald-400 block">Kematian Di-Trade</span>
+              <span className="text-xs font-semibold text-emerald-400 block">{t.matchForm.tradedDeaths}</span>
               <span className="text-2xl font-black text-emerald-400">{tradeKills}</span>
-              <span className="text-[10px] text-[#64748B] block mt-0.5">Teman mati langsung dibalas</span>
+              <span className="text-[10px] text-[#64748B] block mt-0.5">{isEn ? "Teammate death avenged immediately" : "Teman mati langsung dibalas"}</span>
             </div>
             <div className="p-3 rounded-xl bg-[#090C10] border border-amber-500/20">
-              <span className="text-xs font-semibold text-amber-400 block">Dry Deaths (Terisolasi)</span>
+              <span className="text-xs font-semibold text-amber-400 block">{isEn ? "Untraded Deaths" : "Mati Tanpa Balasan"}</span>
               <span className="text-2xl font-black text-amber-400">{untradedDeaths}</span>
-              <span className="text-[10px] text-[#64748B] block mt-0.5">Mati tanpa sempat di-refrag</span>
+              <span className="text-[10px] text-[#64748B] block mt-0.5">{isEn ? "Died without a refrag opportunity" : "Mati tanpa sempat di-refrag"}</span>
             </div>
           </div>
 
@@ -1495,10 +1580,10 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <label className="text-xs font-bold text-white block">
-                  Total Trade Kill / Refrag Berhasil
+                  {isEn ? "Trade Kills Counter (Refragged):" : "Penghitung Trade Kills (Refrag):"}
                 </label>
                 <span className="text-[11px] text-[#64748B]">
-                  Berapa kali tim langsung membalas membunuh musuh saat rekan tim gugur (jeda 3-5 detik)
+                  {isEn ? "Times team instantly traded enemy after teammate death (within 3-5s)" : "Berapa kali tim langsung membalas membunuh musuh saat rekan tim gugur (jeda 3-5 detik)"}
                 </span>
               </div>
               <div className="flex items-center gap-1.5 self-end sm:self-auto">
@@ -1518,7 +1603,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                   value={tradeKills}
                   onChange={(e) => setTradeKills(Math.max(0, parseInt(e.target.value, 10) || 0))}
                   onFocus={(e) => e.target.select()}
-                  title="Ketik jumlah trade kill langsung"
+                  title="Trade kill count"
                   className="w-14 text-center font-bold text-base bg-[#0F141C] border border-[#1C2433] rounded px-1 py-1 text-emerald-400 focus:outline-none focus:border-emerald-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
                 <Button
@@ -1543,11 +1628,11 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
               : "bg-rose-500/10 border-rose-500/30 text-rose-300"
           }`}>
             {tradeEfficiency >= 60 ? (
-              <p>🔥 <strong>Trade Sangat Baik ({tradeEfficiency}%):</strong> Spacing dan reaksi crosshair refrag pemain sangat rapat, tim jarang kehilangan orang secara gratis.</p>
+              <p>🔥 <strong>{isEn ? `Excellent Trades (${tradeEfficiency}%):` : `Trade Sangat Baik (${tradeEfficiency}%):`}</strong> {isEn ? "Player spacing and refrag crosshair reaction are tight, team rarely loses men for free." : "Spacing dan reaksi crosshair refrag pemain sangat rapat, tim jarang kehilangan orang secara gratis."}</p>
             ) : tradeEfficiency >= 45 ? (
-              <p>⚡ <strong>Trade Standar ({tradeEfficiency}%):</strong> Koordinasi trade cukup solid, namun masih terdapat {untradedDeaths} kematian tanpa balasan saat rotasi atau isolasi site.</p>
+              <p>⚡ <strong>{isEn ? `Standard Trades (${tradeEfficiency}%):` : `Trade Standar (${tradeEfficiency}%):`}</strong> {isEn ? `Trade coordination is solid, but ${untradedDeaths} dry deaths occurred during site rotations.` : `Koordinasi trade cukup solid, namun masih terdapat ${untradedDeaths} kematian tanpa balasan saat rotasi atau isolasi site.`}</p>
             ) : (
-              <p>⚠️ <strong>Trade Perlu Evaluasi ({tradeEfficiency}%):</strong> Terlalu banyak dry deaths ({untradedDeaths} kali mati tanpa balasan). Perbaiki jarak antar pemain saat eksekusi atau defense.</p>
+              <p>⚠️ <strong>{isEn ? `Trades Need Improvement (${tradeEfficiency}%):` : `Trade Perlu Evaluasi (${tradeEfficiency}%):`}</strong> {isEn ? `Too many dry deaths (${untradedDeaths} isolated deaths). Improve crosshair spacing during executions or defensive holds.` : `Terlalu banyak dry deaths (${untradedDeaths} kali mati tanpa balasan). Perbaiki jarak antar pemain saat eksekusi atau defense.`}</p>
             )}
           </div>
         </CardContent>
@@ -1556,12 +1641,12 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
       {/* SECTION 5: EVALUATION & ATTACHMENTS */}
       <Card>
         <CardHeader className="py-3.5 px-5 border-b border-[#1C2433]">
-          <CardTitle className="text-sm font-semibold">5. Evaluasi & Catatan Taktis</CardTitle>
+          <CardTitle className="text-sm font-semibold">{t.matchForm.section5Title}</CardTitle>
         </CardHeader>
         <CardContent className="p-5 space-y-4">
           <Textarea
             rows={3}
-            placeholder="Catatan evaluasi strategi atau analisis rotasi..."
+            placeholder={t.matchForm.coachNotesPlaceholder}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             className="text-xs text-[#F1F5F9] leading-relaxed"
@@ -1572,10 +1657,10 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
               <label className="text-xs font-semibold text-white flex items-center gap-1.5">
                 <UploadCloud className="w-4 h-4 text-[#FF4655]" />
-                <span>Lampiran Evaluasi</span>
+                <span>{t.matchDetail.attachmentsTitle}</span>
               </label>
               <span className="text-[11px] text-[#94A3B8]">
-                Maksimal 3 berkas (Gambar / PDF)
+                {t.matchDetail.attachmentsSubtitle}
               </span>
             </div>
 
@@ -1594,10 +1679,14 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                   <UploadCloud className="w-5 h-5" />
                 </div>
                 <div className="text-xs font-semibold text-white">
-                  {isCompressing ? "Memproses berkas..." : "Klik atau Tarik File Gambar / PDF ke Sini"}
+                  {isCompressing
+                    ? (isEn ? "Compressing & processing files..." : "Memproses berkas...")
+                    : (isEn ? "Drag & drop files here, or click to browse" : "Drag & drop file di sini, atau klik untuk memilih")}
                 </div>
                 <p className="text-[11px] text-[#94A3B8]">
-                  Mendukung format PNG, JPG, dan PDF
+                  {isEn
+                    ? "Supports PNG, JPEG, WebP, GIF, and PDF (auto-compressed & stored locally in SQLite)"
+                    : "Mendukung PNG, JPEG, WebP, GIF, dan PDF (terkompresi otomatis & tersimpan lokal di SQLite)"}
                 </p>
               </div>
             </div>
@@ -1653,7 +1742,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
                       size="sm"
                       onClick={() => handleRemoveAttachment(att.id)}
                       className="h-7 w-7 p-0 text-[#94A3B8] hover:text-rose-400 hover:bg-rose-500/10 shrink-0"
-                      title="Hapus Lampiran"
+                      title={isEn ? "Remove Attachment" : "Hapus Lampiran"}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>
@@ -1673,7 +1762,7 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
           onClick={() => router.back()}
           disabled={loading}
         >
-          Batal
+          {t.common.cancel}
         </Button>
         <Button
           type="submit"
@@ -1683,12 +1772,12 @@ export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryForm
           {loading ? (
             <>
               <RefreshCw className="w-4 h-4 animate-spin" />
-              <span>Menyimpan...</span>
+              <span>{t.matchForm.submitSaving}</span>
             </>
           ) : (
             <>
               <Check className="w-4 h-4" />
-              <span>{initialData ? "Simpan Perubahan" : "Simpan & Publish Match"}</span>
+              <span>{initialData ? t.matchForm.submitUpdate : t.matchForm.submitCreate}</span>
             </>
           )}
         </Button>

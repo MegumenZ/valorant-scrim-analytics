@@ -13,35 +13,37 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useUserRole } from "./role-context";
-
-const navItems = [
-  {
-    label: "Dashboard",
-    href: "/",
-    icon: LayoutDashboard,
-  },
-  {
-    label: "Riwayat Scrim",
-    href: "/matches",
-    icon: Swords,
-  },
-  {
-    label: "Roster Pemain",
-    href: "/roster",
-    icon: Users,
-  },
-  {
-    label: "Statistik Map",
-    href: "/maps",
-    icon: MapIcon,
-  },
-];
+import { useTranslation } from "@/lib/i18n/context";
 
 export function Sidebar({ className, onClose }: { className?: string; onClose?: () => void }) {
   const pathname = usePathname();
   const { isAdmin } = useUserRole();
+  const { t } = useTranslation();
 
   const isNewMatchActive = pathname.startsWith("/matches/new") || pathname.includes("/edit");
+
+  const navItems = [
+    {
+      label: t.common.dashboard,
+      href: "/",
+      icon: LayoutDashboard,
+    },
+    {
+      label: t.common.matches,
+      href: "/matches",
+      icon: Swords,
+    },
+    {
+      label: t.common.roster,
+      href: "/roster",
+      icon: Users,
+    },
+    {
+      label: t.common.mapAnalytics,
+      href: "/maps",
+      icon: MapIcon,
+    },
+  ];
 
   return (
     <aside
@@ -64,7 +66,7 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
             Team SC
           </h2>
           <p className="text-xs text-[#94A3B8] font-normal truncate">
-            Scrim Analytics
+            {t.nav.scrimAnalytics}
           </p>
         </div>
       </div>
@@ -83,7 +85,7 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
             )}
           >
             <PlusCircle className="w-4 h-4 shrink-0" />
-            <span>Catat Scrim</span>
+            <span>{t.common.recordScrim}</span>
           </Link>
         </div>
       )}
@@ -91,7 +93,7 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
       {/* Navigation Menu */}
       <div className="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
         <div className="px-3 pb-2 text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
-          Menu Utama
+          {t.nav.overview}
         </div>
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -139,7 +141,7 @@ export function Sidebar({ className, onClose }: { className?: string; onClose?: 
             <Shield className="w-3.5 h-3.5 text-[#94A3B8]" />
             <span>Team SC Official</span>
           </div>
-          <span className="text-[11px]">Musim 2026</span>
+          <span className="text-[11px]">2026</span>
         </div>
       </div>
     </aside>

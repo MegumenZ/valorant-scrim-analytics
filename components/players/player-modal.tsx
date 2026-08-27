@@ -9,6 +9,7 @@ import { VALORANT_ROLES, ValorantRole } from "@/lib/data/valorant";
 import { Player } from "@/lib/db/schema";
 import { createPlayer, updatePlayer } from "@/lib/actions/players";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "@/lib/i18n/context";
 
 interface PlayerModalProps {
   isOpen: boolean;
@@ -18,6 +19,9 @@ interface PlayerModalProps {
 
 export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps) {
   const router = useRouter();
+  const { t, language } = useTranslation();
+  const isEn = language === "en";
+
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -50,7 +54,7 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
 
     try {
       if (!name.trim()) {
-        throw new Error("Nama pemain wajib diisi.");
+        throw new Error(isEn ? "Player name is required." : "Nama pemain wajib diisi.");
       }
 
       const payload = {
@@ -64,12 +68,12 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
       if (playerToEdit) {
         const res = await updatePlayer(playerToEdit.id, payload);
         if (!res.success) {
-          throw new Error(res.error || "Gagal memperbarui data pemain.");
+          throw new Error(res.error || (isEn ? "Failed to update player data." : "Gagal memperbarui data pemain."));
         }
       } else {
         const res = await createPlayer(payload);
         if (!res.success) {
-          throw new Error(res.error || "Gagal menyimpan data pemain.");
+          throw new Error(res.error || (isEn ? "Failed to save player data." : "Gagal menyimpan data pemain."));
         }
       }
 
@@ -77,7 +81,7 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
       onClose();
       router.refresh();
     } catch (err: any) {
-      setErrorMsg(err.message || "Gagal menyimpan data pemain.");
+      setErrorMsg(err.message || (isEn ? "Failed to save player data." : "Gagal menyimpan data pemain."));
       setLoading(false);
     }
   };
@@ -95,7 +99,7 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#1C2433]">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold text-white">
-              {playerToEdit ? "Edit Data Pemain" : "Tambah Pemain Baru"}
+              {playerToEdit ? (isEn ? "Edit Player Profile" : "Edit Data Pemain") : (isEn ? "Add New Player" : "Tambah Pemain Baru")}
             </h3>
           </div>
           <button
@@ -116,7 +120,7 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
           {/* Name */}
           <div className="space-y-1.5">
             <label className="font-semibold text-[#94A3B8]">
-              Nama / Nickname Pemain *
+              {isEn ? "Player Name / Nickname *" : "Nama / Nickname Pemain *"}
             </label>
             <Input
               type="text"
@@ -131,7 +135,7 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
           {/* Riot ID */}
           <div className="space-y-1.5">
             <label className="font-semibold text-[#94A3B8]">
-              Riot ID (Game Tag)
+              {isEn ? "Riot ID (In-game Tag)" : "Riot ID (Game Tag)"}
             </label>
             <Input
               type="text"
@@ -145,7 +149,7 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
           {/* Primary Role */}
           <div className="space-y-1.5">
             <label className="font-semibold text-[#94A3B8]">
-              Role Utama *
+              {isEn ? "Primary Role *" : "Role Utama *"}
             </label>
             <Select
               value={primaryRole}
@@ -163,7 +167,7 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
           {/* Discord ID */}
           <div className="space-y-1.5">
             <label className="font-semibold text-[#94A3B8]">
-              Username Discord
+              {isEn ? "Discord Username" : "Username Discord"}
             </label>
             <Input
               type="text"
@@ -176,7 +180,7 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
 
           {/* Status Toggle */}
           <div className="pt-2 flex items-center justify-between border-t border-[#1C2433]">
-            <span className="text-[#94A3B8] font-semibold">Status Pemain:</span>
+            <span className="text-[#94A3B8] font-semibold">{isEn ? "Player Status:" : "Status Pemain:"}</span>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -185,7 +189,7 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
                 className="w-4 h-4 rounded text-[#FF4655] focus:ring-[#FF4655] bg-[#090C10] border-[#1C2433]"
               />
               <span className={isActive ? "text-emerald-400 font-semibold" : "text-[#94A3B8]"}>
-                {isActive ? "Roster Starter (5 Inti)" : "Pemain Cadangan"}
+                {isActive ? (isEn ? "Active Starter (5 Core)" : "Roster Starter (5 Inti)") : (isEn ? "Bench / Substitute" : "Pemain Cadangan")}
               </span>
             </label>
           </div>
@@ -199,7 +203,7 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
               onClick={onClose}
               disabled={loading}
             >
-              Batal
+              {t.common.cancel}
             </Button>
             <Button
               type="submit"
@@ -210,10 +214,10 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
               {loading ? (
                 <>
                   <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />
-                  <span>Menyimpan...</span>
+                  <span>{isEn ? "Saving..." : "Menyimpan..."}</span>
                 </>
               ) : (
-                <span>{playerToEdit ? "Simpan Perubahan" : "Tambah Pemain"}</span>
+                <span>{playerToEdit ? (isEn ? "Save Changes" : "Simpan Perubahan") : (isEn ? "Add Player" : "Tambah Pemain")}</span>
               )}
             </Button>
           </div>

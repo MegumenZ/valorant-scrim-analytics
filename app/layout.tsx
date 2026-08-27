@@ -7,6 +7,7 @@ import { Header } from "@/components/layout/header";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { TopProgressBar } from "@/components/layout/top-progress-bar";
 import { RoleProvider } from "@/components/layout/role-context";
+import { LanguageProvider } from "@/lib/i18n/context";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -51,25 +52,27 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <TopProgressBar />
         </Suspense>
-        <RoleProvider>
-          <div className="flex h-screen overflow-hidden">
-            {/* Desktop Tactical Sidebar */}
-            <div className="hidden lg:flex shrink-0">
-              <Sidebar />
+        <LanguageProvider>
+          <RoleProvider>
+            <div className="flex h-screen overflow-hidden">
+              {/* Desktop Tactical Sidebar */}
+              <div className="hidden lg:flex shrink-0">
+                <Sidebar />
+              </div>
+
+              {/* Main Application Container */}
+              <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+                <Header />
+                <main className="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-8 pb-24 lg:pb-8">
+                  <div className="max-w-7xl mx-auto">{children}</div>
+                </main>
+              </div>
             </div>
 
-            {/* Main Application Container */}
-            <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-              <Header />
-              <main className="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-8 pb-24 lg:pb-8">
-                <div className="max-w-7xl mx-auto">{children}</div>
-              </main>
-            </div>
-          </div>
-
-          {/* Mobile Ergonomic Bottom Navigation Bar */}
-          <BottomNav />
-        </RoleProvider>
+            {/* Mobile Ergonomic Bottom Navigation Bar */}
+            <BottomNav />
+          </RoleProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

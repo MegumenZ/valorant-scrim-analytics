@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
 import { ChevronRight, ExternalLink } from "lucide-react";
@@ -5,26 +7,30 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MatchWithStats } from "@/lib/actions/matches";
 import { getAgentIcon, getMapListViewIcon } from "@/lib/data/valorant";
+import { useTranslation } from "@/lib/i18n/context";
 
 interface RecentMatchesTableProps {
   matches: MatchWithStats[];
 }
 
 export function RecentMatchesTable({ matches }: RecentMatchesTableProps) {
+  const { t, language } = useTranslation();
+  const isEn = language === "en";
+
   return (
     <Card className="bg-[#0C1017] border-[#1C2433] overflow-hidden shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between py-3.5 px-5 border-b border-[#1C2433] bg-[#090C10]">
         <div>
           <CardTitle className="text-sm sm:text-base font-bold text-white tracking-tight">
-            Log Scrim Terkini
+            {t.dashboard.recentMatchesTitle}
           </CardTitle>
           <p className="text-xs text-[#94A3B8] mt-0.5">
-            Riwayat 5 pertandingan latihan terakhir tim
+            {t.dashboard.recentMatchesSubtitle}
           </p>
         </div>
         <Link href="/matches">
           <Button variant="outline" size="sm" className="text-xs gap-1.5 h-7 px-2.5 font-medium">
-            <span>Semua Match</span>
+            <span>{isEn ? "All Matches" : "Semua Match"}</span>
             <ChevronRight className="w-3.5 h-3.5" />
           </Button>
         </Link>
@@ -35,7 +41,7 @@ export function RecentMatchesTable({ matches }: RecentMatchesTableProps) {
         <div className="md:hidden divide-y divide-[#1C2433]">
           {matches.length === 0 ? (
             <div className="py-8 text-center text-[#64748B] text-xs">
-              Belum ada catatan match.
+              {isEn ? "No match records found." : "Belum ada catatan match."}
             </div>
           ) : (
             matches.map((m) => {
@@ -98,7 +104,7 @@ export function RecentMatchesTable({ matches }: RecentMatchesTableProps) {
                           : "text-sky-400 border-sky-500/30 bg-sky-500/10"
                       }`}
                     >
-                      {m.startSide === "ATTACK" ? "Attack" : "Defense"}
+                      {m.startSide === "ATTACK" ? (isEn ? "Attack" : "Attack") : (isEn ? "Defense" : "Defense")}
                     </span>
                   </div>
 
@@ -134,13 +140,13 @@ export function RecentMatchesTable({ matches }: RecentMatchesTableProps) {
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="border-b border-[#1C2433] bg-[#090C10] text-[#94A3B8] font-semibold text-[11px]">
-                <th className="py-3 px-4">Tanggal</th>
-                <th className="py-3 px-4 sticky left-0 bg-[#090C10] z-10">Map</th>
-                <th className="py-3 px-4">Lawan</th>
-                <th className="py-3 px-4 text-center">Skor</th>
-                <th className="py-3 px-4 text-center">Hasil</th>
-                <th className="py-3 px-4 text-center">Sisi Awal</th>
-                <th className="py-3 px-4">Top Fragger / MVP</th>
+                <th className="py-3 px-4">{isEn ? "Date" : "Tanggal"}</th>
+                <th className="py-3 px-4 sticky left-0 bg-[#090C10] z-10">{t.matches.map}</th>
+                <th className="py-3 px-4">{t.matches.opponent}</th>
+                <th className="py-3 px-4 text-center">{isEn ? "Score" : "Skor"}</th>
+                <th className="py-3 px-4 text-center">{isEn ? "Result" : "Hasil"}</th>
+                <th className="py-3 px-4 text-center">{t.matches.startSide}</th>
+                <th className="py-3 px-4">{isEn ? "Top Fragger / MVP" : "Top Fragger / MVP"}</th>
                 <th className="py-3 px-4 text-right"></th>
               </tr>
             </thead>
@@ -148,7 +154,7 @@ export function RecentMatchesTable({ matches }: RecentMatchesTableProps) {
               {matches.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-[#94A3B8]">
-                    Belum ada catatan match.
+                    {isEn ? "No match records found." : "Belum ada catatan match."}
                   </td>
                 </tr>
               ) : (
@@ -205,7 +211,7 @@ export function RecentMatchesTable({ matches }: RecentMatchesTableProps) {
                               : "text-sky-400 border-sky-500/30 bg-sky-500/10"
                           }`}
                         >
-                          {m.startSide === "ATTACK" ? "Attack" : "Defense"}
+                          {m.startSide === "ATTACK" ? (isEn ? "Attack" : "Attack") : (isEn ? "Defense" : "Defense")}
                         </span>
                       </td>
                       <td className="py-3.5 px-4">
@@ -237,7 +243,7 @@ export function RecentMatchesTable({ matches }: RecentMatchesTableProps) {
                             size="sm"
                             className="h-7 px-2.5 text-xs gap-1 hover:text-white hover:bg-[#1C2433]"
                           >
-                            <span>Detail</span>
+                            <span>{t.common.detail}</span>
                             <ExternalLink className="w-3 h-3" />
                           </Button>
                         </Link>

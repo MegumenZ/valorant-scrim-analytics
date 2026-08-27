@@ -25,6 +25,7 @@ import {
   Sparkles,
   Share2,
   Check,
+  AlertTriangle,
 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +41,8 @@ import { getOutcomeConfig } from "@/components/matches/match-entry-form";
 import { evaluateMatchTactics } from "@/lib/utils/tactical-expert-engine";
 import { TacticalExpertCard } from "@/components/matches/tactical-expert-card";
 import { ConfirmModal } from "@/components/ui/confirm-modal";
+import { useTranslation } from "@/lib/i18n/context";
+import { translateCoachNotes } from "@/lib/utils/note-translator";
 
 interface MatchDetailViewProps {
   match: MatchWithStats;
@@ -49,10 +52,13 @@ interface MatchDetailViewProps {
 export function MatchDetailView({ match, pastMatches = [] }: MatchDetailViewProps) {
   const router = useRouter();
   const { isAdmin } = useUserRole();
+  const { t, language } = useTranslation();
+  const isEn = language === "en";
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<MatchAttachment | null>(null);
   const [selectedPdf, setSelectedPdf] = useState<MatchAttachment | null>(null);
+  const [showTranslatedNotes, setShowTranslatedNotes] = useState(false);
 
   const attachments: MatchAttachment[] = match.parsedAttachments || [];
 
@@ -89,7 +95,16 @@ export function MatchDetailView({ match, pastMatches = [] }: MatchDetailViewProp
     const topFraggerKd = topFragger ? calculateKD(topFragger.kills, topFragger.deaths) : 0;
     const resultEmoji = match.result === "WIN" ? "✅ WIN" : match.result === "LOSS" ? "❌ LOSS" : "⚖️ DRAW";
 
-    const text = `🎮 **SCRIM MATCH SUMMARY - TEAM SC**
+    const text = isEn
+      ? `🎮 **SCRIM MATCH SUMMARY - TEAM SC**
+🗺️ **Map:** ${match.map} (${match.startSide === "ATTACK" ? "Attack" : "Defense"} Start) | 📅 ${match.matchDate}
+🏆 **Result:** Team SC **${match.scoreTeam} - ${match.scoreOpponent}** ${match.opponentName} (${resultEmoji})
+
+👑 **MVP / Top Fragger:** ${topFragger?.player?.name || "Player"} (${topFragger?.agent}) - ${topFragger?.acs} ACS | ${topFragger?.kills}/${topFragger?.deaths}/${topFragger?.assists} (${topFraggerKd.toFixed(2)} KD)
+
+📊 **Team SC Scoreboard:**
+${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔ **${p.acs} ACS** | ${p.kills}/${p.deaths}/${p.assists} | ${p.firstKills} FK${p.clutchesWon > 0 ? ` | ${p.clutchesWon} Clutch` : ""}`).join("\n")}`
+      : `🎮 **SCRIM MATCH SUMMARY - TEAM SC**
 🗺️ **Map:** ${match.map} (${match.startSide === "ATTACK" ? "Attack" : "Defense"} Start) | 📅 ${match.matchDate}
 🏆 **Hasil:** Team SC **${match.scoreTeam} - ${match.scoreOpponent}** ${match.opponentName} (${resultEmoji})
 
@@ -119,7 +134,7 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
         <Link href="/matches">
           <Button variant="ghost" size="sm" className="gap-1.5 text-xs text-[#94A3B8] hover:text-white">
             <ArrowLeft className="w-4 h-4" />
-            <span>Kembali ke Riwayat</span>
+            <span>{t.matchDetail.backToHistory}</span>
           </Button>
         </Link>
 
@@ -131,17 +146,17 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
             size="sm"
             onClick={handleCopyMatchSummary}
             className="gap-1.5 text-xs text-[#94A3B8] hover:text-white"
-            title="Salin ringkasan match ke format Discord/WhatsApp"
+            title={t.matchDetail.shareToDiscord}
           >
             {isCopiedSummary ? (
               <>
                 <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-emerald-400 font-bold">Tersalin ke Clipboard!</span>
+                <span className="text-emerald-400 font-bold">{t.matchDetail.copiedToClipboard}</span>
               </>
             ) : (
               <>
                 <Share2 className="w-3.5 h-3.5 text-sky-400" />
-                <span>Bagikan ke Discord</span>
+                <span>{t.matchDetail.shareToDiscord}</span>
               </>
             )}
           </Button>
@@ -151,7 +166,7 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
               <Link href={`/matches/${match.id}/edit`}>
                 <Button variant="outline" size="sm" className="gap-1.5 text-xs">
                   <Edit className="w-3.5 h-3.5" />
-                  <span>Edit Match</span>
+                  <span>{t.matchDetail.editMatch}</span>
                 </Button>
               </Link>
               <Button
@@ -162,7 +177,7 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
                 className="gap-1.5 text-xs"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>Hapus</span>
+                <span>{t.matchDetail.deleteMatch}</span>
               </Button>
             </>
           )}
@@ -194,7 +209,8 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
                 {match.matchDate}
               </span>
               <Badge variant={match.startSide === "ATTACK" ? "attack" : "defense"}>
-                Mulai: {match.startSide === "ATTACK" ? "Attack" : "Defense"}
+                {isEn ? "Start: " : "Mulai: "}
+                {match.startSide === "ATTACK" ? t.common.attack : t.common.defense}
               </Badge>
             </div>
 
@@ -202,7 +218,7 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
               Team SC <span className="text-[#64748B] font-normal">vs</span> <span className="text-[#FF4655]">{match.opponentName}</span>
             </h1>
             <p className="text-xs text-[#94A3B8] mt-1">
-              Lokasi: {mapMeta.location}
+              {isEn ? "Location: " : "Lokasi: "}{mapMeta.location}
             </p>
           </div>
 
@@ -218,7 +234,7 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
             </div>
             <div className="text-2xl font-bold text-[#64748B]">:</div>
             <div className="text-center">
-              <div className="text-[11px] font-semibold text-[#94A3B8] uppercase">Lawan</div>
+              <div className="text-[11px] font-semibold text-[#94A3B8] uppercase">{isEn ? "Opponent" : "Lawan"}</div>
               <div className="text-4xl sm:text-5xl font-extrabold text-[#F1F5F9] tabular-nums tracking-tight">
                 {match.scoreOpponent}
               </div>
@@ -234,7 +250,7 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
                 }
                 className="text-xs px-3 py-1 font-bold"
               >
-                {match.result}
+                {match.result === "WIN" ? t.common.win.toUpperCase() : match.result === "LOSS" ? t.common.loss.toUpperCase() : t.common.draw.toUpperCase()}
               </Badge>
             </div>
           </div>
@@ -243,7 +259,7 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
 
       {/* TACTICAL EXPERT & COACH EVALUATION CARD */}
       {(() => {
-        const tacticalReport = evaluateMatchTactics(match, pastMatches);
+        const tacticalReport = evaluateMatchTactics(match, pastMatches, language);
         return <TacticalExpertCard report={tacticalReport} />;
       })()}
 
@@ -252,10 +268,10 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
         <CardHeader className="py-4 px-5 border-b border-[#1C2433]">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base font-bold text-white">
-              Scoreboard Performa Pemain
+              {t.matchDetail.scoreboardTitle}
             </CardTitle>
             <span className="text-xs text-[#94A3B8]">
-              Disortir berdasarkan ACS
+              {t.matchDetail.scoreboardSubtitle}
             </span>
           </div>
         </CardHeader>
@@ -348,13 +364,13 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-[#1C2433] bg-[#090C10] text-[#94A3B8] font-semibold text-[11px]">
-                  <th className="py-3 px-4 sticky left-0 bg-[#090C10] z-10">Pemain</th>
-                  <th className="py-3 px-4">Agent</th>
-                  <th className="py-3 px-4 text-right">ACS</th>
-                  <th className="py-3 px-4 text-center">K / D / A</th>
-                  <th className="py-3 px-4 text-center">K/D Ratio</th>
-                  <th className="py-3 px-4 text-center">First Blood (FK)</th>
-                  <th className="py-3 px-4 text-center">Clutch (1vX)</th>
+                  <th className="py-3 px-4 sticky left-0 bg-[#090C10] z-10">{t.matchDetail.player}</th>
+                  <th className="py-3 px-4">{t.matchDetail.agent}</th>
+                  <th className="py-3 px-4 text-right">{t.matchDetail.acs}</th>
+                  <th className="py-3 px-4 text-center">{t.matchDetail.kda}</th>
+                  <th className="py-3 px-4 text-center">{t.matchDetail.kdRatio}</th>
+                  <th className="py-3 px-4 text-center">{t.matchDetail.firstBlood}</th>
+                  <th className="py-3 px-4 text-center">{t.matchDetail.clutch}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#1C2433]">
@@ -433,7 +449,7 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <CardTitle className="text-sm font-semibold flex items-center gap-2 text-white">
                 <Swords className="w-4 h-4 text-[#FF4655]" />
-                <span>Kronologi Ronde (Round Progression)</span>
+                <span>{t.matchDetail.roundProgressionTitle}</span>
               </CardTitle>
 
               {/* Half Score Summaries */}
@@ -450,11 +466,11 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
                   return (
                     <div className="flex items-center gap-2">
                       <span className="px-2 py-0.5 rounded bg-[#090C10] border border-[#1C2433] text-[#94A3B8]">
-                        Babak 1: <strong className="text-white">{h1Wins}-{h1Loss}</strong>
+                        {isEn ? "1st Half: " : "Babak 1: "}<strong className="text-white">{h1Wins}-{h1Loss}</strong>
                       </span>
                       {h2.length > 0 && (
                         <span className="px-2 py-0.5 rounded bg-[#090C10] border border-[#1C2433] text-[#94A3B8]">
-                          Babak 2: <strong className="text-white">{h2Wins}-{h2Loss}</strong>
+                          {isEn ? "2nd Half: " : "Babak 2: "}<strong className="text-white">{h2Wins}-{h2Loss}</strong>
                         </span>
                       )}
                     </div>
@@ -468,19 +484,19 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-white">Babak 1 (R1 - R12)</span>
+                  <span className="font-bold text-white">{isEn ? "1st Half (R1 - R12)" : "Babak 1 (R1 - R12)"}</span>
                   <Badge variant={match.startSide === "ATTACK" ? "attack" : "defense"} className="text-[10px] py-0 px-2">
-                    {match.startSide === "ATTACK" ? "Attack" : "Defense"}
+                    {match.startSide === "ATTACK" ? t.common.attack : t.common.defense}
                   </Badge>
                 </div>
-                <span className="text-[11px] text-[#94A3B8]">Pistol Round: R1</span>
+                <span className="text-[11px] text-[#94A3B8]">{isEn ? "Pistol Round: R1" : "Pistol Round: R1"}</span>
               </div>
 
               <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-1.5">
                 {match.parsedRoundTimeline.slice(0, 12).map((item) => {
                   const isWin = item.winner === "TEAM";
                   const isPistol = item.round === 1;
-                  const outcomeConfig = getOutcomeConfig(item.side, item.winner, item.outcomeType || item.winType);
+                  const outcomeConfig = getOutcomeConfig(item.side, item.winner, item.outcomeType || item.winType, language);
 
                   return (
                     <div
@@ -503,7 +519,7 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
                         {isWin ? "W" : "L"}
                       </span>
                       <span
-                        title={`${isWin ? "Cara Menang" : "Cara Kalah"}: ${outcomeConfig.label}`}
+                        title={`${isWin ? (isEn ? "Win Method" : "Cara Menang") : (isEn ? "Loss Reason" : "Cara Kalah")}: ${outcomeConfig.label}`}
                         className={`w-full py-0.5 px-0.5 rounded text-[8px] sm:text-[9px] font-bold border truncate text-center ${outcomeConfig.bg} ${outcomeConfig.border} ${outcomeConfig.color}`}
                       >
                         {outcomeConfig.short}
@@ -519,19 +535,19 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
               <div className="space-y-2 pt-2 border-t border-[#1C2433]">
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-white">Babak 2 (R13 - R24)</span>
+                    <span className="font-bold text-white">{isEn ? "2nd Half (R13 - R24)" : "Babak 2 (R13 - R24)"}</span>
                     <Badge variant={match.startSide === "ATTACK" ? "defense" : "attack"} className="text-[10px] py-0 px-2">
-                      {match.startSide === "ATTACK" ? "Defense" : "Attack"}
+                      {match.startSide === "ATTACK" ? t.common.defense : t.common.attack}
                     </Badge>
                   </div>
-                  <span className="text-[11px] text-[#94A3B8]">Pistol Round: R13</span>
+                  <span className="text-[11px] text-[#94A3B8]">{isEn ? "Pistol Round: R13" : "Pistol Round: R13"}</span>
                 </div>
 
                 <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-1.5">
                   {match.parsedRoundTimeline.slice(12, 24).map((item) => {
                     const isWin = item.winner === "TEAM";
                     const isPistol = item.round === 13;
-                    const outcomeConfig = getOutcomeConfig(item.side, item.winner, item.outcomeType || item.winType);
+                    const outcomeConfig = getOutcomeConfig(item.side, item.winner, item.outcomeType || item.winType, language);
 
                     return (
                       <div
@@ -554,7 +570,7 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
                           {isWin ? "W" : "L"}
                         </span>
                         <span
-                          title={`${isWin ? "Cara Menang" : "Cara Kalah"}: ${outcomeConfig.label}`}
+                          title={`${isWin ? (isEn ? "Win Method" : "Cara Menang") : (isEn ? "Loss Reason" : "Cara Kalah")}: ${outcomeConfig.label}`}
                           className={`w-full py-0.5 px-0.5 rounded text-[8px] sm:text-[9px] font-bold border truncate text-center ${outcomeConfig.bg} ${outcomeConfig.border} ${outcomeConfig.color}`}
                         >
                           {outcomeConfig.short}
@@ -570,14 +586,14 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
             {match.parsedRoundTimeline.length > 24 && (
               <div className="space-y-2 pt-2 border-t border-[#1C2433]">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-amber-400">Babak Overtime (OT)</span>
-                  <span className="text-[11px] text-[#94A3B8]">{match.parsedRoundTimeline.length - 24} Ronde Tambahan</span>
+                  <span className="font-bold text-amber-400">{isEn ? "Overtime (OT)" : "Babak Overtime (OT)"}</span>
+                  <span className="text-[11px] text-[#94A3B8]">{match.parsedRoundTimeline.length - 24} {isEn ? "Extra Rounds" : "Ronde Tambahan"}</span>
                 </div>
 
                 <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-1.5">
                   {match.parsedRoundTimeline.slice(24).map((item) => {
                     const isWin = item.winner === "TEAM";
-                    const outcomeConfig = getOutcomeConfig(item.side, item.winner, item.outcomeType || item.winType);
+                    const outcomeConfig = getOutcomeConfig(item.side, item.winner, item.outcomeType || item.winType, language);
 
                     return (
                       <div
@@ -595,7 +611,7 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
                           {isWin ? "W" : "L"}
                         </span>
                         <span
-                          title={`${isWin ? "Cara Menang" : "Cara Kalah"}: ${outcomeConfig.label}`}
+                          title={`${isWin ? (isEn ? "Win Method" : "Cara Menang") : (isEn ? "Loss Reason" : "Cara Kalah")}: ${outcomeConfig.label}`}
                           className={`w-full py-0.5 px-0.5 rounded text-[8px] sm:text-[9px] font-bold border truncate text-center ${outcomeConfig.bg} ${outcomeConfig.border} ${outcomeConfig.color}`}
                         >
                           {outcomeConfig.short}
@@ -628,7 +644,9 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
                   <div className="p-3.5 rounded-xl bg-[#090C10] border border-[#1C2433] space-y-2.5">
                     <div className="flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-emerald-400" />
-                      <span className="text-xs font-bold text-white">Distribusi Cara Menang Tim ({teamWins.length} Ronde)</span>
+                      <span className="text-xs font-bold text-white">
+                        {isEn ? `Team Round Win Methods (${teamWins.length} Rounds)` : `Distribusi Cara Menang Tim (${teamWins.length} Ronde)`}
+                      </span>
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
@@ -641,19 +659,19 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
                       <div className="p-2.5 rounded-lg bg-[#0F141C] border border-amber-500/20 space-y-1">
                         <span className="text-[10px] font-bold text-amber-400 block">Post-Plant (Boom)</span>
                         <div className="text-lg font-black text-white">{detonationWins}</div>
-                        <p className="text-[9px] text-[#94A3B8]">Spike Meledak</p>
+                        <p className="text-[9px] text-[#94A3B8]">Spike Detonated</p>
                       </div>
 
                       <div className="p-2.5 rounded-lg bg-[#0F141C] border border-rose-500/20 space-y-1">
-                        <span className="text-[10px] font-bold text-rose-400 block">Eliminasi</span>
+                        <span className="text-[10px] font-bold text-rose-400 block">{isEn ? "Elimination" : "Eliminasi"}</span>
                         <div className="text-lg font-black text-white">{elimWins}</div>
-                        <p className="text-[9px] text-[#94A3B8]">Duel Bersih</p>
+                        <p className="text-[9px] text-[#94A3B8]">{isEn ? "Team Wiped" : "Duel Bersih"}</p>
                       </div>
 
                       <div className="p-2.5 rounded-lg bg-[#0F141C] border border-emerald-500/20 space-y-1">
-                        <span className="text-[10px] font-bold text-emerald-400 block">Waktu Habis</span>
+                        <span className="text-[10px] font-bold text-emerald-400 block">{isEn ? "Site Stall (0:00)" : "Waktu Habis (0:00)"}</span>
                         <div className="text-lg font-black text-white">{timeWins}</div>
-                        <p className="text-[9px] text-[#94A3B8]">Defender Stall</p>
+                        <p className="text-[9px] text-[#94A3B8]">{isEn ? "On Defense" : "Saat Defense"}</p>
                       </div>
                     </div>
                   </div>
@@ -662,33 +680,35 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
                   {teamLosses.length > 0 && (
                     <div className="p-3.5 rounded-xl bg-[#090C10] border border-[#1C2433] space-y-2.5">
                       <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-rose-400" />
-                        <span className="text-xs font-bold text-white">Distribusi Cara Kalah Tim ({teamLosses.length} Ronde)</span>
+                        <AlertTriangle className="w-4 h-4 text-rose-400" />
+                        <span className="text-xs font-bold text-white">
+                          {isEn ? `Conceded Round Reasons (${teamLosses.length} Rounds)` : `Distribusi Cara Kalah Tim (${teamLosses.length} Ronde)`}
+                        </span>
                       </div>
 
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
                         <div className="p-2.5 rounded-lg bg-[#0F141C] border border-sky-500/20 space-y-1">
-                          <span className="text-[10px] font-bold text-sky-400 block">Musuh Retake</span>
+                          <span className="text-[10px] font-bold text-sky-400 block">{isEn ? "Enemy Retake" : "Musuh Retake"}</span>
                           <div className="text-lg font-black text-white">{defusedLosses}</div>
-                          <p className="text-[9px] text-[#94A3B8]">Saat Attack</p>
+                          <p className="text-[9px] text-[#94A3B8]">{isEn ? "Failed Post-Plant" : "Gagal Tahan Spike"}</p>
                         </div>
 
                         <div className="p-2.5 rounded-lg bg-[#0F141C] border border-amber-500/20 space-y-1">
-                          <span className="text-[10px] font-bold text-amber-400 block">Spike Meledak</span>
+                          <span className="text-[10px] font-bold text-amber-400 block">{isEn ? "Enemy Detonation" : "Spike Musuh Boom"}</span>
                           <div className="text-lg font-black text-white">{detonationLosses}</div>
-                          <p className="text-[9px] text-[#94A3B8]">Saat Defense</p>
+                          <p className="text-[9px] text-[#94A3B8]">{isEn ? "Failed Defuse" : "Gagal Retake"}</p>
                         </div>
 
                         <div className="p-2.5 rounded-lg bg-[#0F141C] border border-rose-500/20 space-y-1">
-                          <span className="text-[10px] font-bold text-rose-400 block">Tereliminasi</span>
+                          <span className="text-[10px] font-bold text-rose-400 block">{isEn ? "Eliminated" : "Tereliminasi"}</span>
                           <div className="text-lg font-black text-white">{elimLosses}</div>
                           <p className="text-[9px] text-[#94A3B8]">Wiped Out</p>
                         </div>
 
                         <div className="p-2.5 rounded-lg bg-[#0F141C] border border-emerald-500/20 space-y-1">
-                          <span className="text-[10px] font-bold text-emerald-400 block">Gagal Plant (0:00)</span>
+                          <span className="text-[10px] font-bold text-emerald-400 block">{isEn ? "Plant Failed (0:00)" : "Gagal Plant (0:00)"}</span>
                           <div className="text-lg font-black text-white">{timeoutLosses}</div>
-                          <p className="text-[9px] text-[#94A3B8]">Saat Attack</p>
+                          <p className="text-[9px] text-[#94A3B8]">{isEn ? "On Attack" : "Saat Attack"}</p>
                         </div>
                       </div>
                     </div>
@@ -708,46 +728,66 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
             <CardTitle className="text-sm flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <FileText className="w-4 h-4 text-rose-500" />
-                <span>Catatan Evaluasi & Lampiran Taktis</span>
+                <span>{t.matchDetail.coachNotesTitle}</span>
               </div>
-              {attachments.length > 0 && (
-                <span className="text-[11px] font-semibold text-slate-400 bg-[#0e131b] px-2 py-0.5 rounded-full border border-[#242e40]">
-                  {attachments.length} Berkas
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {match.notes && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowTranslatedNotes(!showTranslatedNotes)}
+                    className="h-6 px-2 text-[10px] text-sky-400 hover:text-sky-300 bg-sky-500/10 hover:bg-sky-500/20 rounded border border-sky-500/30"
+                  >
+                    {showTranslatedNotes ? t.matchDetail.originalNotes : t.matchDetail.translateNotes}
+                  </Button>
+                )}
+                {attachments.length > 0 && (
+                  <span className="text-[11px] font-semibold text-[#94A3B8] bg-[#090C10] px-2 py-0.5 rounded-full border border-[#1C2433]">
+                    {attachments.length} {isEn ? "Files" : "Berkas"}
+                  </span>
+                )}
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent className="text-xs leading-relaxed text-slate-300 space-y-4">
             {/* Notes Body */}
             {match.notes ? (
-              <p className="whitespace-pre-wrap bg-[#0e131b] p-4 rounded-xl border border-[#242e40]">
-                {match.notes}
-              </p>
+              <div className="space-y-1.5">
+                <p className="whitespace-pre-wrap bg-[#090C10] p-4 rounded-xl border border-[#1C2433]">
+                  {showTranslatedNotes ? translateCoachNotes(match.notes) : match.notes}
+                </p>
+                {showTranslatedNotes && (
+                  <p className="text-[10px] text-sky-400 italic">
+                    * Automated tactical English translation for team leadership review.
+                  </p>
+                )}
+              </div>
             ) : (
               <p className="text-slate-500 italic">
-                Tidak ada catatan evaluasi tertulis untuk pertandingan ini.
+                {t.matchDetail.noNotes}
               </p>
             )}
 
             {/* Attachments Gallery */}
             {attachments.length > 0 && (
-              <div className="space-y-2.5 pt-2 border-t border-[#242e40]">
+              <div className="space-y-2.5 pt-2 border-t border-[#1C2433]">
                 <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                   <ImageIcon className="w-3.5 h-3.5 text-rose-400" />
-                  <span>Dokumen & Screenshot Taktis Coach:</span>
+                  <span>{t.matchDetail.attachmentsSubtitle}</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {attachments.map((att) => (
                     <div
                       key={att.id}
-                      className="p-3 rounded-xl bg-[#0e131b] border border-[#242e40] hover:border-[#3b4b66] transition-all flex flex-col justify-between gap-3 group"
+                      className="p-3 rounded-xl bg-[#090C10] border border-[#1C2433] hover:border-[#2A364F] transition-all flex flex-col justify-between gap-3 group"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         {att.type === "image" ? (
                           <div
                             onClick={() => setSelectedImage(att)}
-                            className="w-10 h-10 rounded-lg bg-[#141a24] border border-[#242e40] overflow-hidden shrink-0 cursor-pointer relative group/thumb"
+                            className="w-10 h-10 rounded-lg bg-[#161D28] border border-[#2A364F] overflow-hidden shrink-0 cursor-pointer relative group/thumb"
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
@@ -777,8 +817,8 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
                             {att.name}
                           </p>
                           <div className="flex items-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
-                            <span className="px-1.5 py-0.2 rounded bg-[#141a24] border border-[#242e40] text-emerald-400 font-semibold uppercase">
-                              {att.type === "image" ? "Gambar" : "PDF"}
+                            <span className="px-1.5 py-0.2 rounded bg-[#161D28] border border-[#2A364F] text-emerald-400 font-semibold uppercase">
+                              {att.type === "image" ? "Image" : "PDF"}
                             </span>
                             <span>{formatFileSize(att.sizeBytes)}</span>
                           </div>
@@ -786,7 +826,7 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
                       </div>
 
                       {/* Action Buttons for Players */}
-                      <div className="flex items-center gap-2 pt-1 border-t border-[#242e40]/60">
+                      <div className="flex items-center gap-2 pt-1 border-t border-[#1C2433]">
                         {att.type === "image" ? (
                           <Button
                             variant="ghost"
@@ -795,7 +835,7 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
                             className="flex-1 h-7 text-[11px] gap-1 text-slate-300 hover:text-white"
                           >
                             <Eye className="w-3 h-3" />
-                            <span>Lihat</span>
+                            <span>{isEn ? "View" : "Lihat"}</span>
                           </Button>
                         ) : (
                           <Button
@@ -805,7 +845,7 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
                             className="flex-1 h-7 text-[11px] gap-1 text-slate-300 hover:text-white"
                           >
                             <Eye className="w-3 h-3" />
-                            <span>Buka PDF</span>
+                            <span>{isEn ? "Open PDF" : "Buka PDF"}</span>
                           </Button>
                         )}
 
@@ -814,10 +854,10 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
                           size="sm"
                           onClick={() => handleDownload(att)}
                           className="h-7 px-2.5 text-[11px] gap-1 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 font-bold"
-                          title="Unduh berkas ke perangkat"
+                          title={t.matchDetail.downloadAttachment}
                         >
                           <Download className="w-3 h-3" />
-                          <span>Unduh</span>
+                          <span>{isEn ? "Download" : "Unduh"}</span>
                         </Button>
                       </div>
                     </div>
@@ -833,28 +873,28 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
           <CardHeader className="pb-3">
             <CardTitle className="text-sm">
               <Tv className="w-4 h-4 text-sky-400" />
-              <span>Video Rekaman VOD Scrim</span>
+              <span>{t.matchDetail.vodReviewTitle}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="text-xs">
             {match.vodUrl ? (
               <div className="space-y-3">
                 <p className="text-slate-300">
-                  Tautan video rekaman scrim tersedia untuk ditinjau:
+                  {t.matchDetail.vodReviewSubtitle}:
                 </p>
                 <a
                   href={match.vodUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 transition-all font-semibold break-all text-xs"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-500/10 border border-sky-500/30 text-sky-400 hover:text-sky-300 hover:bg-sky-500/20 transition-colors font-semibold"
                 >
-                  <Tv className="w-4 h-4 shrink-0 text-rose-400" />
-                  <span>Buka Video VOD ({match.vodUrl})</span>
+                  <ExternalLink className="w-4 h-4" />
+                  <span>{t.matchDetail.watchVod}</span>
                 </a>
               </div>
             ) : (
               <p className="text-slate-500 italic">
-                Belum ada tautan video VOD yang dilampirkan.
+                {isEn ? "No VOD link attached for this match." : "Tidak ada tautan rekaman VOD untuk match ini."}
               </p>
             )}
           </CardContent>
@@ -888,7 +928,7 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
                   className="gap-1.5 h-8 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>Unduh Gambar</span>
+                  <span>{isEn ? "Download Image" : "Unduh Gambar"}</span>
                 </Button>
                 <Button
                   variant="ghost"
@@ -941,7 +981,7 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
                   className="gap-1.5 h-8 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white"
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>Unduh Dokumen PDF</span>
+                  <span>{isEn ? "Download PDF" : "Unduh Dokumen PDF"}</span>
                 </Button>
                 <Button
                   variant="ghost"
@@ -971,10 +1011,10 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         onConfirm={handleDelete}
-        title="Konfirmasi Hapus Scrim"
-        description="Apakah Anda yakin ingin menghapus data pertandingan scrim ini? Seluruh riwayat ronde, statistik pemain, dan lampiran catatan strategi akan dihapus permanen."
-        confirmText="Hapus Match"
-        cancelText="Batal"
+        title={t.matchDetail.deleteConfirmTitle}
+        description={t.matchDetail.deleteConfirmDesc}
+        confirmText={t.common.delete}
+        cancelText={t.common.cancel}
         variant="danger"
         isLoading={isDeleting}
       />

@@ -1,5 +1,6 @@
 import { MatchWithStats } from "@/lib/actions/matches";
 import { RoundItem, RoundOutcomeType } from "@/lib/validations/match";
+import { Language } from "@/lib/i18n/types";
 
 export type TacticalGrade = "S" | "A+" | "A" | "B+" | "B" | "C+" | "C" | "D";
 
@@ -57,15 +58,15 @@ export interface TeamTacticalOverview {
   topTeamPriorities: Array<{ title: string; desc: string; icon: string; urgency: "HIGH" | "MEDIUM" | "LOW" }>;
 }
 
-const GRADE_CONFIG: Record<TacticalGrade, { label: string; color: string; bg: string; border: string }> = {
-  "S": { label: "Masterclass (S)", color: "text-amber-400", bg: "bg-amber-500/15", border: "border-amber-500/40" },
-  "A+": { label: "Sangat Disiplin (A+)", color: "text-emerald-400", bg: "bg-emerald-500/15", border: "border-emerald-500/40" },
-  "A": { label: "Solid & Rapi (A)", color: "text-emerald-400", bg: "bg-emerald-500/15", border: "border-emerald-500/30" },
-  "B+": { label: "Cukup Baik (B+)", color: "text-sky-400", bg: "bg-sky-500/15", border: "border-sky-500/30" },
-  "B": { label: "Standar (B)", color: "text-sky-400", bg: "bg-sky-500/15", border: "border-sky-500/30" },
-  "C+": { label: "Kurang Rapi (C+)", color: "text-amber-400", bg: "bg-amber-500/15", border: "border-amber-500/30" },
-  "C": { label: "Banyak Blunder (C)", color: "text-rose-400", bg: "bg-rose-500/15", border: "border-rose-500/30" },
-  "D": { label: "Struktur Kolaps (D)", color: "text-rose-500", bg: "bg-rose-500/20", border: "border-rose-500/50" },
+const GRADE_CONFIG: Record<TacticalGrade, { labelId: string; labelEn: string; color: string; bg: string; border: string }> = {
+  "S": { labelId: "Masterclass (S)", labelEn: "Masterclass (S)", color: "text-amber-400", bg: "bg-amber-500/15", border: "border-amber-500/40" },
+  "A+": { labelId: "Sangat Disiplin (A+)", labelEn: "Highly Disciplined (A+)", color: "text-emerald-400", bg: "bg-emerald-500/15", border: "border-emerald-500/40" },
+  "A": { labelId: "Solid & Rapi (A)", labelEn: "Solid & Structured (A)", color: "text-emerald-400", bg: "bg-emerald-500/15", border: "border-emerald-500/30" },
+  "B+": { labelId: "Cukup Baik (B+)", labelEn: "Above Average (B+)", color: "text-sky-400", bg: "bg-sky-500/15", border: "border-sky-500/30" },
+  "B": { labelId: "Standar (B)", labelEn: "Standard (B)", color: "text-sky-400", bg: "bg-sky-500/15", border: "border-sky-500/30" },
+  "C+": { labelId: "Kurang Rapi (C+)", labelEn: "Inconsistent (C+)", color: "text-amber-400", bg: "bg-amber-500/15", border: "border-amber-500/30" },
+  "C": { labelId: "Banyak Blunder (C)", color: "text-rose-400", labelEn: "Frequent Blunders (C)", bg: "bg-rose-500/15", border: "border-rose-500/30" },
+  "D": { labelId: "Struktur Kolaps (D)", labelEn: "Collapsed Structure (D)", color: "text-rose-500", bg: "bg-rose-500/20", border: "border-rose-500/50" },
 };
 
 function determineGrade(score: number): TacticalGrade {
@@ -80,12 +81,14 @@ function determineGrade(score: number): TacticalGrade {
 }
 
 /**
- * Menganalisis sebuah pertandingan secara deterministik dan membandingkannya dengan riwayat masa lalu
+ * Menganalisis sebuah pertandingan secara deterministik dan membandingkannya dengan riwayat masa lalu (Bilingual ID / EN)
  */
 export function evaluateMatchTactics(
   currentMatch: MatchWithStats,
-  pastMatches: MatchWithStats[] = []
+  pastMatches: MatchWithStats[] = [],
+  lang: Language = "id"
 ): TacticalMatchReport {
+  const isEn = lang === "en";
   const totalRounds = currentMatch.scoreTeam + currentMatch.scoreOpponent;
   const roundWinRate = totalRounds > 0 ? (currentMatch.scoreTeam / totalRounds) * 100 : 50;
 
@@ -122,72 +125,92 @@ export function evaluateMatchTactics(
     pistolCount++;
     if (r13.winner === "TEAM") pistolWins++;
   }
-  const pistolRate = pistolCount > 0 ? Math.round((pistolWins / pistolCount) * 100) : (currentMatch.scoreTeam >= 13 ? 50 : 35);
+  const pistolRate = pistolCount > 0 ? Math.round((pistolWins / pistolCount) * 100) : 50;
 
-  // 3. Pilar Side Balance (Attack vs Defense)
-  const attackRounds = timeline.filter((r) => r.side === "ATTACK");
-  const defenseRounds = timeline.filter((r) => r.side === "DEFENSE");
-  const attackWins = attackRounds.filter((r) => r.winner === "TEAM").length;
-  const defenseWins = defenseRounds.filter((r) => r.winner === "TEAM").length;
+  // 3. Pilar Side Asymmetry Balance
+  let attackWins = 0;
+  let attackTotal = 0;
+  let defenseWins = 0;
+  let defenseTotal = 0;
 
-  const attackWinRate = attackRounds.length > 0 ? (attackWins / attackRounds.length) * 100 : 50;
-  const defenseWinRate = defenseRounds.length > 0 ? (defenseWins / defenseRounds.length) * 100 : 50;
+  if (timeline.length > 0) {
+    for (const r of timeline) {
+      if (r.side === "ATTACK") {
+        attackTotal++;
+        if (r.winner === "TEAM") attackWins++;
+      } else {
+        defenseTotal++;
+        if (r.winner === "TEAM") defenseWins++;
+      }
+    }
+  } else {
+    // Estimasi jika data kronologi kosong
+    const isAttStart = currentMatch.startSide === "ATTACK";
+    attackWins = isAttStart ? Math.min(12, Math.round(currentMatch.scoreTeam * 0.5)) : Math.round(currentMatch.scoreTeam * 0.5);
+    defenseWins = currentMatch.scoreTeam - attackWins;
+    attackTotal = 12;
+    defenseTotal = totalRounds - 12;
+  }
+
+  const attackWinRate = attackTotal > 0 ? (attackWins / attackTotal) * 100 : 50;
+  const defenseWinRate = defenseTotal > 0 ? (defenseWins / defenseTotal) * 100 : 50;
   const sideDifference = Math.abs(attackWinRate - defenseWinRate);
-  const sideBalanceScore = Math.max(0, Math.round(100 - sideDifference * 0.8));
+  const sideBalanceScore = Math.max(0, Math.min(100, Math.round(100 - sideDifference * 0.8)));
 
   // 4. Pilar Post-Plant & Retake Quality
-  const teamWins = timeline.filter((r) => r.winner === "TEAM");
-  const teamLosses = timeline.filter((r) => r.winner === "OPPONENT");
+  let defuseWins = 0;
+  let defusedLosses = 0;
+  let timeoutLosses = 0;
 
-  const defuseWins = teamWins.filter((r) => (r.outcomeType || r.winType) === "DEFUSE").length;
-  const detonationWins = teamWins.filter((r) => (r.outcomeType || r.winType) === "DETONATION").length;
-  const defusedLosses = teamLosses.filter((r) => (r.outcomeType || r.winType) === "DEFUSE").length;
-  const timeoutLosses = teamLosses.filter((r) => (r.outcomeType || r.winType) === "TIME").length;
+  if (timeline.length > 0) {
+    for (const r of timeline) {
+      if (r.winner === "TEAM" && r.outcomeType === "DEFUSE") defuseWins++;
+      if (r.winner === "OPPONENT" && r.outcomeType === "DEFUSE") defusedLosses++;
+      if (r.winner === "OPPONENT" && r.outcomeType === "TIME") timeoutLosses++;
+    }
+  }
 
-  let postPlantRetakeScore = 70;
-  if (defuseWins >= 3) postPlantRetakeScore += 15;
-  if (detonationWins >= 4) postPlantRetakeScore += 15;
-  if (defusedLosses >= 3) postPlantRetakeScore -= 20;
-  if (timeoutLosses >= 1) postPlantRetakeScore -= 10;
-  postPlantRetakeScore = Math.max(20, Math.min(100, postPlantRetakeScore));
+  const postPlantRetakeScore = Math.min(
+    100,
+    Math.max(20, Math.round(60 + defuseWins * 8 - defusedLosses * 10 - timeoutLosses * 15))
+  );
 
-  // HITUNG TACTICAL SCORE (0 - 100)
-  const rawScore =
-    roundWinRate * 0.30 +
+  // 5. Rumus Nilai Taktis Komposit
+  const weightedScore =
+    roundWinRate * 0.35 +
     tradeRate * 0.25 +
     pistolRate * 0.15 +
     sideBalanceScore * 0.15 +
-    postPlantRetakeScore * 0.15;
+    postPlantRetakeScore * 0.10;
 
-  const score = Math.max(10, Math.min(100, Math.round(rawScore)));
+  const score = Math.min(100, Math.max(0, Math.round(weightedScore)));
   const grade = determineGrade(score);
   const gradeConf = GRADE_CONFIG[grade];
 
-  // 5. Komparasi Tren Historis (Moving Average dari 5 game sebelumnya)
-  const previousMatches = pastMatches.filter((m) => m.id !== currentMatch.id).slice(0, 5);
+  // Hitung tren momentum dibanding scrim terdahulu
+  const previousMatches = pastMatches.filter((m) => m.id !== currentMatch.id);
   let deltaScore = 0;
   let deltaTradeRate = 0;
 
   if (previousMatches.length > 0) {
-    const prevScores = previousMatches.map((m) => {
-      const tot = m.scoreTeam + m.scoreOpponent;
-      const wr = tot > 0 ? (m.scoreTeam / tot) * 100 : 50;
+    const recentScores = previousMatches.slice(0, 3).map((m) => {
+      const totR = m.scoreTeam + m.scoreOpponent;
+      const wr = totR > 0 ? (m.scoreTeam / totR) * 100 : 50;
       return wr;
     });
-    const avgPrevWinRate = prevScores.reduce((a, b) => a + b, 0) / prevScores.length;
-    deltaScore = Math.round(roundWinRate - avgPrevWinRate);
-    deltaTradeRate = Math.round(tradeRate - 50); // Baseline normal 50%
+    const avgPrevWr = recentScores.reduce((a, b) => a + b, 0) / recentScores.length;
+    deltaScore = Math.round(roundWinRate - avgPrevWr);
   }
 
   const isImproving = deltaScore >= 0;
   const trendLabel =
     previousMatches.length === 0
-      ? "Pertandingan Evaluasi Awal"
+      ? isEn ? "Initial Evaluation Match" : "Pertandingan Evaluasi Awal"
       : deltaScore > 5
-      ? `📈 Performa Naik (+${deltaScore}% vs Baseline)`
+      ? isEn ? `📈 Performance Up (+${deltaScore}% vs Baseline)` : `📈 Performa Naik (+${deltaScore}% vs Baseline)`
       : deltaScore < -5
-      ? `📉 Performa Turun (${deltaScore}% vs Baseline)`
-      : `⚖️ Performa Stabil (Konsisten)`;
+      ? isEn ? `📉 Performance Down (${deltaScore}% vs Baseline)` : `📉 Performa Turun (${deltaScore}% vs Baseline)`
+      : isEn ? "⚖️ Stable Performance (Consistent)" : "⚖️ Performa Stabil (Konsisten)";
 
   // 6. Heuristic Insights Generator (Strengths, Weaknesses, Drills)
   const strengths: TacticalInsight[] = [];
@@ -198,23 +221,29 @@ export function evaluateMatchTactics(
   if (tradeRate >= 60) {
     strengths.push({
       category: "STRENGTH",
-      title: `Crosshair Spacing Rapat (${tradeRate}% Trade Rate)`,
-      desc: "Koordinasi refrag sangat disiplin. Setiap kehilangan anggota tim langsung dibalas cepat tanpa memberi keuntungan orang pada musuh.",
+      title: isEn ? `Tight Crosshair Spacing (${tradeRate}% Trade Rate)` : `Crosshair Spacing Rapat (${tradeRate}% Trade Rate)`,
+      desc: isEn
+        ? "Refrag coordination was highly disciplined. Teammate losses were immediately traded without conceding man advantages."
+        : "Koordinasi refrag sangat disiplin. Setiap kehilangan anggota tim langsung dibalas cepat tanpa memberi keuntungan orang pada musuh.",
       icon: "Swords",
       impact: "HIGH",
     });
   } else if (tradeRate < 45) {
     weaknesses.push({
       category: "FLAW",
-      title: `Banyak Kematian Terisolasi (${untradedDeaths} Dry Deaths)`,
-      desc: "Pemain terlalu sering ter-pick-off sendirian saat rotasi atau eksekusi site tanpa rekan di jarak pendukung (refrag distance).",
+      title: isEn ? `Excessive Dry Deaths (${untradedDeaths} Untraded Deaths)` : `Banyak Kematian Terisolasi (${untradedDeaths} Dry Deaths)`,
+      desc: isEn
+        ? "Players were repeatedly picked off alone during rotations or site hits without teammate support in trading distance."
+        : "Pemain terlalu sering ter-pick-off sendirian saat rotasi atau eksekusi site tanpa rekan di jarak pendukung (refrag distance).",
       icon: "AlertTriangle",
       impact: "HIGH",
     });
     drills.push({
       category: "DRILL",
-      title: "Buddy-System & Spacing Execution Drill",
-      desc: "Latihan masuk site berpasangan (jarak maksimal 3-5 meter) agar duel pertama selalu terlindungi crossfire teman.",
+      title: isEn ? "Buddy-System & Spacing Execution Drill" : "Buddy-System & Spacing Execution Drill",
+      desc: isEn
+        ? "Practice paired site entries (max 3-5m spacing) so opening duels are always covered by a teammate's crossfire."
+        : "Latihan masuk site berpasangan (jarak maksimal 3-5 meter) agar duel pertama selalu terlindungi crossfire teman.",
       icon: "Users",
       impact: "HIGH",
     });
@@ -224,23 +253,29 @@ export function evaluateMatchTactics(
   if (pistolWins === 2 && pistolCount === 2) {
     strengths.push({
       category: "STRENGTH",
-      title: "Pistol Round Clean Sweep (2/2 Menang)",
-      desc: "Dominasi penuh di ronde pembuka kedua babak, memberikan keunggulan ekonomi beruntun untuk ronde berikutnya.",
+      title: isEn ? "Pistol Round Clean Sweep (2/2 Won)" : "Pistol Round Clean Sweep (2/2 Menang)",
+      desc: isEn
+        ? "Total dominance in both half opening pistol rounds, securing rolling economic advantages into subsequent rounds."
+        : "Dominasi penuh di ronde pembuka kedua babak, memberikan keunggulan ekonomi beruntun untuk ronde berikutnya.",
       icon: "Crosshair",
       impact: "MEDIUM",
     });
   } else if (pistolWins === 0 && pistolCount > 0) {
     weaknesses.push({
       category: "FLAW",
-      title: "Kalah di Seluruh Pistol Round (0/2)",
-      desc: "Kehilangan kedua ronde pistol membebani ekonomi tim dan memaksa tim bermain eco/semi-buy lebih sering.",
+      title: isEn ? "Lost All Pistol Rounds (0/2)" : "Kalah di Seluruh Pistol Round (0/2)",
+      desc: isEn
+        ? "Conceding both pistol rounds strained the team economy and forced frequent eco/semi-buy scenarios."
+        : "Kehilangan kedua ronde pistol membebani ekonomi tim dan memaksa tim bermain eco/semi-buy lebih sering.",
       icon: "TrendingDown",
       impact: "MEDIUM",
     });
     drills.push({
       category: "DRILL",
-      title: "Pistol Round Default & Crossfire Setup",
-      desc: "Perbaiki strategi round 1 dengan setup crossfire dan positioning sudut rapat daripada adu duel satu lawan satu.",
+      title: isEn ? "Pistol Round Default & Crossfire Setup" : "Pistol Round Default & Crossfire Setup",
+      desc: isEn
+        ? "Revamp round 1 defaults with crossfire setups and tight angle positioning rather than taking isolated 50/50 duels."
+        : "Perbaiki strategi round 1 dengan setup crossfire dan positioning sudut rapat daripada adu duel satu lawan satu.",
       icon: "ShieldAlert",
       impact: "MEDIUM",
     });
@@ -250,8 +285,10 @@ export function evaluateMatchTactics(
   if (defuseWins >= 3) {
     strengths.push({
       category: "STRENGTH",
-      title: `Retake Protocol Sangat Solid (${defuseWins} Kali Defuse)`,
-      desc: "Koordinasi retake defensif berjalan rapi saat membersihkan site dan mengamankan defuse spike.",
+      title: isEn ? `Solid Retake Protocol (${defuseWins} Successful Defuses)` : `Retake Protocol Sangat Solid (${defuseWins} Kali Defuse)`,
+      desc: isEn
+        ? "Defensive retake protocols were executed cleanly when clearing site angles and securing defuses."
+        : "Koordinasi retake defensif berjalan rapi saat membersihkan site dan mengamankan defuse spike.",
       icon: "ShieldCheck",
       impact: "HIGH",
     });
@@ -260,15 +297,19 @@ export function evaluateMatchTactics(
   if (defusedLosses >= 3) {
     weaknesses.push({
       category: "FLAW",
-      title: `Post-Plant Rentan Dibongkar (${defusedLosses} Kali Gagal Tahan Spike)`,
-      desc: "Spike sudah terpasang namun posisi penjagaan pasca-plant mudah diisolasi oleh manuver retake tim lawan.",
+      title: isEn ? `Vulnerable Post-Plant (${defusedLosses} Failed Spike Holds)` : `Post-Plant Rentan Dibongkar (${defusedLosses} Kali Gagal Tahan Spike)`,
+      desc: isEn
+        ? "Spikes were planted but post-plant holding positions were easily dismantled by enemy retake utility."
+        : "Spike sudah terpasang namun posisi penjagaan pasca-plant mudah diisolasi oleh manuver retake tim lawan.",
       icon: "Bomb",
       impact: "HIGH",
     });
     drills.push({
       category: "DRILL",
-      title: "Post-Plant Crossfire & Delay Position",
-      desc: "Terapkan setup posisi crossfire pasca-plant yang saling melindungi untuk menghabiskan timer defuse lawan.",
+      title: isEn ? "Post-Plant Crossfire & Delay Positioning" : "Post-Plant Crossfire & Delay Position",
+      desc: isEn
+        ? "Establish layered post-plant crossfire positions designed specifically to bleed the enemy defuse timer."
+        : "Terapkan setup posisi crossfire pasca-plant yang saling melindungi untuk menghabiskan timer defuse lawan.",
       icon: "Timer",
       impact: "HIGH",
     });
@@ -277,8 +318,10 @@ export function evaluateMatchTactics(
   if (timeoutLosses >= 1) {
     weaknesses.push({
       category: "FLAW",
-      title: "Eksekusi Terlambat (Kalah Kehabisan Waktu 0:00)",
-      desc: "Rotasi dan pengambilan keputusan mid-round terlalu lambat sehingga waktu habis sebelum sempat memasang spike.",
+      title: isEn ? "Delayed Execution (Loss to 0:00 Timer Expired)" : "Eksekusi Terlambat (Kalah Kehabisan Waktu 0:00)",
+      desc: isEn
+        ? "Mid-round decision making and rotations were overly hesitant, causing time to expire before getting the spike down."
+        : "Rotasi dan pengambilan keputusan mid-round terlalu lambat sehingga waktu habis sebelum sempat memasang spike.",
       icon: "Clock",
       impact: "MEDIUM",
     });
@@ -289,15 +332,21 @@ export function evaluateMatchTactics(
     const weakerSide = attackWinRate < defenseWinRate ? "Attack" : "Defense";
     weaknesses.push({
       category: "FLAW",
-      title: `Ketimpangan Sisi ${weakerSide} (${Math.round(weakerSide === "Attack" ? attackWinRate : defenseWinRate)}% Winrate)`,
-      desc: `Tim bermain jauh lebih dominan di satu sisi namun kesulitan beradaptasi saat bertukar peran ke sisi ${weakerSide}.`,
+      title: isEn
+        ? `${weakerSide} Side Deficit (${Math.round(weakerSide === "Attack" ? attackWinRate : defenseWinRate)}% Winrate)`
+        : `Ketimpangan Sisi ${weakerSide} (${Math.round(weakerSide === "Attack" ? attackWinRate : defenseWinRate)}% Winrate)`,
+      desc: isEn
+        ? `The team dominated on one side but struggled severely to convert rounds after swapping to ${weakerSide}.`
+        : `Tim bermain jauh lebih dominan di satu sisi namun kesulitan beradaptasi saat bertukar peran ke sisi ${weakerSide}.`,
       icon: "Split",
       impact: "HIGH",
     });
     drills.push({
       category: "DRILL",
-      title: `Khusus Drill Sisi ${weakerSide} di Map ${currentMatch.map}`,
-      desc: `Lakukan scrim khusus 12 ronde berturut-turut pada sisi ${weakerSide} untuk memperkaya variasi default setup.`,
+      title: isEn ? `${weakerSide} Side Tactical Drill on ${currentMatch.map}` : `Khusus Drill Sisi ${weakerSide} di Map ${currentMatch.map}`,
+      desc: isEn
+        ? `Run a targeted 12-round scrim block specifically on ${weakerSide} to expand default playbook variations.`
+        : `Lakukan scrim khusus 12 ronde berturut-turut pada sisi ${weakerSide} untuk memperkaya variasi default setup.`,
       icon: "Target",
       impact: "HIGH",
     });
@@ -312,8 +361,10 @@ export function evaluateMatchTactics(
   if (mvp && mvp.acs >= 270) {
     strengths.push({
       category: "STRENGTH",
-      title: `Impact Fragging Dominan (${mvp.agent} - ${mvp.acs} ACS)`,
-      desc: `Kontribusi opening kill dan damage dari ${mvp.agent} sangat konsisten membuka ruang bagi tim.`,
+      title: isEn ? `Dominant Impact Fragging (${mvp.agent} - ${mvp.acs} ACS)` : `Impact Fragging Dominan (${mvp.agent} - ${mvp.acs} ACS)`,
+      desc: isEn
+        ? `Opening duels and heavy combat damage from ${mvp.agent} consistently generated map control and space.`
+        : `Kontribusi opening kill dan damage dari ${mvp.agent} sangat konsisten membuka ruang bagi tim.`,
       icon: "Trophy",
       impact: "MEDIUM",
     });
@@ -323,8 +374,10 @@ export function evaluateMatchTactics(
   if (strengths.length === 0) {
     strengths.push({
       category: "STRENGTH",
-      title: "Struktur Permainan Fundamental Stabil",
-      desc: "Tidak ada kesalahan individual fatal yang mencolok, fundamental tim berjalan sesuai rencana standar.",
+      title: isEn ? "Stable Tactical Fundamentals" : "Struktur Permainan Fundamental Stabil",
+      desc: isEn
+        ? "No major individual mistakes noticed; team fundamentals operated consistently according to playbook."
+        : "Tidak ada kesalahan individual fatal yang mencolok, fundamental tim berjalan sesuai rencana standar.",
       icon: "CheckCircle2",
       impact: "LOW",
     });
@@ -333,8 +386,10 @@ export function evaluateMatchTactics(
   if (weaknesses.length === 0) {
     weaknesses.push({
       category: "FLAW",
-      title: "Optimasi Detail Mikro & Disiplin Posisi",
-      desc: "Secara taktis pertandingan berjalan sangat bersih tanpa kesalahan fatal. Pertahankan disiplin sudut duel dan tempo rotasi.",
+      title: isEn ? "Micro Detail & Positional Discipline" : "Optimasi Detail Mikro & Disiplin Posisi",
+      desc: isEn
+        ? "Tactically clean match without glaring leaks. Maintain angle discipline and rotation pacing."
+        : "Secara taktis pertandingan berjalan sangat bersih tanpa kesalahan fatal. Pertahankan disiplin sudut duel dan tempo rotasi.",
       icon: "Sparkles",
       impact: "LOW",
     });
@@ -343,22 +398,28 @@ export function evaluateMatchTactics(
   if (drills.length === 0) {
     drills.push({
       category: "DRILL",
-      title: "Pertahankan Struktur & Poles Komunikasi Mid-Round",
-      desc: "Pertahankan struktur rotasi yang sudah solid dan pertajam calling informasi di detik-detik krusial.",
+      title: isEn ? "Maintain Structure & Polish Mid-Round Calling" : "Pertahankan Struktur & Poles Komunikasi Mid-Round",
+      desc: isEn
+        ? "Preserve solid rotation architecture and sharpen crucial information comms under high-pressure seconds."
+        : "Pertahankan struktur rotasi yang sudah solid dan pertajam calling informasi di detik-detik krusial.",
       icon: "Flame",
       impact: "LOW",
     });
   }
 
   // Ringkasan Eksekutif Otomatis
-  const summary = currentMatch.result === "WIN"
-    ? `Kemenangan meyakinkan ${currentMatch.scoreTeam}-${currentMatch.scoreOpponent} di ${currentMatch.map}. Sisi ${defenseWinRate >= attackWinRate ? "Defense" : "Attack"} berjalan solid dengan trade rate ${tradeRate}%. Pertahankan disiplin refrag dan setup retake.`
-    : `Pertandingan ketat ${currentMatch.scoreTeam}-${currentMatch.scoreOpponent} di ${currentMatch.map}. Celah utama terletak pada ${weaknesses[0]?.title.toLowerCase() || "koordinasi spacing"}. Segera benahi sebelum scrim berikutnya.`;
+  const summary = isEn
+    ? currentMatch.result === "WIN"
+      ? `Convincing ${currentMatch.scoreTeam}-${currentMatch.scoreOpponent} victory on ${currentMatch.map}. ${defenseWinRate >= attackWinRate ? "Defense" : "Attack"} side performed solidly with a ${tradeRate}% trade rate. Maintain refrag discipline and retake protocols.`
+      : `Tight ${currentMatch.scoreTeam}-${currentMatch.scoreOpponent} match on ${currentMatch.map}. Key leak stemmed from ${weaknesses[0]?.title.toLowerCase() || "spacing coordination"}. Address immediately before the next scrim block.`
+    : currentMatch.result === "WIN"
+      ? `Kemenangan meyakinkan ${currentMatch.scoreTeam}-${currentMatch.scoreOpponent} di ${currentMatch.map}. Sisi ${defenseWinRate >= attackWinRate ? "Defense" : "Attack"} berjalan solid dengan trade rate ${tradeRate}%. Pertahankan disiplin refrag dan setup retake.`
+      : `Pertandingan ketat ${currentMatch.scoreTeam}-${currentMatch.scoreOpponent} di ${currentMatch.map}. Celah utama terletak pada ${weaknesses[0]?.title.toLowerCase() || "koordinasi spacing"}. Segera benahi sebelum scrim berikutnya.`;
 
   return {
     score,
     grade,
-    gradeLabel: gradeConf.label,
+    gradeLabel: isEn ? gradeConf.labelEn : gradeConf.labelId,
     gradeColor: gradeConf.color,
     gradeBg: gradeConf.bg,
     gradeBorder: gradeConf.border,
@@ -388,9 +449,11 @@ export function evaluateMatchTactics(
 }
 
 /**
- * Menghitung ringkasan kesehatan taktis tim secara keseluruhan dari seluruh riwayat pertandingan
+ * Menghitung ringkasan kesehatan taktis tim secara keseluruhan dari seluruh riwayat pertandingan (Bilingual ID / EN)
  */
-export function evaluateTeamTacticalHealth(matches: MatchWithStats[]): TeamTacticalOverview {
+export function evaluateTeamTacticalHealth(matches: MatchWithStats[], lang: Language = "id"): TeamTacticalOverview {
+  const isEn = lang === "en";
+
   if (!matches || matches.length === 0) {
     return {
       averageScore: 70,
@@ -400,13 +463,18 @@ export function evaluateTeamTacticalHealth(matches: MatchWithStats[]): TeamTacti
       strongestMap: null,
       weakestMap: null,
       topTeamPriorities: [
-        { title: "Mulai Rekam Pertandingan Scrim", desc: "Catat beberapa game scrim untuk mengaktifkan Tactical Engine.", icon: "Sparkles", urgency: "LOW" },
+        {
+          title: isEn ? "Start Recording Scrim Matches" : "Mulai Rekam Pertandingan Scrim",
+          desc: isEn ? "Record several scrim matches to activate the Tactical Engine." : "Catat beberapa game scrim untuk mengaktifkan Tactical Engine.",
+          icon: "Sparkles",
+          urgency: "LOW",
+        },
       ],
     };
   }
 
   // Hitung score per match
-  const reports = matches.map((m) => evaluateMatchTactics(m, matches));
+  const reports = matches.map((m) => evaluateMatchTactics(m, matches, lang));
   const avgScore = Math.round(reports.reduce((acc, r) => acc + r.score, 0) / reports.length);
   const overallGrade = determineGrade(avgScore);
 
@@ -444,15 +512,19 @@ export function evaluateTeamTacticalHealth(matches: MatchWithStats[]): TeamTacti
 
   if (currTrade < 48) {
     topTeamPriorities.push({
-      title: "Perbaiki Crosshair Spacing & Refrag Speed",
-      desc: `Rata-rata trade tim (${currTrade}%) masih berada di bawah ambang standar kompetitif (55%). Prioritaskan drill buddy-system.`,
+      title: isEn ? "Improve Crosshair Spacing & Refrag Speed" : "Perbaiki Crosshair Spacing & Refrag Speed",
+      desc: isEn
+        ? `Team trade average (${currTrade}%) sits below competitive threshold (55%). Prioritize buddy-system drills.`
+        : `Rata-rata trade tim (${currTrade}%) masih berada di bawah ambang standar kompetitif (55%). Prioritaskan drill buddy-system.`,
       icon: "Swords",
       urgency: "HIGH",
     });
   } else {
     topTeamPriorities.push({
-      title: "Pertahankan Konsistensi Spacing",
-      desc: `Disiplin trade tim (${currTrade}%) sudah sangat solid. Terus asah koordinasi eksekusi site dan tempo rotasi.`,
+      title: isEn ? "Maintain Spacing Consistency" : "Pertahankan Konsistensi Spacing",
+      desc: isEn
+        ? `Team trade discipline (${currTrade}%) is solid. Continue polishing site hit timings and rotation tempo.`
+        : `Disiplin trade tim (${currTrade}%) sudah sangat solid. Terus asah koordinasi eksekusi site dan tempo rotasi.`,
       icon: "ShieldCheck",
       urgency: "MEDIUM",
     });
@@ -460,8 +532,10 @@ export function evaluateTeamTacticalHealth(matches: MatchWithStats[]): TeamTacti
 
   if (weakestMap && weakestMap.winrate < 45) {
     topTeamPriorities.push({
-      title: `Rombak Playbook Map ${weakestMap.map}`,
-      desc: `Winrate tim di ${weakestMap.map} hanya ${weakestMap.winrate}% (${weakestMap.matchCount} game). Butuh sesi teori & evaluasi setup default.`,
+      title: isEn ? `Revamp Playbook for Map ${weakestMap.map}` : `Rombak Playbook Map ${weakestMap.map}`,
+      desc: isEn
+        ? `Team winrate on ${weakestMap.map} is only ${weakestMap.winrate}% across ${weakestMap.matchCount} games. Needs a dedicated tactical theory session.`
+        : `Winrate tim di ${weakestMap.map} hanya ${weakestMap.winrate}% (${weakestMap.matchCount} game). Butuh sesi teori & evaluasi setup default.`,
       icon: "MapPin",
       urgency: "HIGH",
     });
@@ -484,4 +558,3 @@ export function evaluateTeamTacticalHealth(matches: MatchWithStats[]): TeamTacti
 }
 
 export const calculateTacticalMetrics = evaluateTeamTacticalHealth;
-
