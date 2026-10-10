@@ -3,17 +3,19 @@ import { SignJWT, jwtVerify } from "jose";
 import { db, ensureDbInitialized } from "../db";
 import { users, players, User } from "../db/schema";
 import { eq } from "drizzle-orm";
+import { getSessionSecret } from "./session-secret";
 
 const COOKIE_NAME = "valo_scrim_session";
 const SESSION_EXPIRATION_SECONDS = 7 * 24 * 60 * 60; // 7 days
 
-// Encryption secret from AUTH_SECRET or auto-generated fallback
-const authSecretString =
-  process.env.AUTH_SECRET ||
-  process.env.DISCORD_CLIENT_SECRET ||
-  "valorant-scrim-analytics-secure-secret-key-32-chars";
+export const DEMO_ADMIN_DISCORD_ID = "100000000000000001";
+export const DEMO_MEMBER_DISCORD_ID = "100000000000000002";
 
-const encodedSecret = new TextEncoder().encode(authSecretString);
+export function isDemoAccount(discordId: string): boolean {
+  return discordId === DEMO_ADMIN_DISCORD_ID || discordId === DEMO_MEMBER_DISCORD_ID;
+}
+
+const encodedSecret = new TextEncoder().encode(getSessionSecret());
 
 export interface SessionPayload {
   userId: string;
@@ -59,11 +61,6 @@ export async function isAuthorizedTeamMember(discordId: string, username?: strin
   );
 
   if (isRosterMatch) {
-    return true;
-  }
-
-  // 4. Initial fallback if no whitelist set in .env
-  if (adminIds.length === 0 && memberIds.length === 0) {
     return true;
   }
 

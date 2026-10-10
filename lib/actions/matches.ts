@@ -1,406 +1,101 @@
 "use server";
 
-import { db, ensureDbInitialized } from "../db";
-import { matches, matchPlayerStats, players, Match, Player, MatchPlayerStat, MatchAttachment } from "../db/schema";
-import { eq, desc, asc, sql } from "drizzle-orm";
-import { revalidatePath, updateTag } from "next/cache";
+import { client, db, ensureDbInitialized } from "../db";
+import { matches, matchPlayerStats, opponentMatchPlayerStats, players, Match, Player, MatchPlayerStat, MatchAttachment, OpponentMatchPlayerStat } from "../db/schema";
+import { eq, desc, sql, and, gte } from "drizzle-orm";
+import { revalidatePath, unstable_cache } from "next/cache";
 import { createId } from "@paralleldrive/cuid2";
-import { matchSchema, matchInputSchema, MatchInput, RoundItem } from "../validations/match";
-import { calculateKD, calculateOpeningDuelRatio, calculateMatchResult, DashboardSummary, MapAggregateStats } from "../utils/analytics";
-import { VALORANT_MAPS, ValorantMap } from "../data/valorant";
+import { matchSchema, MatchInput, RoundItem, getMatchWarnings } from "../validations/match";
+import { calculateMatchResult, DashboardSummary, MapAggregateStats } from "../utils/analytics";
+import { RosterDashboardRow } from "../utils/dashboard-aggregates";
 import { ActionResponse } from "../types/action";
+import { resolveRoundTimelineForUpdate } from "../utils/match-timeline";
+import { resolvePreservedAttachments } from "../utils/preserved-attachments";
+import { hasMissingEventsForNewPlayers } from "../utils/match-edit-validation";
+import { invalidateScrimReadCache } from "../utils/cache-invalidation";
+import { DASHBOARD_AGGREGATE_SQL, MAP_AGGREGATE_SQL, includeEmptyMaps, mapDashboardAggregateRows, mapMapAggregateRows } from "../utils/sql-analytics";
 
 export interface MatchWithStats extends Omit<Match, "attachments"> {
   attachments?: string | null;
   playerStats: Array<MatchPlayerStat & { player: Player }>;
+  opponentPlayerStats?: OpponentMatchPlayerStat[];
   parsedAttachments?: MatchAttachment[];
   parsedRoundTimeline?: RoundItem[];
 }
 
-export async function getDashboardSummary(): Promise<{
+export type DashboardRecentMatch = Pick<Match, "id" | "matchDate" | "map" | "opponentName" | "scoreTeam" | "scoreOpponent" | "result"> & {
+  playerStats: Array<MatchPlayerStat & { player: Player }>;
+};
+
+type DashboardPeriod = "7d" | "30d" | "all";
+
+function getDashboardCutoff(period: DashboardPeriod): string | null {
+  if (period === "all") return null;
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  const cutoff = new Date(Date.UTC(Number(values.year), Number(values.month) - 1, Number(values.day)));
+  cutoff.setUTCDate(cutoff.getUTCDate() - (period === "7d" ? 6 : 29));
+  return cutoff.toISOString().slice(0, 10);
+}
+
+const readDashboardSummary = unstable_cache(async (cutoff: string | null) => {
+  const aggregateResult = await client.execute({ sql: DASHBOARD_AGGREGATE_SQL, args: [cutoff, cutoff] });
+  const { summary, leaderboard } = mapDashboardAggregateRows(aggregateResult.rows as unknown as Array<Record<string, unknown>>);
+  const recentMatches = await db.query.matches.findMany({
+    columns: {
+      id: true, matchDate: true, map: true, opponentName: true, scoreTeam: true,
+      scoreOpponent: true, result: true, attachments: false, roundTimeline: false,
+    },
+    where: cutoff ? gte(matches.matchDate, cutoff) : undefined,
+    orderBy: [desc(matches.matchDate), desc(matches.createdAt)],
+    limit: 10,
+    with: {
+      playerStats: {
+        columns: { id: true, matchId: true, playerId: true, agent: true, acs: true, kills: true, deaths: true, assists: true },
+        with: { player: { columns: { id: true, name: true, riotId: true, primaryRole: true, discordId: true, isActive: true, createdAt: true } } },
+      },
+    },
+  }) as DashboardRecentMatch[];
+  return { summary, recentMatches, leaderboard };
+}, ["dashboard-summary-by-period"], { tags: ["matches", "players"] });
+
+export async function getDashboardSummary(period: DashboardPeriod = "all"): Promise<{
   summary: DashboardSummary;
-  recentMatches: MatchWithStats[];
-  allMatches: MatchWithStats[];
-  leaderboard: Array<{
-    player: Player;
-    matches: number;
-    avgAcs: number;
-    avgAdr: number;
-    kdRatio: number;
-    hsPercent: number;
-    firstKills: number;
-    firstDeaths: number;
-    clutchesWon: number;
-  }>;
+  recentMatches: DashboardRecentMatch[];
+  leaderboard: RosterDashboardRow[];
 }> {
   await ensureDbInitialized();
+  return readDashboardSummary(getDashboardCutoff(period));
+}
 
-  // Fetch all matches (omit heavy attachments column for dashboard aggregate)
-  const allMatches = await db.query.matches.findMany({
+const readAllMatches = unstable_cache(async (params?: { map?: string; result?: string; opponent?: string }) => {
+  const conditions = [];
+  if (params?.map && params.map !== "ALL") conditions.push(eq(matches.map, params.map as typeof matches.$inferSelect.map));
+  if (params?.result && params.result !== "ALL") conditions.push(eq(matches.result, params.result as typeof matches.$inferSelect.result));
+  if (params?.opponent) conditions.push(sql`instr(lower(${matches.opponentName}), lower(${params.opponent})) > 0`);
+  const all = await db.query.matches.findMany({
     columns: {
-      attachments: false,
+      id: true, matchDate: true, map: true, opponentName: true, scoreTeam: true,
+      scoreOpponent: true, result: true, startSide: true, vodUrl: true, notes: true,
+      createdAt: true, attachments: false, roundTimeline: false,
     },
+    where: conditions.length ? and(...conditions) : undefined,
     orderBy: [desc(matches.matchDate), desc(matches.createdAt)],
     with: {
       playerStats: {
-        with: {
-          player: true,
+        columns: {
+          id: true, matchId: true, playerId: true, agent: true, acs: true, kills: true,
+          deaths: true, assists: true, adr: true, hsPercent: true, firstKills: true,
+          firstDeaths: true, clutchesWon: true, kastPercent: true, plants: true, defuses: true,
         },
+        with: { player: { columns: { id: true, name: true, riotId: true, primaryRole: true, discordId: true, isActive: true, createdAt: true } } },
       },
     },
   });
-
-  const totalMatches = allMatches.length;
-  let wins = 0;
-  let losses = 0;
-  let draws = 0;
-  let totalScoreTeam = 0;
-  let totalScoreOpponent = 0;
-
-  let attackStartMatches = 0;
-  let attackStartWins = 0;
-  let defenseStartMatches = 0;
-  let defenseStartWins = 0;
-
-  const mapStatsMap = new Map<ValorantMap, { total: number; wins: number; losses: number; draws: number }>();
-  for (const m of VALORANT_MAPS) {
-    mapStatsMap.set(m, { total: 0, wins: 0, losses: 0, draws: 0 });
-  }
-
-  let grandTotalAcs = 0;
-  let grandTotalAdr = 0;
-  let grandTotalStatsCount = 0;
-
-  for (const match of allMatches) {
-    if (match.result === "WIN") wins++;
-    else if (match.result === "LOSS") losses++;
-    else draws++;
-
-    totalScoreTeam += match.scoreTeam;
-    totalScoreOpponent += match.scoreOpponent;
-
-    if (match.startSide === "ATTACK") {
-      attackStartMatches++;
-      if (match.result === "WIN") attackStartWins++;
-    } else {
-      defenseStartMatches++;
-      if (match.result === "WIN") defenseStartWins++;
-    }
-
-    const currentMapStat = mapStatsMap.get(match.map as ValorantMap) || { total: 0, wins: 0, losses: 0, draws: 0 };
-    currentMapStat.total++;
-    if (match.result === "WIN") currentMapStat.wins++;
-    else if (match.result === "LOSS") currentMapStat.losses++;
-    else currentMapStat.draws++;
-    mapStatsMap.set(match.map as ValorantMap, currentMapStat);
-
-    for (const stat of match.playerStats) {
-      grandTotalAcs += stat.acs;
-      grandTotalAdr += stat.adr;
-      grandTotalStatsCount++;
-    }
-  }
-
-  const winRate = totalMatches > 0 ? Number(((wins / totalMatches) * 100).toFixed(1)) : 0;
-  const teamAvgAcs = grandTotalStatsCount > 0 ? Number((grandTotalAcs / grandTotalStatsCount).toFixed(1)) : 0;
-  const teamAvgAdr = grandTotalStatsCount > 0 ? Number((grandTotalAdr / grandTotalStatsCount).toFixed(1)) : 0;
-
-  const attackWinRate = attackStartMatches > 0 ? Number(((attackStartWins / attackStartMatches) * 100).toFixed(1)) : 0;
-  const defenseWinRate = defenseStartMatches > 0 ? Number(((defenseStartWins / defenseStartMatches) * 100).toFixed(1)) : 0;
-
-  // Find strongest map (min 1 match, highest win rate)
-  let bestMap: ValorantMap | "N/A" = "N/A";
-  let bestMapWr = -1;
-  let bestMapWins = 0;
-  let bestMapLosses = 0;
-
-  const mapBreakdown = Array.from(mapStatsMap.entries())
-    .filter(([_, data]) => data.total > 0)
-    .map(([map, data]) => {
-      const wr = Number(((data.wins / data.total) * 100).toFixed(1));
-      if (wr > bestMapWr || (wr === bestMapWr && data.total > (mapStatsMap.get(bestMap as ValorantMap)?.total || 0))) {
-        bestMapWr = wr;
-        bestMap = map;
-        bestMapWins = data.wins;
-        bestMapLosses = data.losses;
-      }
-      return {
-        map,
-        total: data.total,
-        wins: data.wins,
-        losses: data.losses,
-        draws: data.draws,
-        winRate: wr,
-      };
-    })
-    .sort((a, b) => b.total - a.total);
-
-  // ACS Trend (last 10 matches chronologically)
-  const acsTrend = [...allMatches]
-    .reverse()
-    .slice(-10)
-    .map((m, idx) => {
-      const avgAcs = m.playerStats.length > 0
-        ? Math.round(m.playerStats.reduce((acc, s) => acc + s.acs, 0) / m.playerStats.length)
-        : 0;
-      return {
-        matchId: m.id,
-        matchDate: m.matchDate,
-        map: m.map,
-        opponent: m.opponentName,
-        result: m.result,
-        score: `${m.scoreTeam}-${m.scoreOpponent}`,
-        teamAvgAcs: avgAcs,
-      };
-    });
-
-  // Leaderboard Calculation
-  const allPlayers = await db.query.players.findMany({
-    where: eq(players.isActive, true),
-  });
-
-  const playerStatsAggregation = new Map<string, {
-    player: Player;
-    matches: number;
-    totalAcs: number;
-    totalAdr: number;
-    totalKills: number;
-    totalDeaths: number;
-    totalAssists: number;
-    hsSum: number;
-    hsCount: number;
-    firstKills: number;
-    firstDeaths: number;
-    clutchesWon: number;
-  }>();
-
-  for (const p of allPlayers) {
-    playerStatsAggregation.set(p.id, {
-      player: p,
-      matches: 0,
-      totalAcs: 0,
-      totalAdr: 0,
-      totalKills: 0,
-      totalDeaths: 0,
-      totalAssists: 0,
-      hsSum: 0,
-      hsCount: 0,
-      firstKills: 0,
-      firstDeaths: 0,
-      clutchesWon: 0,
-    });
-  }
-
-  for (const m of allMatches) {
-    for (const stat of m.playerStats) {
-      const agg = playerStatsAggregation.get(stat.playerId);
-      if (agg) {
-        agg.matches++;
-        agg.totalAcs += stat.acs;
-        agg.totalAdr += stat.adr;
-        agg.totalKills += stat.kills;
-        agg.totalDeaths += stat.deaths;
-        agg.totalAssists += stat.assists;
-        if (stat.hsPercent != null) {
-          agg.hsSum += stat.hsPercent;
-          agg.hsCount++;
-        }
-        agg.firstKills += stat.firstKills;
-        agg.firstDeaths += stat.firstDeaths;
-        agg.clutchesWon += stat.clutchesWon;
-      }
-    }
-  }
-
-  const leaderboard = Array.from(playerStatsAggregation.values())
-    .filter((agg) => agg.matches > 0)
-    .map((agg) => ({
-      player: agg.player,
-      matches: agg.matches,
-      avgAcs: Number((agg.totalAcs / agg.matches).toFixed(1)),
-      avgAdr: Number((agg.totalAdr / agg.matches).toFixed(1)),
-      kdRatio: calculateKD(agg.totalKills, agg.totalDeaths),
-      hsPercent: agg.hsCount > 0 ? Number((agg.hsSum / agg.hsCount).toFixed(1)) : 0,
-      firstKills: agg.firstKills,
-      firstDeaths: agg.firstDeaths,
-      clutchesWon: agg.clutchesWon,
-    }))
-    .sort((a, b) => b.avgAcs - a.avgAcs);
-
-  // Formatted all matches with parsed round timeline
-  const formattedAllMatches: MatchWithStats[] = allMatches.map((m) => {
-    let parsedRoundTimeline: RoundItem[] | undefined;
-    if (m.roundTimeline) {
-      try {
-        parsedRoundTimeline = JSON.parse(m.roundTimeline);
-      } catch (e) {}
-    }
-    return {
-      ...m,
-      playerStats: [...m.playerStats].sort((a, b) => b.acs - a.acs),
-      parsedRoundTimeline,
-    };
-  });
-
-  // Recent 5 matches with player stats sorted by ACS desc
-  const recentMatches: MatchWithStats[] = formattedAllMatches.slice(0, 5);
-
-  // Tactical Win Conditions Calculation
-  // Tactical Win & Loss Breakdown Calculation (Contextual to Attacker vs Defender)
-  let totalTeamRoundWins = 0;
-  let elimWins = 0;
-  let defuseWins = 0;     // Retake & Spike Defused (Defender Win)
-  let detonationWins = 0; // Post-Plant Spike Detonated (Attacker Win)
-  let timeWins = 0;       // Waktu Habis (Defender Win)
-
-  let totalTeamRoundLosses = 0;
-  let elimLosses = 0;        // Tim Tereliminasi
-  let defusedLosses = 0;     // Musuh Retake & Defuse (Saat Kita Attacker)
-  let detonationLosses = 0;  // Spike Musuh Meledak (Saat Kita Defender Gagal Retake)
-  let timeoutLosses = 0;     // Waktu Habis (Saat Kita Attacker Gagal Plant)
-
-  for (const m of allMatches) {
-    if (m.roundTimeline) {
-      try {
-        const rounds = JSON.parse(m.roundTimeline);
-        if (Array.isArray(rounds)) {
-          for (const r of rounds) {
-            const outcome = r.outcomeType || r.winType || "ELIMINATION";
-            if (r.winner === "TEAM") {
-              totalTeamRoundWins++;
-              if (r.side === "ATTACK") {
-                if (outcome === "DETONATION") detonationWins++;
-                else elimWins++;
-              } else {
-                // DEFENSE
-                if (outcome === "DEFUSE") defuseWins++;
-                else if (outcome === "TIME") timeWins++;
-                else elimWins++;
-              }
-            } else {
-              // OPPONENT WIN = TEAM LOSS
-              totalTeamRoundLosses++;
-              if (r.side === "ATTACK") {
-                if (outcome === "DEFUSE") defusedLosses++;
-                else if (outcome === "TIME") timeoutLosses++;
-                else elimLosses++;
-              } else {
-                // DEFENSE
-                if (outcome === "DETONATION") detonationLosses++;
-                else elimLosses++;
-              }
-            }
-          }
-        }
-      } catch (e) {
-        // fallback
-      }
-    } else {
-      totalTeamRoundWins += m.scoreTeam;
-      elimWins += m.scoreTeam;
-      totalTeamRoundLosses += m.scoreOpponent;
-      elimLosses += m.scoreOpponent;
-    }
-  }
-
-  const tacticalWins = {
-    totalWins: totalTeamRoundWins,
-    eliminations: elimWins,
-    eliminationRate: totalTeamRoundWins > 0 ? Math.round((elimWins / totalTeamRoundWins) * 100) : 0,
-    defuses: defuseWins,
-    defuseRate: totalTeamRoundWins > 0 ? Math.round((defuseWins / totalTeamRoundWins) * 100) : 0,
-    detonations: detonationWins,
-    detonationRate: totalTeamRoundWins > 0 ? Math.round((detonationWins / totalTeamRoundWins) * 100) : 0,
-    timeouts: timeWins,
-    timeoutRate: totalTeamRoundWins > 0 ? Math.round((timeWins / totalTeamRoundWins) * 100) : 0,
-  };
-
-  const tacticalLosses = {
-    totalLosses: totalTeamRoundLosses,
-    eliminations: elimLosses,
-    eliminationRate: totalTeamRoundLosses > 0 ? Math.round((elimLosses / totalTeamRoundLosses) * 100) : 0,
-    defusedLosses,
-    defusedLossRate: totalTeamRoundLosses > 0 ? Math.round((defusedLosses / totalTeamRoundLosses) * 100) : 0,
-    detonationLosses,
-    detonationLossRate: totalTeamRoundLosses > 0 ? Math.round((detonationLosses / totalTeamRoundLosses) * 100) : 0,
-    timeoutLosses,
-    timeoutLossRate: totalTeamRoundLosses > 0 ? Math.round((timeoutLosses / totalTeamRoundLosses) * 100) : 0,
-  };
-
-  // Trading Kills Calculation
-  let totalTeamDeaths = 0;
-  let totalTradesWon = 0;
-  let totalTradedDeaths = 0;
-
-  for (const m of allMatches) {
-    const matchDeaths = m.playerStats.reduce((acc, s) => acc + s.deaths, 0);
-    totalTeamDeaths += matchDeaths;
-
-    if (m.roundTimeline) {
-      try {
-        const rounds = JSON.parse(m.roundTimeline);
-        if (Array.isArray(rounds)) {
-          for (const r of rounds) {
-            if (r.tradesWon) totalTradesWon += r.tradesWon;
-            if (r.tradedDeaths) totalTradedDeaths += r.tradedDeaths;
-          }
-        }
-      } catch (e) {}
-    }
-  }
-
-  if (totalTradedDeaths === 0 && totalTeamDeaths > 0) {
-    totalTradedDeaths = Math.round(totalTeamDeaths * 0.52);
-    totalTradesWon = totalTradedDeaths;
-  }
-
-  const tradeEfficiency = totalTeamDeaths > 0
-    ? Math.min(100, Math.round((totalTradedDeaths / totalTeamDeaths) * 100))
-    : 0;
-
-  const untradedDeaths = Math.max(0, totalTeamDeaths - totalTradedDeaths);
-  const tradeRating: "EXCELLENT" | "GOOD" | "POOR" =
-    tradeEfficiency >= 60 ? "EXCELLENT" : tradeEfficiency >= 45 ? "GOOD" : "POOR";
-
-  const tradingStats = {
-    tradesWon: totalTradesWon,
-    tradedDeaths: totalTradedDeaths,
-    untradedDeaths,
-    totalDeaths: totalTeamDeaths,
-    tradeEfficiency,
-    tradeRating,
-  };
-
-  return {
-    summary: {
-      totalMatches,
-      wins,
-      losses,
-      draws,
-      winRate,
-      teamAvgAcs,
-      teamAvgAdr,
-      strongestMap: {
-        map: bestMap,
-        winRate: bestMapWr >= 0 ? bestMapWr : 0,
-        wins: bestMapWins,
-        losses: bestMapLosses,
-      },
-      sideStats: {
-        attackWinRate,
-        defenseWinRate,
-      },
-      tacticalWins,
-      tacticalLosses,
-      tradingStats,
-      mapBreakdown,
-      acsTrend,
-    },
-    recentMatches,
-    allMatches: formattedAllMatches,
-    leaderboard,
-  };
-}
+  return all.map((m) => ({ ...m, playerStats: [...m.playerStats].sort((a, b) => (b.acs ?? -1) - (a.acs ?? -1)) })) as unknown as MatchWithStats[];
+}, ["match-history"], { tags: ["matches", "players"] });
 
 export async function getAllMatches(params?: {
   map?: string;
@@ -408,84 +103,72 @@ export async function getAllMatches(params?: {
   opponent?: string;
 }): Promise<MatchWithStats[]> {
   await ensureDbInitialized();
-
-  const all = await db.query.matches.findMany({
-    columns: {
-      attachments: false,
-    },
-    orderBy: [desc(matches.matchDate), desc(matches.createdAt)],
-    with: {
-      playerStats: {
-        with: {
-          player: true,
-        },
-      },
-    },
-  });
-
-  return all
-    .filter((m) => {
-      if (params?.map && params.map !== "ALL" && m.map !== params.map) return false;
-      if (params?.result && params.result !== "ALL" && m.result !== params.result) return false;
-      if (params?.opponent && !m.opponentName.toLowerCase().includes(params.opponent.toLowerCase())) return false;
-      return true;
-    })
-    .map((m) => ({
-      ...m,
-      playerStats: [...m.playerStats].sort((a, b) => b.acs - a.acs),
-    }));
+  return readAllMatches(params);
 }
 
-export async function getMatchById(id: string): Promise<MatchWithStats | null> {
-  await ensureDbInitialized();
-
+const readMatchById = unstable_cache(async (id: string) => {
   const match = await db.query.matches.findFirst({
     where: eq(matches.id, id),
+    columns: {
+      id: true, matchDate: true, map: true, opponentName: true, scoreTeam: true, scoreOpponent: true,
+      result: true, startSide: true, vodUrl: true, notes: true, attachments: true,
+      roundTimeline: true, createdAt: true,
+    },
     with: {
       playerStats: {
-        with: {
-          player: true,
+        columns: {
+          id: true, matchId: true, playerId: true, agent: true, acs: true, kills: true,
+          deaths: true, assists: true, adr: true, hsPercent: true, firstKills: true,
+          firstDeaths: true, clutchesWon: true, kastPercent: true, plants: true, defuses: true,
         },
+        with: { player: { columns: { id: true, name: true } } },
+      },
+      opponentPlayerStats: {
+        columns: { id: true, matchId: true, displayName: true, agent: true, kills: true, deaths: true, assists: true, firstKills: true, plants: true, defuses: true },
       },
     },
   });
-
   if (!match) return null;
-
   let parsedAttachments: MatchAttachment[] = [];
   if (match.attachments) {
-    try {
-      parsedAttachments = JSON.parse(match.attachments);
-    } catch (err) {
-      console.error("Failed to parse attachments JSON:", err);
-    }
+    try { parsedAttachments = JSON.parse(match.attachments); }
+    catch (err) { console.error("Failed to parse attachments JSON:", err); }
   }
-
   let parsedRoundTimeline: RoundItem[] = [];
   if (match.roundTimeline) {
-    try {
-      parsedRoundTimeline = JSON.parse(match.roundTimeline);
-    } catch (err) {
-      console.error("Failed to parse roundTimeline JSON:", err);
-    }
+    try { parsedRoundTimeline = JSON.parse(match.roundTimeline); }
+    catch (err) { console.error("Failed to parse roundTimeline JSON:", err); }
   }
-
   return {
     ...match,
     parsedAttachments,
     parsedRoundTimeline,
-    playerStats: [...match.playerStats].sort((a, b) => b.acs - a.acs),
-  };
+    playerStats: [...match.playerStats].sort((a, b) => (b.acs ?? -1) - (a.acs ?? -1)),
+  } as unknown as MatchWithStats;
+}, ["match-detail"], { tags: ["matches", "players"] });
+
+export async function getMatchById(id: string): Promise<MatchWithStats | null> {
+  await ensureDbInitialized();
+  return readMatchById(id);
 }
 
-import { getCurrentUser } from "../auth/session";
+import { getCurrentUser, isDemoAccount } from "../auth/session";
 
 async function requireAdmin() {
   const user = await getCurrentUser();
-  if (!user || (user.role !== "ADMIN" && user.role !== "COACH")) {
+  if (!user || isDemoAccount(user.discordId) || (user.role !== "ADMIN" && user.role !== "COACH")) {
     throw new Error("Akses ditolak: Anda harus login sebagai Admin / IGL untuk melakukan aksi ini.");
   }
   return user;
+}
+
+function revalidateMatchData(matchId?: string) {
+  invalidateScrimReadCache();
+  revalidatePath("/");
+  revalidatePath("/matches");
+  if (matchId) revalidatePath(`/matches/${matchId}`);
+  revalidatePath("/maps");
+  revalidatePath("/roster");
 }
 
 export async function createMatchAction(
@@ -512,6 +195,32 @@ export async function createMatchAction(
   }
 
   const validated = parsed.data;
+  if (validated.preservedAttachmentIds.length > 0 || validated.attachments.some((attachment) => !attachment.id.startsWith("att-webp-"))) {
+    return { success: false, error: "Lampiran baru wajib berupa screenshot WebP yang telah dikompresi." };
+  }
+  if (!validated.idempotencyKey) {
+    return { success: false, error: "Kunci pengiriman tidak valid. Muat ulang form lalu coba lagi." };
+  }
+  const warnings = getMatchWarnings(validated);
+  if (warnings.length && !validated.confirmWarnings) {
+    return { success: false, error: "Konfirmasi diperlukan sebelum menyimpan skor/statistik yang tidak biasa.", confirmationRequired: true, warnings };
+  }
+  const existingPlayers = await db.query.players.findMany({ columns: { id: true } });
+  const knownPlayerIds = new Set(existingPlayers.map((player) => player.id));
+  if (validated.playerStats.some((stat) => !knownPlayerIds.has(stat.playerId))) {
+    return { success: false, error: "Pemain tidak ditemukan pada roster." };
+  }
+  if (validated.playerStats.some((stat) => stat.plants == null || stat.defuses == null)) {
+    return { success: false, error: "Plants dan defuses wajib diisi untuk scoreboard baru." };
+  }
+  const priorSubmission = await db.query.matches.findFirst({
+    where: eq(matches.idempotencyKey, validated.idempotencyKey),
+    columns: { id: true },
+  });
+  if (priorSubmission) {
+    revalidateMatchData(priorSubmission.id);
+    return { success: true, data: { id: priorSubmission.id } };
+  }
   const matchId = createId();
   const result = calculateMatchResult(validated.scoreTeam, validated.scoreOpponent);
 
@@ -536,6 +245,7 @@ export async function createMatchAction(
         roundTimeline: validated.roundsTimeline && validated.roundsTimeline.length > 0
           ? JSON.stringify(validated.roundsTimeline)
           : null,
+        idempotencyKey: validated.idempotencyKey,
       }),
       // Insert Player Stats via .map()
       ...validated.playerStats.map((stat) =>
@@ -551,13 +261,25 @@ export async function createMatchAction(
           adr: stat.adr,
           hsPercent: stat.hsPercent ?? null,
           firstKills: stat.firstKills ?? 0,
-          firstDeaths: stat.firstDeaths ?? 0,
-          clutchesWon: stat.clutchesWon ?? 0,
+          firstDeaths: stat.firstDeaths,
+          clutchesWon: stat.clutchesWon,
           kastPercent: stat.kastPercent ?? null,
+          plants: stat.plants,
+          defuses: stat.defuses,
         })
       ),
+      ...(validated.opponentPlayerStats ?? []).map((stat) => db.insert(opponentMatchPlayerStats).values({ id: createId(), matchId, ...stat })),
     ]);
   } catch (err) {
+    // Concurrent retries can collide on the unique idempotency key after one commits.
+    const committedRetry = await db.query.matches.findFirst({
+      where: eq(matches.idempotencyKey, validated.idempotencyKey),
+      columns: { id: true },
+    }).catch(() => undefined);
+    if (committedRetry) {
+      revalidateMatchData(committedRetry.id);
+      return { success: true, data: { id: committedRetry.id } };
+    }
     console.error("[DATABASE_ERROR] Batch insert match failed:", err);
     return {
       success: false,
@@ -566,11 +288,7 @@ export async function createMatchAction(
   }
 
   // 3. Invalidate Cache Analitik & Paths
-  updateTag("scrim-analytics");
-  revalidatePath("/");
-  revalidatePath("/matches");
-  revalidatePath("/maps");
-  revalidatePath("/roster");
+  revalidateMatchData(matchId);
 
   return {
     success: true,
@@ -615,6 +333,46 @@ export async function updateMatch(
   }
 
   const validated = parsed.data;
+  if (validated.attachments.some((attachment) => !attachment.id.startsWith("att-webp-"))) {
+    return { success: false, error: "Unggahan baru wajib berupa screenshot WebP yang telah dikompresi." };
+  }
+  const warnings = getMatchWarnings(validated);
+  if (warnings.length && !validated.confirmWarnings) {
+    return { success: false, error: "Konfirmasi diperlukan sebelum menyimpan skor/statistik yang tidak biasa.", confirmationRequired: true, warnings };
+  }
+  const existingPlayers = await db.query.players.findMany({ columns: { id: true } });
+  const knownPlayerIds = new Set(existingPlayers.map((player) => player.id));
+  if (validated.playerStats.some((stat) => !knownPlayerIds.has(stat.playerId))) {
+    return { success: false, error: "Pemain tidak ditemukan pada roster." };
+  }
+
+  const existingMatch = await db.query.matches.findFirst({
+    // Attachments are stored in the match JSON column, so this query scopes IDs to the edited match.
+    where: eq(matches.id, id),
+    columns: { id: true, roundTimeline: true, attachments: true },
+    with: { playerStats: { columns: { playerId: true, plants: true, defuses: true } } },
+  });
+  if (!existingMatch) return { success: false, error: "Match tidak ditemukan." };
+  const previousScoreboardStats = new Map(existingMatch.playerStats.map((stat) => [stat.playerId, stat]));
+  if (hasMissingEventsForNewPlayers(validated.playerStats, new Set(previousScoreboardStats.keys()))) {
+    return { success: false, error: "Plants dan defuses wajib diisi untuk pemain baru pada scoreboard." };
+  }
+  let existingAttachments: unknown[] = [];
+  try {
+    existingAttachments = existingMatch.attachments ? JSON.parse(existingMatch.attachments) : [];
+  } catch (error) {
+    console.error("[MATCH_ATTACHMENT] Failed to parse existing attachments:", error);
+    return { success: false, error: "Lampiran match lama tidak dapat dibaca; perubahan belum disimpan." };
+  }
+  const preserved = resolvePreservedAttachments(existingAttachments, validated.preservedAttachmentIds);
+  if (!preserved.success) {
+    return { success: false, error: preserved.error };
+  }
+  const attachmentsToSave = [
+    ...preserved.attachments,
+    ...validated.attachments,
+  ];
+  const preservedTimeline = resolveRoundTimelineForUpdate(validated.roundsTimeline, existingMatch.roundTimeline);
   const result = calculateMatchResult(validated.scoreTeam, validated.scoreOpponent);
 
   try {
@@ -631,15 +389,14 @@ export async function updateMatch(
           startSide: validated.startSide,
           vodUrl: validated.vodUrl || null,
           notes: validated.notes || null,
-          attachments: validated.attachments && validated.attachments.length > 0
-            ? JSON.stringify(validated.attachments)
+          attachments: attachmentsToSave.length > 0
+            ? JSON.stringify(attachmentsToSave)
             : null,
-          roundTimeline: validated.roundsTimeline && validated.roundsTimeline.length > 0
-            ? JSON.stringify(validated.roundsTimeline)
-            : null,
+          roundTimeline: preservedTimeline,
         })
         .where(eq(matches.id, id)),
       db.delete(matchPlayerStats).where(eq(matchPlayerStats.matchId, id)),
+      db.delete(opponentMatchPlayerStats).where(eq(opponentMatchPlayerStats.matchId, id)),
       ...validated.playerStats.map((stat) =>
         db.insert(matchPlayerStats).values({
           id: createId(),
@@ -653,11 +410,14 @@ export async function updateMatch(
           adr: stat.adr,
           hsPercent: stat.hsPercent ?? null,
           firstKills: stat.firstKills ?? 0,
-          firstDeaths: stat.firstDeaths ?? 0,
-          clutchesWon: stat.clutchesWon ?? 0,
+          firstDeaths: stat.firstDeaths,
+          clutchesWon: stat.clutchesWon,
           kastPercent: stat.kastPercent ?? null,
+          plants: stat.plants ?? previousScoreboardStats.get(stat.playerId)?.plants ?? null,
+          defuses: stat.defuses ?? previousScoreboardStats.get(stat.playerId)?.defuses ?? null,
         })
       ),
+      ...(validated.opponentPlayerStats ?? []).map((stat) => db.insert(opponentMatchPlayerStats).values({ id: createId(), matchId: id, ...stat })),
     ]);
   } catch (err) {
     console.error("[DATABASE_ERROR] Batch update match failed:", err);
@@ -667,12 +427,7 @@ export async function updateMatch(
     };
   }
 
-  updateTag("scrim-analytics");
-  revalidatePath("/");
-  revalidatePath("/matches");
-  revalidatePath(`/matches/${id}`);
-  revalidatePath("/maps");
-  revalidatePath("/roster");
+  revalidateMatchData(id);
 
   return {
     success: true,
@@ -701,70 +456,17 @@ export async function deleteMatch(id: string): Promise<ActionResponse<{ id: stri
     };
   }
 
-  updateTag("scrim-analytics");
-  revalidatePath("/");
-  revalidatePath("/matches");
-  revalidatePath("/maps");
-  revalidatePath("/roster");
+  revalidateMatchData(id);
 
   return { success: true, data: { id } };
 }
 
 export async function getMapAnalyticsData(): Promise<MapAggregateStats[]> {
   await ensureDbInitialized();
-
-  const allMatches = await db.query.matches.findMany({
-    columns: {
-      attachments: false,
-    },
-  });
-
-  return VALORANT_MAPS.map((mapName) => {
-    const mapMatches = allMatches.filter((m) => m.map === mapName);
-    const total = mapMatches.length;
-    let wins = 0;
-    let losses = 0;
-    let draws = 0;
-    let roundsWon = 0;
-    let roundsLost = 0;
-    let attackStartMatches = 0;
-    let attackStartWins = 0;
-    let defenseStartMatches = 0;
-    let defenseStartWins = 0;
-
-    for (const m of mapMatches) {
-      if (m.result === "WIN") wins++;
-      else if (m.result === "LOSS") losses++;
-      else draws++;
-
-      roundsWon += m.scoreTeam;
-      roundsLost += m.scoreOpponent;
-
-      if (m.startSide === "ATTACK") {
-        attackStartMatches++;
-        if (m.result === "WIN") attackStartWins++;
-      } else {
-        defenseStartMatches++;
-        if (m.result === "WIN") defenseStartWins++;
-      }
-    }
-
-    const totalRounds = roundsWon + roundsLost;
-
-    return {
-      map: mapName,
-      totalMatches: total,
-      wins,
-      losses,
-      draws,
-      winRate: total > 0 ? Number(((wins / total) * 100).toFixed(1)) : 0,
-      roundsWon,
-      roundsLost,
-      roundWinRate: totalRounds > 0 ? Number(((roundsWon / totalRounds) * 100).toFixed(1)) : 0,
-      attackStartMatches,
-      attackStartWins,
-      defenseStartMatches,
-      defenseStartWins,
-    };
-  }).sort((a, b) => b.totalMatches - a.totalMatches);
+  return readMapAnalytics();
 }
+
+const readMapAnalytics = unstable_cache(async () => {
+  const result = await client.execute(MAP_AGGREGATE_SQL);
+  return includeEmptyMaps(mapMapAggregateRows(result.rows as unknown as Array<Record<string, unknown>>));
+}, ["map-analytics"], { tags: ["matches"] });

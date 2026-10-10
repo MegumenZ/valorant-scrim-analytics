@@ -24,10 +24,18 @@ yarn-error.log*
 /data/*.db-journal
 /data/*.db-wal
 /data/*.db-shm
+/data/backups/
+
+# Temporary npm cache used for dependency installation in restricted environments
+/.npm-cache/
 
 # Local Environment Variables
 .env*.local
 .env
+
+# Local development context
+/AGENTS.md
+/docs/PROJECT_CONTEXT.md
 
 # Vercel
 .vercel

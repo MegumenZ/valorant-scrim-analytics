@@ -1,4 +1,4 @@
-CREATE TABLE `match_player_stats` (
+CREATE TABLE IF NOT EXISTS `match_player_stats` (
 	`id` text PRIMARY KEY NOT NULL,
 	`match_id` text NOT NULL,
 	`player_id` text NOT NULL,
@@ -17,10 +17,10 @@ CREATE TABLE `match_player_stats` (
 	FOREIGN KEY (`player_id`) REFERENCES `players`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `match_player_unique_idx` ON `match_player_stats` (`match_id`,`player_id`);--> statement-breakpoint
-CREATE INDEX `stats_match_idx` ON `match_player_stats` (`match_id`);--> statement-breakpoint
-CREATE INDEX `stats_player_idx` ON `match_player_stats` (`player_id`);--> statement-breakpoint
-CREATE TABLE `matches` (
+CREATE UNIQUE INDEX IF NOT EXISTS `match_player_unique_idx` ON `match_player_stats` (`match_id`,`player_id`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `stats_match_idx` ON `match_player_stats` (`match_id`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `stats_player_idx` ON `match_player_stats` (`player_id`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `matches` (
 	`id` text PRIMARY KEY NOT NULL,
 	`match_date` text NOT NULL,
 	`map` text NOT NULL,
@@ -34,9 +34,9 @@ CREATE TABLE `matches` (
 	`created_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 --> statement-breakpoint
-CREATE INDEX `match_date_idx` ON `matches` (`match_date`);--> statement-breakpoint
-CREATE INDEX `match_map_idx` ON `matches` (`map`);--> statement-breakpoint
-CREATE TABLE `players` (
+CREATE INDEX IF NOT EXISTS `match_date_idx` ON `matches` (`match_date`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `match_map_idx` ON `matches` (`map`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `players` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
 	`riot_id` text,
@@ -46,7 +46,7 @@ CREATE TABLE `players` (
 	`created_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `sessions` (
+CREATE TABLE IF NOT EXISTS `sessions` (
 	`id` text PRIMARY KEY NOT NULL,
 	`user_id` text NOT NULL,
 	`expires_at` integer NOT NULL,
@@ -56,8 +56,8 @@ CREATE TABLE `sessions` (
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE INDEX `sessions_user_id_idx` ON `sessions` (`user_id`);--> statement-breakpoint
-CREATE TABLE `users` (
+CREATE INDEX IF NOT EXISTS `sessions_user_id_idx` ON `sessions` (`user_id`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `users` (
 	`id` text PRIMARY KEY NOT NULL,
 	`discord_id` text NOT NULL,
 	`username` text NOT NULL,
@@ -68,5 +68,5 @@ CREATE TABLE `users` (
 	`updated_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `users_discord_id_unique` ON `users` (`discord_id`);--> statement-breakpoint
-CREATE UNIQUE INDEX `users_discord_id_idx` ON `users` (`discord_id`);
+CREATE UNIQUE INDEX IF NOT EXISTS `users_discord_id_unique` ON `users` (`discord_id`);--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS `users_discord_id_idx` ON `users` (`discord_id`);

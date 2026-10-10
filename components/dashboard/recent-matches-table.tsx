@@ -1,261 +1,40 @@
 "use client";
 
-import React from "react";
 import Link from "next/link";
-import { ChevronRight, ExternalLink } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { MatchWithStats } from "@/lib/actions/matches";
-import { getAgentIcon, getMapListViewIcon } from "@/lib/data/valorant";
+import { Card, CardContent } from "@/components/ui/card";
+import { DashboardRecentMatch } from "@/lib/actions/matches";
 import { useTranslation } from "@/lib/i18n/context";
+import { calculateKD } from "@/lib/utils/calculations";
 
-interface RecentMatchesTableProps {
-  matches: MatchWithStats[];
+function matchKd(match: DashboardRecentMatch) {
+  const totals = match.playerStats.reduce((result, row) => ({ kills: result.kills + row.kills, deaths: result.deaths + row.deaths }), { kills: 0, deaths: 0 });
+  return calculateKD(totals.kills, totals.deaths);
 }
 
-export function RecentMatchesTable({ matches }: RecentMatchesTableProps) {
-  const { t, language } = useTranslation();
+function ResultBadge({ result, isEn }: { result: DashboardRecentMatch["result"]; isEn: boolean }) {
+  const isWin = result === "WIN";
+  const isLoss = result === "LOSS";
+  const letter = isWin ? "W" : isLoss ? "L" : "D";
+  const label = isWin ? (isEn ? "Win" : "Menang") : isLoss ? (isEn ? "Loss" : "Kalah") : (isEn ? "Draw" : "Seri");
+  return <span title={label} aria-label={label} className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${isWin ? "bg-emerald-500/15 text-emerald-400" : isLoss ? "bg-[#FF4655]/10 text-[#FF4655]" : "bg-amber-500/15 text-amber-300"}`}>{letter}</span>;
+}
+
+export function RecentMatchesTable({ matches }: { matches: DashboardRecentMatch[] }) {
+  const { language } = useTranslation();
   const isEn = language === "en";
+  const headers = isEn ? ["Date", "Opponent", "Map", "Round Score", "Result", "K/D"] : ["Tanggal", "Lawan", "Map", "Skor Ronde", "Hasil", "K/D"];
+  const scrimHref = (match: DashboardRecentMatch) => `/matches/${match.id}`;
+  const linkClass = "block rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF4655]";
 
-  return (
-    <Card className="bg-[#0C1017] border-[#1C2433] overflow-hidden shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between py-3.5 px-5 border-b border-[#1C2433] bg-[#090C10]">
-        <div>
-          <CardTitle className="text-sm sm:text-base font-bold text-white tracking-tight">
-            {t.dashboard.recentMatchesTitle}
-          </CardTitle>
-          <p className="text-xs text-[#94A3B8] mt-0.5">
-            {t.dashboard.recentMatchesSubtitle}
-          </p>
-        </div>
-        <Link href="/matches">
-          <Button variant="outline" size="sm" className="text-xs gap-1.5 h-7 px-2.5 font-medium">
-            <span>{isEn ? "All Matches" : "Semua Match"}</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </Button>
-        </Link>
-      </CardHeader>
-
-      <CardContent className="p-0">
-        {/* MOBILE VIEW: Responsive Scrim Cards (md:hidden) */}
-        <div className="md:hidden divide-y divide-[#1C2433]">
-          {matches.length === 0 ? (
-            <div className="py-8 text-center text-[#64748B] text-xs">
-              {isEn ? "No match records found." : "Belum ada catatan match."}
-            </div>
-          ) : (
-            matches.map((m) => {
-              const topFragger = m.playerStats[0];
-
-              return (
-                <Link
-                  key={m.id}
-                  href={`/matches/${m.id}`}
-                  className="block p-4 hover:bg-[#141A24] active:bg-[#1A2230] transition-colors"
-                >
-                  <div className="flex items-center justify-between gap-2 mb-2.5">
-                    {/* Map & Date */}
-                    <div className="flex items-center gap-2.5">
-                      <img
-                        src={getMapListViewIcon(m.map)}
-                        alt={m.map}
-                        className="w-8 h-8 rounded object-cover border border-[#1C2433] bg-[#161D28] shrink-0"
-                      />
-                      <div>
-                        <div className="font-tactical font-black text-base text-white uppercase tracking-wide">
-                          {m.map}
-                        </div>
-                        <div className="text-[11px] text-[#94A3B8]">{m.matchDate}</div>
-                      </div>
-                    </div>
-
-                    {/* Result Tag */}
-                    <div className="flex items-center gap-2">
-                      <div className="font-tactical text-lg font-black tabular-nums">
-                        <span className={m.result === "WIN" ? "text-emerald-400" : m.result === "LOSS" ? "text-[#FF4655]" : "text-amber-400"}>
-                          {m.scoreTeam}
-                        </span>
-                        <span className="text-[#64748B] mx-1">-</span>
-                        <span className="text-[#94A3B8]">{m.scoreOpponent}</span>
-                      </div>
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase ${
-                          m.result === "WIN"
-                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                            : m.result === "LOSS"
-                            ? "bg-[#FF4655]/10 text-[#FF4655] border-[#FF4655]/40"
-                            : "bg-amber-500/10 text-amber-400 border-amber-500/30"
-                        }`}
-                      >
-                        {m.result}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Opponent & Side */}
-                  <div className="flex items-center justify-between text-xs py-1">
-                    <span className="font-medium text-[#F1F5F9] truncate">
-                      vs {m.opponentName}
-                    </span>
-                    <span
-                      className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${
-                        m.startSide === "ATTACK"
-                          ? "text-[#FF4655] border-[#FF4655]/30 bg-[#FF4655]/10"
-                          : "text-sky-400 border-sky-500/30 bg-sky-500/10"
-                      }`}
-                    >
-                      {m.startSide === "ATTACK" ? (isEn ? "Attack" : "Attack") : (isEn ? "Defense" : "Defense")}
-                    </span>
-                  </div>
-
-                  {/* Top Fragger */}
-                  {topFragger && (
-                    <div className="flex items-center justify-between pt-2.5 mt-1 border-t border-[#1C2433] text-xs">
-                      <div className="flex items-center gap-2">
-                        <img
-                          src={getAgentIcon(topFragger.agent)}
-                          alt={topFragger.agent}
-                          className="w-5 h-5 rounded-full bg-[#161D28] border border-[#2A364F] shrink-0 object-cover"
-                        />
-                        <span className="text-xs font-medium text-[#F1F5F9]">
-                          {topFragger.player?.name}
-                        </span>
-                        <span className="text-[#64748B] text-[11px]">
-                          ({topFragger.agent})
-                        </span>
-                      </div>
-                      <span className="text-xs font-bold text-sky-400">
-                        {topFragger.acs} ACS
-                      </span>
-                    </div>
-                  )}
-                </Link>
-              );
-            })
-          )}
-        </div>
-
-        {/* DESKTOP VIEW: Full Data Table (hidden md:block) */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-[#1C2433] bg-[#090C10] text-[#94A3B8] font-semibold text-[11px]">
-                <th className="py-3 px-4">{isEn ? "Date" : "Tanggal"}</th>
-                <th className="py-3 px-4 sticky left-0 bg-[#090C10] z-10">{t.matches.map}</th>
-                <th className="py-3 px-4">{t.matches.opponent}</th>
-                <th className="py-3 px-4 text-center">{isEn ? "Score" : "Skor"}</th>
-                <th className="py-3 px-4 text-center">{isEn ? "Result" : "Hasil"}</th>
-                <th className="py-3 px-4 text-center">{t.matches.startSide}</th>
-                <th className="py-3 px-4">{isEn ? "Top Fragger / MVP" : "Top Fragger / MVP"}</th>
-                <th className="py-3 px-4 text-right"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#1C2433]">
-              {matches.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-8 text-center text-[#94A3B8]">
-                    {isEn ? "No match records found." : "Belum ada catatan match."}
-                  </td>
-                </tr>
-              ) : (
-                matches.map((m) => {
-                  const topFragger = m.playerStats[0];
-
-                  return (
-                    <tr
-                      key={m.id}
-                      className="hover:bg-[#141A24] transition-colors group"
-                    >
-                      <td className="py-3.5 px-4 text-xs text-[#94A3B8] whitespace-nowrap">
-                        {m.matchDate}
-                      </td>
-                      <td className="py-3.5 px-4 font-tactical text-base font-black text-white uppercase tracking-wide sticky left-0 bg-[#0C1017] group-hover:bg-[#141A24] z-10 transition-colors">
-                        <div className="flex items-center gap-2.5">
-                          <img
-                            src={getMapListViewIcon(m.map)}
-                            alt={m.map}
-                            className="w-7 h-7 rounded object-cover border border-[#1C2433] bg-[#161D28] shrink-0"
-                          />
-                          <span>{m.map}</span>
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4 text-xs font-semibold text-white whitespace-nowrap">
-                        vs {m.opponentName}
-                      </td>
-                      <td className="py-3.5 px-4 text-center font-tactical text-lg font-black tracking-wide tabular-nums">
-                        <span className={m.result === "WIN" ? "text-emerald-400" : m.result === "LOSS" ? "text-[#FF4655]" : "text-amber-400"}>
-                          {m.scoreTeam}
-                        </span>
-                        <span className="text-[#64748B] mx-1">-</span>
-                        <span className="text-[#94A3B8]">{m.scoreOpponent}</span>
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase inline-flex items-center gap-1 ${
-                            m.result === "WIN"
-                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                              : m.result === "LOSS"
-                              ? "bg-[#FF4655]/10 text-[#FF4655] border-[#FF4655]/40"
-                              : "bg-amber-500/10 text-amber-400 border-amber-500/30"
-                          }`}
-                        >
-                          <span>{m.result === "WIN" ? "✓" : m.result === "LOSS" ? "✕" : "−"}</span>
-                          <span>{m.result}</span>
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        <span
-                          className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${
-                            m.startSide === "ATTACK"
-                              ? "text-[#FF4655] border-[#FF4655]/30 bg-[#FF4655]/10"
-                              : "text-sky-400 border-sky-500/30 bg-sky-500/10"
-                          }`}
-                        >
-                          {m.startSide === "ATTACK" ? (isEn ? "Attack" : "Attack") : (isEn ? "Defense" : "Defense")}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        {topFragger ? (
-                          <div className="flex items-center gap-2 whitespace-nowrap">
-                            <img
-                              src={getAgentIcon(topFragger.agent)}
-                              alt={topFragger.agent}
-                              className="w-6 h-6 rounded-full bg-[#161D28] border border-[#2A364F] shrink-0 object-cover"
-                            />
-                            <span className="text-xs font-bold text-white">
-                              {topFragger.player?.name || "Player"}
-                            </span>
-                            <span className="text-[#64748B] text-[11px]">
-                              ({topFragger.agent})
-                            </span>
-                            <span className="text-xs font-bold text-sky-400 ml-1">
-                              {topFragger.acs} ACS
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-[#64748B]">-</span>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                        <Link href={`/matches/${m.id}`}>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 px-2.5 text-xs gap-1 hover:text-white hover:bg-[#1C2433]"
-                          >
-                            <span>{t.common.detail}</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </Button>
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </CardContent>
-    </Card>
-  );
+  return <Card className="overflow-hidden rounded-xl border-[#1C2433] bg-[#0C1017] text-[#F1F5F9] shadow-none">
+    <CardContent className="p-0">
+      {!matches.length ? <p className="py-10 text-center text-sm text-[#CBD5E1]">{isEn ? "No scrims in this period." : "Belum ada scrim pada periode ini."}</p> : <>
+        <ul className="divide-y divide-[#1C2433] md:hidden">{matches.map((match) => <li key={match.id}><Link href={scrimHref(match)} className="block space-y-3 px-4 py-4 transition-colors hover:bg-[#141A24] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#FF4655]">
+          <div className="flex items-center justify-between gap-3"><span className="text-xs text-[#CBD5E1]">{match.matchDate}</span><ResultBadge result={match.result} isEn={isEn} /></div>
+          <div className="flex items-center justify-between gap-3"><div className="min-w-0"><p className="truncate font-semibold text-white">{match.opponentName}</p><p className="mt-1 text-xs text-[#CBD5E1]">{match.map}</p></div><div className="text-right"><p className="font-mono text-sm font-semibold tabular-nums text-white">{match.scoreTeam} – {match.scoreOpponent}</p><p className="mt-1 text-xs text-[#CBD5E1]">K/D <span className="font-mono tabular-nums text-[#F1F5F9]">{matchKd(match).toFixed(2)}</span></p></div></div>
+        </Link></li>)}</ul>
+        <div className="hidden overflow-x-auto md:block"><table className="w-full text-left text-sm"><thead><tr className="border-b border-[#1C2433] bg-[#090C10] text-xs font-semibold text-[#CBD5E1]">{headers.map((header, index) => <th key={header} className={`px-5 py-4 ${index >= 3 ? "text-center" : ""}`}>{header}</th>)}</tr></thead><tbody className="divide-y divide-[#1C2433]">{matches.map((match) => <tr key={match.id} className="cursor-pointer transition-colors hover:bg-[#141A24]">{[match.matchDate, match.opponentName, match.map].map((value, index) => <td key={headers[index]} className="px-5 py-4"><Link href={scrimHref(match)} className={`${linkClass} ${index === 1 ? "font-medium text-white" : "text-[#CBD5E1]"}`}>{value}</Link></td>)}<td className="px-5 py-4 text-center"><Link href={scrimHref(match)} className={`${linkClass} font-mono font-semibold tabular-nums text-white`}>{match.scoreTeam} – {match.scoreOpponent}</Link></td><td className="px-5 py-3 text-center"><Link href={scrimHref(match)} className={`mx-auto w-fit ${linkClass}`}><ResultBadge result={match.result} isEn={isEn} /></Link></td><td className="px-5 py-4 text-center"><Link href={scrimHref(match)} className={`${linkClass} font-mono font-semibold tabular-nums text-white`}>{matchKd(match).toFixed(2)}</Link></td></tr>)}</tbody></table></div>
+      </>}
+    </CardContent>
+  </Card>;
 }

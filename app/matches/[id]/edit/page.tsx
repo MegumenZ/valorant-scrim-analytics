@@ -31,6 +31,8 @@ export default async function EditMatchPage({ params }: EditMatchPageProps) {
     vodUrl: match.vodUrl,
     notes: match.notes,
     attachments: match.parsedAttachments || [],
+    roundsTimeline: match.parsedRoundTimeline || [],
+    opponentStats: match.opponentPlayerStats,
     stats: match.playerStats.map((s) => ({
       playerId: s.playerId,
       agent: s.agent,
@@ -43,6 +45,8 @@ export default async function EditMatchPage({ params }: EditMatchPageProps) {
       firstKills: s.firstKills,
       firstDeaths: s.firstDeaths,
       clutchesWon: s.clutchesWon,
+      plants: s.plants,
+      defuses: s.defuses,
     })),
   };
 

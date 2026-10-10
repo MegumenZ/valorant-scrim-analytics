@@ -45,16 +45,15 @@ export function MatchFilters({
       "ScoreTeam",
       "ScoreOpponent",
       "Result",
-      "StartSide",
       "PlayerName",
       "Agent",
-      "ACS",
       "Kills",
       "Deaths",
       "Assists",
       "KD_Ratio",
       "FirstKills",
-      "ClutchesWon",
+      "Plants",
+      "Defuses",
     ];
 
     const rows: string[] = [];
@@ -71,16 +70,15 @@ export function MatchFilters({
           m.scoreTeam,
           m.scoreOpponent,
           m.result,
-          m.startSide,
           `"${s.player?.name || "Player"}"`,
           s.agent,
-          s.acs,
           s.kills,
           s.deaths,
           s.assists,
           kd,
           s.firstKills,
-          s.clutchesWon ?? 0,
+          s.plants ?? "",
+          s.defuses ?? "",
         ].join(","));
       }
     }

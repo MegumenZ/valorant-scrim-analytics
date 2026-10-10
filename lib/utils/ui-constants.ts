@@ -1,0 +1,1 @@
+export const SMALL_SAMPLE_THRESHOLD = 10;

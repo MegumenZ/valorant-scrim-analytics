@@ -1,18 +1,8 @@
 "use client";
 
-import React from "react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ValorantMap } from "@/lib/data/valorant";
+import { useTranslation } from "@/lib/i18n/context";
 
 interface MapChartItem {
   map: ValorantMap;
@@ -23,110 +13,25 @@ interface MapChartItem {
   winRate: number;
 }
 
-interface MapWinrateChartProps {
-  data: MapChartItem[];
-}
+export function MapWinrateChart({ data }: { data: MapChartItem[] }) {
+  const { language } = useTranslation();
+  const isEn = language === "en";
+  const summary = data.map((item) => `${item.map}: ${item.winRate}% (${item.total} ${isEn ? "games" : "game"}), ${item.wins} ${isEn ? "wins" : "menang"}, ${item.losses} ${isEn ? "losses" : "kalah"}${item.draws ? `, ${item.draws} ${isEn ? "draws" : "seri"}` : ""}.`).join(" ");
 
-export function MapWinrateChart({ data }: MapWinrateChartProps) {
-  if (!data || data.length === 0) {
-    return (
-      <Card className="h-full bg-[#0C1017] border-[#1C2433]">
-        <CardHeader className="py-3.5 px-5 border-b border-[#1C2433] bg-[#090C10]">
-          <CardTitle className="text-sm sm:text-base font-bold text-white tracking-tight">
-            Win Rate Berdasarkan Map
-          </CardTitle>
-          <p className="text-xs text-[#94A3B8] mt-0.5">
-            Persentase kemenangan tim pada setiap map
-          </p>
-        </CardHeader>
-        <CardContent className="h-64 flex items-center justify-center text-[#64748B] text-xs">
-          Belum ada data map tercatat.
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card className="h-full flex flex-col bg-[#0C1017] border-[#1C2433] overflow-hidden shadow-sm">
-      <CardHeader className="py-3.5 px-5 border-b border-[#1C2433] bg-[#090C10]">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <CardTitle className="text-sm sm:text-base font-bold text-white tracking-tight">
-              Win Rate Berdasarkan Map
-            </CardTitle>
-            <p className="text-xs text-[#94A3B8] mt-0.5">
-              Persentase kemenangan tim pada setiap map
-            </p>
-          </div>
-          <div className="flex items-center gap-3 text-xs text-[#94A3B8] font-medium">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span>&ge; 50% Win</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#FF4655]" />
-              <span>&lt; 50% Win</span>
-            </span>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="p-4 sm:p-5 flex-1">
-        <div className="h-64 sm:h-72 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={data}
-              margin={{ top: 10, right: 10, left: -25, bottom: 15 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#1C2433" vertical={false} />
-              <XAxis
-                dataKey="map"
-                stroke="#64748B"
-                fontSize={11}
-                tickLine={false}
-                axisLine={{ stroke: "#1C2433" }}
-              />
-              <YAxis
-                stroke="#64748B"
-                fontSize={11}
-                tickLine={false}
-                axisLine={{ stroke: "#1C2433" }}
-                domain={[0, 100]}
-                unit="%"
-              />
-              <Tooltip
-                cursor={{ fill: "rgba(28, 36, 51, 0.4)" }}
-                content={({ active, payload }) => {
-                  if (active && payload && payload.length) {
-                    const item = payload[0].payload as MapChartItem;
-                    return (
-                      <div className="bg-[#090C10] border border-[#1C2433] p-3 rounded-lg shadow-xl text-xs space-y-1">
-                        <p className="font-tactical font-black text-white text-base uppercase">
-                          {item.map}
-                        </p>
-                        <p className={item.winRate >= 50 ? "text-emerald-400 font-bold" : "text-[#FF4655] font-bold"}>
-                          Win Rate: {item.winRate}%
-                        </p>
-                        <p className="text-[#94A3B8] text-[11px]">
-                          Rekor: {item.wins} Menang · {item.losses} Kalah {item.draws > 0 ? `· ${item.draws} Seri` : ""} ({item.total} Game)
-                        </p>
-                      </div>
-                    );
-                  }
-                  return null;
-                }}
-              />
-              <Bar dataKey="winRate" radius={[4, 4, 0, 0]}>
-                {data.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={entry.winRate >= 50 ? "#10B981" : "#FF4655"}
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </CardContent>
-    </Card>
-  );
+  return <Card className="overflow-hidden rounded-xl border-[#1C2433] bg-[#0C1017] text-[#F1F5F9] shadow-none">
+    <CardHeader className="border-b border-[#1C2433] px-5 py-5 sm:px-6">
+      <CardTitle className="text-base font-semibold text-white">{isEn ? "Win Rate by Map" : "Win Rate per Map"}</CardTitle>
+      <p className="text-sm text-[#CBD5E1]">{isEn ? "Win percentage and game count for every map played." : "Persentase kemenangan dan jumlah game untuk setiap map yang dimainkan."}</p>
+    </CardHeader>
+    <CardContent className="space-y-6 p-5 sm:p-6" role="img" aria-label={summary || (isEn ? "No map results yet." : "Belum ada hasil map.")}>
+      {!data.length ? <p className="py-8 text-center text-sm text-[#CBD5E1]">{isEn ? "No map results yet." : "Belum ada hasil map yang tercatat."}</p> : data.map((item) => {
+        const percentage = item.winRate % 1 === 0 ? item.winRate.toFixed(0) : item.winRate.toFixed(1);
+        return <div key={item.map} className="grid grid-cols-[72px_minmax(0,1fr)_76px] items-center gap-3 sm:grid-cols-[100px_minmax(0,1fr)_88px] sm:gap-4">
+          <span className="text-[13px] font-medium text-[#F1F5F9]">{item.map}</span>
+          <div className="h-3 overflow-hidden rounded-full bg-[#1C2433]" aria-hidden="true"><div className="h-full rounded-full bg-[#FF4655] transition-[width] duration-300" style={{ width: `${Math.max(0, Math.min(100, item.winRate))}%` }} /></div>
+          <span className="text-right"><span className="block font-mono text-base font-bold tabular-nums text-white">{percentage}%</span><span className="block text-[11px] text-[#CBD5E1]">({item.total} {isEn ? (item.total === 1 ? "game" : "games") : "game"})</span></span>
+        </div>;
+      })}
+    </CardContent>
+  </Card>;
 }

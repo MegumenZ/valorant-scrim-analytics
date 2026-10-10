@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- Native Valorant asset images avoid Vercel image optimization usage. */
+
 import React, { useState } from "react";
 import { getAgentIcon, VALORANT_AGENTS } from "@/lib/data/valorant";
 
@@ -42,6 +44,8 @@ export function AgentAvatar({
     <img
       src={iconUrl}
       alt={agentName}
+      width={size === "lg" ? 32 : size === "md" ? 24 : 20}
+      height={size === "lg" ? 32 : size === "md" ? 24 : 20}
       onError={() => setHasError(true)}
       className={`rounded-full bg-[#161D28] border border-[#2A364F] object-cover shrink-0 select-none ${sizeClasses} ${className}`}
       loading="lazy"

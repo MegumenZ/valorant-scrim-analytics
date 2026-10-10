@@ -74,10 +74,10 @@ export function BottomNav() {
                 href={item.href}
                 className="flex flex-col items-center justify-center -mt-4 group"
               >
-                <div className="w-11 h-11 rounded-full bg-[#FF4655] border-2 border-[#090C10] shadow-md shadow-[#FF4655]/30 flex items-center justify-center text-white group-active:scale-95 transition-transform">
+                <div className="w-11 h-11 rounded-full bg-[#67E8D1] border-2 border-[#090C10] shadow-md shadow-[#67E8D1]/30 flex items-center justify-center text-[#090C10] group-active:scale-95 transition-transform">
                   <Icon className="w-5 h-5" />
                 </div>
-                <span className="text-[10px] font-semibold text-[#FF4655] mt-0.5">
+                <span className="text-[10px] font-semibold text-[#67E8D1] mt-0.5">
                   {item.label}
                 </span>
               </Link>
@@ -88,7 +88,7 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center justify-center py-1 px-3 rounded-lg transition-all ${
+              className={`flex min-h-11 min-w-11 flex-col items-center justify-center py-1 px-3 rounded-lg transition-all ${
                 item.active
                   ? "text-[#FF4655] font-semibold"
                   : "text-[#94A3B8] hover:text-white"

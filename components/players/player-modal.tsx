@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import { UserPlus, UserCheck, X, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,9 +21,34 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
   const router = useRouter();
   const { t, language } = useTranslation();
   const isEn = language === "en";
-
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const loadingRef = useRef(loading);
+  const closeRef = useRef(onClose);
+
+  useEffect(() => {
+    loadingRef.current = loading;
+    closeRef.current = onClose;
+  }, [loading, onClose]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const dialog = dialogRef.current;
+    dialog?.querySelector<HTMLElement>("button, input, select")?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !loadingRef.current) closeRef.current();
+      if (event.key !== "Tab" || !dialog) return;
+      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), [href], [tabindex]:not([tabindex="-1"])'));
+      if (!focusable.length) return;
+      if (event.shiftKey && document.activeElement === focusable[0]) { event.preventDefault(); focusable.at(-1)?.focus(); }
+      else if (!event.shiftKey && document.activeElement === focusable.at(-1)) { event.preventDefault(); focusable[0].focus(); }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => { window.removeEventListener("keydown", handleKeyDown); previousFocus?.focus(); };
+  }, [isOpen]);
 
   const [name, setName] = useState(playerToEdit?.name || "");
   const [riotId, setRiotId] = useState(playerToEdit?.riotId || "");
@@ -32,18 +57,6 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
   );
   const [discordId, setDiscordId] = useState(playerToEdit?.discordId || "");
   const [isActive, setIsActive] = useState(playerToEdit?.isActive ?? true);
-
-  useEffect(() => {
-    if (isOpen) {
-      setName(playerToEdit?.name || "");
-      setRiotId(playerToEdit?.riotId || "");
-      setPrimaryRole((playerToEdit?.primaryRole as ValorantRole) || "Flex");
-      setDiscordId(playerToEdit?.discordId || "");
-      setIsActive(playerToEdit?.isActive ?? true);
-      setLoading(false);
-      setErrorMsg(null);
-    }
-  }, [isOpen, playerToEdit]);
 
   if (!isOpen) return null;
 
@@ -95,16 +108,18 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
       />
 
       {/* Modal Container */}
-      <div className="relative w-full max-w-md bg-[#0F141C] border border-[#1C2433] rounded-xl shadow-2xl overflow-hidden z-10">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="relative w-full max-w-md bg-[#0F141C] border border-[#1C2433] rounded-xl shadow-2xl overflow-hidden z-10">
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#1C2433]">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-white">
+            <h3 id={titleId} className="text-sm font-semibold text-white">
               {playerToEdit ? (isEn ? "Edit Player Profile" : "Edit Data Pemain") : (isEn ? "Add New Player" : "Tambah Pemain Baru")}
             </h3>
           </div>
           <button
+            type="button"
+            aria-label={t.common.close}
             onClick={onClose}
-            className="p-1 rounded-lg text-[#94A3B8] hover:text-white hover:bg-[#161D28]"
+            className="flex h-11 w-11 items-center justify-center rounded-lg text-[#CBD5E1] hover:text-white hover:bg-[#161D28]"
           >
             <X className="w-4 h-4" />
           </button>
@@ -179,7 +194,7 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
           </div>
 
           {/* Status Toggle */}
-          <div className="pt-2 flex items-center justify-between border-t border-[#1C2433]">
+          {!playerToEdit && <div className="pt-2 flex items-center justify-between border-t border-[#1C2433]">
             <span className="text-[#94A3B8] font-semibold">{isEn ? "Player Status:" : "Status Pemain:"}</span>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -189,10 +204,10 @@ export function PlayerModal({ isOpen, onClose, playerToEdit }: PlayerModalProps)
                 className="w-4 h-4 rounded text-[#FF4655] focus:ring-[#FF4655] bg-[#090C10] border-[#1C2433]"
               />
               <span className={isActive ? "text-emerald-400 font-semibold" : "text-[#94A3B8]"}>
-                {isActive ? (isEn ? "Active Starter (5 Core)" : "Roster Starter (5 Inti)") : (isEn ? "Bench / Substitute" : "Pemain Cadangan")}
+                {isActive ? (isEn ? "Active roster" : "Roster aktif") : (isEn ? "Inactive" : "Nonaktif")}
               </span>
             </label>
-          </div>
+          </div>}
 
           {/* Action Buttons */}
           <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-[#1C2433]">

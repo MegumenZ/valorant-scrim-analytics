@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useId, useRef } from "react";
 import { AlertTriangle, Trash2, X, RefreshCw } from "lucide-react";
 import { Button } from "./button";
 
@@ -27,16 +27,37 @@ export function ConfirmModal({
   variant = "danger",
   isLoading = false,
 }: ConfirmModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const closeRef = useRef(onClose);
+  const loadingRef = useRef(isLoading);
+  useEffect(() => {
+    closeRef.current = onClose;
+    loadingRef.current = isLoading;
+  }, [onClose, isLoading]);
   // Close on Escape key
   useEffect(() => {
+    if (!isOpen) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const dialog = dialogRef.current;
+    dialog?.querySelector<HTMLElement>("button:not(:disabled)")?.focus();
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen && !isLoading) {
-        onClose();
+      if (e.key === "Escape" && isOpen && !loadingRef.current) {
+        closeRef.current();
+        return;
+      }
+      if (e.key === "Tab" && dialog) {
+        const focusable = Array.from(dialog.querySelectorAll<HTMLElement>('button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'));
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, isLoading, onClose]);
+    return () => { window.removeEventListener("keydown", handleKeyDown); previousFocus?.focus(); };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -45,9 +66,12 @@ export function ConfirmModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm select-none animate-in fade-in duration-200">
       <div
+        ref={dialogRef}
         className="w-full max-w-md bg-[#0C1017] border border-[#1C2433] rounded-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
       >
         {/* Modal Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#1C2433] bg-[#090C10]">
@@ -65,14 +89,16 @@ export function ConfirmModal({
                 <AlertTriangle className="w-4 h-4" />
               )}
             </div>
-            <h3 className="font-bold text-sm sm:text-base text-white tracking-tight">
+            <h3 id={titleId} className="font-bold text-sm sm:text-base text-white tracking-tight">
               {title}
             </h3>
           </div>
           <button
+            type="button"
+            aria-label={cancelText}
             onClick={onClose}
             disabled={isLoading}
-            className="text-[#94A3B8] hover:text-white transition-colors p-1 rounded hover:bg-[#1C2433] cursor-pointer disabled:opacity-50"
+            className="flex h-11 w-11 items-center justify-center text-[#94A3B8] hover:text-white transition-colors rounded hover:bg-[#1C2433] cursor-pointer disabled:opacity-50"
           >
             <X className="w-4 h-4" />
           </button>
@@ -103,7 +129,7 @@ export function ConfirmModal({
             disabled={isLoading}
             className={`text-xs gap-1.5 font-bold ${
               isDanger
-                ? "bg-[#FF4655] hover:bg-[#FF4655]/90 text-white"
+                ? "bg-[#D62E40] hover:bg-[#B91C2B] text-white"
                 : "bg-emerald-600 hover:bg-emerald-500 text-white"
             }`}
           >

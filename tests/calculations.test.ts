@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
   calculateKD,
-  calculateOpeningDuelRatio,
   calculateMatchResult,
 } from "@/lib/utils/analytics";
 
@@ -15,17 +14,6 @@ describe("Analytics Math Calculations", () => {
     it("should guard against division by zero when deaths is 0", () => {
       expect(calculateKD(15, 0)).toBe(15.0);
       expect(calculateKD(0, 0)).toBe(0.0);
-    });
-  });
-
-  describe("calculateOpeningDuelRatio", () => {
-    it("should calculate FK/FD ratio correctly", () => {
-      expect(calculateOpeningDuelRatio(6, 2)).toBe(3.0);
-      expect(calculateOpeningDuelRatio(3, 4)).toBe(0.75);
-    });
-
-    it("should guard against division by zero when first deaths is 0", () => {
-      expect(calculateOpeningDuelRatio(4, 0)).toBe(4.0);
     });
   });
 

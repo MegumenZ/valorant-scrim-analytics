@@ -48,7 +48,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id" className={`dark ${plusJakartaSans.variable} ${barlowCondensed.variable} ${jetbrainsMono.variable}`}>
-      <body className="bg-[#090C10] text-[#F1F5F9] font-sans antialiased min-h-screen selection:bg-[#FF4655] selection:text-white">
+      <body className="h-full overflow-hidden bg-[#090C10] text-[#F1F5F9] font-sans antialiased selection:bg-[#FF4655] selection:text-white">
         <Suspense fallback={null}>
           <TopProgressBar />
         </Suspense>
@@ -61,9 +61,9 @@ export default function RootLayout({
               </div>
 
               {/* Main Application Container */}
-              <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+              <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
                 <Header />
-                <main className="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-8 pb-24 lg:pb-8">
+                <main className="min-h-0 min-w-0 flex-1 overflow-y-auto p-3 pb-24 sm:p-5 lg:p-8 lg:pb-8">
                   <div className="max-w-7xl mx-auto">{children}</div>
                 </main>
               </div>

@@ -4,7 +4,6 @@ import { en } from "@/lib/i18n/dictionaries/en";
 import { translateCoachNotes } from "@/lib/utils/note-translator";
 import {
   evaluateMatchTactics,
-  evaluateTeamTacticalHealth,
 } from "@/lib/utils/tactical-expert-engine";
 import { MatchWithStats } from "@/lib/actions/matches";
 
@@ -93,6 +92,11 @@ describe("Tactical Expert Engine Localization", () => {
     opponentName: "Team Secret",
     scoreTeam: 13,
     scoreOpponent: 7,
+    roundTimeline: JSON.stringify([
+      { round: 1, side: "ATTACK", winner: "TEAM", outcomeType: "ELIMINATION", tradesWon: 1, tradedDeaths: 1 },
+      { round: 2, side: "ATTACK", winner: "TEAM", outcomeType: "DETONATION", tradesWon: 1, tradedDeaths: 1 },
+      { round: 3, side: "ATTACK", winner: "OPPONENT", outcomeType: "DEFUSE", tradesWon: 0, tradedDeaths: 0 },
+    ]),
     result: "WIN",
     startSide: "ATTACK",
     rounds: [
@@ -114,6 +118,8 @@ describe("Tactical Expert Engine Localization", () => {
 
   it("should evaluate individual match in Indonesian", () => {
     const reportId = evaluateMatchTactics(dummyMatch, [], "id");
+    expect(reportId).not.toBeNull();
+    if (!reportId) throw new Error("Expected tactical report when match has recorded timeline and trade stats");
     expect(reportId.grade).toBeDefined();
     expect(reportId.gradeLabel).toBeDefined();
     expect(reportId.summary).toBeDefined();
@@ -124,6 +130,8 @@ describe("Tactical Expert Engine Localization", () => {
 
   it("should evaluate individual match in English", () => {
     const reportEn = evaluateMatchTactics(dummyMatch, [], "en");
+    expect(reportEn).not.toBeNull();
+    if (!reportEn) throw new Error("Expected tactical report when match has recorded timeline and trade stats");
     expect(reportEn.grade).toBeDefined();
     expect(reportEn.gradeLabel).toBeDefined();
     expect(reportEn.summary).toBeDefined();
@@ -133,11 +141,4 @@ describe("Tactical Expert Engine Localization", () => {
     expect(reportEn.gradeLabel).toMatch(/Masterclass|Disciplined|Solid|Average|Standard|Inconsistent|Blunders|Structure/i);
   });
 
-  it("should evaluate collective team tactical health in both languages", () => {
-    const overviewId = evaluateTeamTacticalHealth([dummyMatch], "id");
-    const overviewEn = evaluateTeamTacticalHealth([dummyMatch], "en");
-
-    expect(overviewId.averageScore).toBe(overviewEn.averageScore);
-    expect(overviewEn.topTeamPriorities.length).toBeGreaterThan(0);
-  });
 });

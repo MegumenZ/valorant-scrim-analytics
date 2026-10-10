@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth/session";
+import { getCurrentUser, isDemoAccount } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +17,7 @@ export async function GET() {
       globalName: user.globalName,
       avatar: user.avatar,
       role: user.role,
+      isDemo: isDemoAccount(user.discordId),
     },
   });
 }

@@ -17,13 +17,14 @@ export default async function PlayerProfilePage({ params }: PlayerProfilePagePro
     notFound();
   }
 
-  const { player, stats, agentPool, recentMatches } = data;
+  const { player, stats, agentPool, kdTrend, recentMatches } = data;
 
   return (
     <PlayerProfileView
       player={player}
       stats={stats}
       agentPool={agentPool}
+      kdTrend={kdTrend}
       recentMatches={recentMatches}
     />
   );

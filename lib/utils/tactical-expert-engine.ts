@@ -43,21 +43,6 @@ export interface TacticalMatchReport {
   };
 }
 
-export interface TeamTacticalOverview {
-  averageScore: number;
-  overallGrade: TacticalGrade;
-  totalMatchesAnalyzed: number;
-  tradeRateTrend: {
-    current: number;
-    baseline: number;
-    delta: number;
-    isImproving: boolean;
-  };
-  strongestMap: { map: string; winrate: number; matchCount: number } | null;
-  weakestMap: { map: string; winrate: number; matchCount: number } | null;
-  topTeamPriorities: Array<{ title: string; desc: string; icon: string; urgency: "HIGH" | "MEDIUM" | "LOW" }>;
-}
-
 const GRADE_CONFIG: Record<TacticalGrade, { labelId: string; labelEn: string; color: string; bg: string; border: string }> = {
   "S": { labelId: "Masterclass (S)", labelEn: "Masterclass (S)", color: "text-amber-400", bg: "bg-amber-500/15", border: "border-amber-500/40" },
   "A+": { labelId: "Sangat Disiplin (A+)", labelEn: "Highly Disciplined (A+)", color: "text-emerald-400", bg: "bg-emerald-500/15", border: "border-emerald-500/40" },
@@ -87,7 +72,7 @@ export function evaluateMatchTactics(
   currentMatch: MatchWithStats,
   pastMatches: MatchWithStats[] = [],
   lang: Language = "id"
-): TacticalMatchReport {
+): TacticalMatchReport | null {
   const isEn = lang === "en";
   const totalRounds = currentMatch.scoreTeam + currentMatch.scoreOpponent;
   const roundWinRate = totalRounds > 0 ? (currentMatch.scoreTeam / totalRounds) * 100 : 50;
@@ -97,7 +82,15 @@ export function evaluateMatchTactics(
   const totalFirstKills = playerStats.reduce((acc, p) => acc + (p.firstKills || 0), 0);
   const totalClutches = playerStats.reduce((acc, p) => acc + (p.clutchesWon || 0), 0);
 
-  const timeline: RoundItem[] = (currentMatch as any).parsedRoundTimeline || [];
+  let timeline: RoundItem[] = (currentMatch as any).parsedRoundTimeline || [];
+  if (timeline.length === 0 && currentMatch.roundTimeline) {
+    try {
+      const parsed = JSON.parse(currentMatch.roundTimeline);
+      if (Array.isArray(parsed)) timeline = parsed;
+    } catch { /* malformed legacy timeline is unavailable */ }
+  }
+  const hasRecordedTradeStats = timeline.some((round) => round.tradedDeaths != null || round.tradesWon != null);
+  if (timeline.length === 0 || !hasRecordedTradeStats) return null;
 
   // 1. Pilar Trade Efficiency
   let tradedDeaths = 0;
@@ -105,9 +98,6 @@ export function evaluateMatchTactics(
     for (const r of timeline) {
       if (r.tradedDeaths) tradedDeaths += r.tradedDeaths;
     }
-  }
-  if (tradedDeaths === 0 && totalDeaths > 0) {
-    tradedDeaths = Math.round(totalDeaths * 0.52);
   }
   const tradeRate = totalDeaths > 0 ? Math.min(100, Math.round((tradedDeaths / totalDeaths) * 100)) : 50;
   const untradedDeaths = Math.max(0, totalDeaths - tradedDeaths);
@@ -143,13 +133,6 @@ export function evaluateMatchTactics(
         if (r.winner === "TEAM") defenseWins++;
       }
     }
-  } else {
-    // Estimasi jika data kronologi kosong
-    const isAttStart = currentMatch.startSide === "ATTACK";
-    attackWins = isAttStart ? Math.min(12, Math.round(currentMatch.scoreTeam * 0.5)) : Math.round(currentMatch.scoreTeam * 0.5);
-    defenseWins = currentMatch.scoreTeam - attackWins;
-    attackTotal = 12;
-    defenseTotal = totalRounds - 12;
   }
 
   const attackWinRate = attackTotal > 0 ? (attackWins / attackTotal) * 100 : 50;
@@ -353,12 +336,12 @@ export function evaluateMatchTactics(
   }
 
   // Standout Players
-  const sortedByACS = [...playerStats].sort((a, b) => b.acs - a.acs);
+  const sortedByACS = [...playerStats].filter((player) => player.acs != null).sort((a, b) => (b.acs ?? 0) - (a.acs ?? 0));
   const mvp = sortedByACS[0];
   const clutchLeader = [...playerStats].sort((a, b) => (b.clutchesWon || 0) - (a.clutchesWon || 0))[0];
   const entryFragger = [...playerStats].sort((a, b) => (b.firstKills || 0) - (a.firstKills || 0))[0];
 
-  if (mvp && mvp.acs >= 270) {
+  if (mvp && mvp.acs != null && mvp.acs >= 270) {
     strengths.push({
       category: "STRENGTH",
       title: isEn ? `Dominant Impact Fragging (${mvp.agent} - ${mvp.acs} ACS)` : `Impact Fragging Dominan (${mvp.agent} - ${mvp.acs} ACS)`,
@@ -441,120 +424,9 @@ export function evaluateMatchTactics(
       postPlantRetakeScore,
     },
     standouts: {
-      mvp: mvp ? { name: mvp.playerId, agent: mvp.agent, acs: mvp.acs } : undefined,
+      mvp: mvp && mvp.acs != null ? { name: mvp.playerId, agent: mvp.agent, acs: mvp.acs } : undefined,
       clutchHero: clutchLeader && (clutchLeader.clutchesWon || 0) > 0 ? { name: clutchLeader.playerId, clutchesWon: clutchLeader.clutchesWon || 0 } : undefined,
       entryFragger: entryFragger && (entryFragger.firstKills || 0) > 0 ? { name: entryFragger.playerId, firstKills: entryFragger.firstKills || 0 } : undefined,
     },
   };
 }
-
-/**
- * Menghitung ringkasan kesehatan taktis tim secara keseluruhan dari seluruh riwayat pertandingan (Bilingual ID / EN)
- */
-export function evaluateTeamTacticalHealth(matches: MatchWithStats[], lang: Language = "id"): TeamTacticalOverview {
-  const isEn = lang === "en";
-
-  if (!matches || matches.length === 0) {
-    return {
-      averageScore: 70,
-      overallGrade: "B",
-      totalMatchesAnalyzed: 0,
-      tradeRateTrend: { current: 50, baseline: 50, delta: 0, isImproving: true },
-      strongestMap: null,
-      weakestMap: null,
-      topTeamPriorities: [
-        {
-          title: isEn ? "Start Recording Scrim Matches" : "Mulai Rekam Pertandingan Scrim",
-          desc: isEn ? "Record several scrim matches to activate the Tactical Engine." : "Catat beberapa game scrim untuk mengaktifkan Tactical Engine.",
-          icon: "Sparkles",
-          urgency: "LOW",
-        },
-      ],
-    };
-  }
-
-  // Hitung score per match
-  const reports = matches.map((m) => evaluateMatchTactics(m, matches, lang));
-  const avgScore = Math.round(reports.reduce((acc, r) => acc + r.score, 0) / reports.length);
-  const overallGrade = determineGrade(avgScore);
-
-  // Trade rate trend
-  const recentReports = reports.slice(0, 5);
-  const baselineReports = reports.slice(5, 15);
-
-  const currTrade = Math.round(recentReports.reduce((acc, r) => acc + r.pillars.tradeRate, 0) / Math.max(1, recentReports.length));
-  const baseTrade = baselineReports.length > 0
-    ? Math.round(baselineReports.reduce((acc, r) => acc + r.pillars.tradeRate, 0) / baselineReports.length)
-    : currTrade;
-
-  const deltaTrade = currTrade - baseTrade;
-
-  // Map performance aggregation
-  const mapStats: Record<string, { wins: number; total: number }> = {};
-  for (const m of matches) {
-    if (!mapStats[m.map]) mapStats[m.map] = { wins: 0, total: 0 };
-    mapStats[m.map].total++;
-    if (m.result === "WIN") mapStats[m.map].wins++;
-  }
-
-  const mapList = Object.entries(mapStats).map(([map, stat]) => ({
-    map,
-    winrate: Math.round((stat.wins / stat.total) * 100),
-    matchCount: stat.total,
-  }));
-
-  mapList.sort((a, b) => b.winrate - a.winrate);
-  const strongestMap = mapList.length > 0 ? mapList[0] : null;
-  const weakestMap = mapList.length > 1 ? mapList[mapList.length - 1] : null;
-
-  // Top priorities
-  const topTeamPriorities: Array<{ title: string; desc: string; icon: string; urgency: "HIGH" | "MEDIUM" }> = [];
-
-  if (currTrade < 48) {
-    topTeamPriorities.push({
-      title: isEn ? "Improve Crosshair Spacing & Refrag Speed" : "Perbaiki Crosshair Spacing & Refrag Speed",
-      desc: isEn
-        ? `Team trade average (${currTrade}%) sits below competitive threshold (55%). Prioritize buddy-system drills.`
-        : `Rata-rata trade tim (${currTrade}%) masih berada di bawah ambang standar kompetitif (55%). Prioritaskan drill buddy-system.`,
-      icon: "Swords",
-      urgency: "HIGH",
-    });
-  } else {
-    topTeamPriorities.push({
-      title: isEn ? "Maintain Spacing Consistency" : "Pertahankan Konsistensi Spacing",
-      desc: isEn
-        ? `Team trade discipline (${currTrade}%) is solid. Continue polishing site hit timings and rotation tempo.`
-        : `Disiplin trade tim (${currTrade}%) sudah sangat solid. Terus asah koordinasi eksekusi site dan tempo rotasi.`,
-      icon: "ShieldCheck",
-      urgency: "MEDIUM",
-    });
-  }
-
-  if (weakestMap && weakestMap.winrate < 45) {
-    topTeamPriorities.push({
-      title: isEn ? `Revamp Playbook for Map ${weakestMap.map}` : `Rombak Playbook Map ${weakestMap.map}`,
-      desc: isEn
-        ? `Team winrate on ${weakestMap.map} is only ${weakestMap.winrate}% across ${weakestMap.matchCount} games. Needs a dedicated tactical theory session.`
-        : `Winrate tim di ${weakestMap.map} hanya ${weakestMap.winrate}% (${weakestMap.matchCount} game). Butuh sesi teori & evaluasi setup default.`,
-      icon: "MapPin",
-      urgency: "HIGH",
-    });
-  }
-
-  return {
-    averageScore: avgScore,
-    overallGrade,
-    totalMatchesAnalyzed: matches.length,
-    tradeRateTrend: {
-      current: currTrade,
-      baseline: baseTrade,
-      delta: deltaTrade,
-      isImproving: deltaTrade >= 0,
-    },
-    strongestMap,
-    weakestMap,
-    topTeamPriorities,
-  };
-}
-
-export const calculateTacticalMetrics = evaluateTeamTacticalHealth;

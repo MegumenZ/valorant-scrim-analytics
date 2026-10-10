@@ -8,6 +8,13 @@
       "when": 1786994032909,
       "tag": "0000_curious_george_stacy",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1791590400000,
+      "tag": "0001_post_match_scoreboard",
+      "breakpoints": true
     }
   ]
 }

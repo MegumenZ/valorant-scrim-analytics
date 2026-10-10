@@ -10,6 +10,7 @@ export interface AuthUser {
   globalName?: string | null;
   avatar?: string | null;
   role: "ADMIN" | "COACH" | "MEMBER";
+  isDemo?: boolean;
 }
 
 interface RoleContextType {
@@ -53,6 +54,7 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Hydrate the existing auth session from the API on mount.
     fetchUser();
   }, []);
 
@@ -64,7 +66,8 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
       router.refresh();
     } catch (err) {
       console.error("Logout error:", err);
-      window.location.href = "/login";
+      router.push("/login");
+      router.refresh();
     }
   };
 

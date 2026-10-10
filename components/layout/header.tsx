@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- Native images keep local brand and Discord avatars outside Vercel image optimization. */
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut, LogIn, Globe } from "lucide-react";
@@ -9,7 +11,7 @@ import { useTranslation } from "@/lib/i18n/context";
 
 export function Header() {
   const pathname = usePathname();
-  const { user, isAdmin, logout, isLoading } = useUserRole();
+  const { user, logout, isLoading } = useUserRole();
   const { t, language, setLanguage } = useTranslation();
 
   const getPageTitle = () => {
@@ -33,6 +35,8 @@ export function Header() {
           <img
             src="/team-sc-logo.png"
             alt="Team SC"
+            width={20}
+            height={20}
             className="w-5 h-5 object-contain shrink-0"
           />
           <span className="font-bold text-sm text-white tracking-tight">
@@ -84,6 +88,8 @@ export function Header() {
               <img
                 src={user.avatar}
                 alt={user.username}
+                width={24}
+                height={24}
                 className="w-6 h-6 rounded-full border border-[#2A364F] shrink-0"
               />
             ) : (
@@ -93,28 +99,25 @@ export function Header() {
             )}
 
             {/* Name & Role */}
-            <div className="hidden sm:flex flex-col text-left">
+            <div className="flex min-w-0 flex-col text-left">
               <span className="text-xs font-semibold text-white leading-tight truncate max-w-[120px]">
-                {user.globalName || user.username}
+                <span className="hidden sm:inline">{user.globalName || user.username}</span>
+                <span className="sm:hidden">{(user.globalName || user.username).slice(0, 12)}</span>
               </span>
               <span className={`text-[10px] font-medium leading-tight ${
-                isAdmin ? "text-rose-400" : "text-sky-400"
+                user.role === "ADMIN" ? "text-rose-300" : user.role === "COACH" ? "text-sky-300" : "text-[#CBD5E1]"
               }`}>
-                {isAdmin ? t.common.admin : t.common.member}
+                {user.role === "ADMIN" ? t.common.admin : user.role === "COACH" ? t.common.coach : t.common.member}{user.isDemo && <span className="ml-1.5 rounded border border-amber-400/30 bg-amber-400/10 px-1 text-amber-200">{t.common.demo}</span>}
               </span>
             </div>
 
             {/* Mobile Compact Role Badge */}
-            <span className={`sm:hidden px-1.5 py-0.5 rounded text-[9px] font-semibold ${
-              isAdmin ? "bg-rose-500/15 text-rose-400" : "bg-sky-500/15 text-sky-400"
-            }`}>
-              {isAdmin ? "Admin" : "Member"}
-            </span>
 
             {/* Logout Button */}
             <button
               onClick={logout}
-              className="p-1 text-[#94A3B8] hover:text-rose-400 hover:bg-[#161D28] rounded-md transition-colors cursor-pointer"
+              aria-label={t.common.logout}
+              className="min-h-11 min-w-11 flex items-center justify-center text-[#94A3B8] hover:text-rose-400 hover:bg-[#161D28] rounded-md transition-colors cursor-pointer"
               title={t.common.logout}
             >
               <LogOut className="w-3.5 h-3.5" />

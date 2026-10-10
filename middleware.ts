@@ -1,14 +1,10 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
+import { getSessionSecret } from "@/lib/auth/session-secret";
 
 const COOKIE_NAME = "valo_scrim_session";
-const authSecretString =
-  process.env.AUTH_SECRET ||
-  process.env.DISCORD_CLIENT_SECRET ||
-  "valorant-scrim-analytics-secure-secret-key-32-chars";
-
-const encodedSecret = new TextEncoder().encode(authSecretString);
+const encodedSecret = new TextEncoder().encode(getSessionSecret());
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

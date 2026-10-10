@@ -44,10 +44,12 @@ export const matches = sqliteTable("matches", {
   notes: text("notes"),
   attachments: text("attachments"), // JSON stringified array of MatchAttachment
   roundTimeline: text("round_timeline"), // JSON stringified array of RoundItem
+  idempotencyKey: text("idempotency_key"),
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 }, (table) => [
   index("match_date_idx").on(table.matchDate),
   index("match_map_idx").on(table.map),
+  uniqueIndex("matches_idempotency_key_idx").on(table.idempotencyKey),
 ]);
 
 // 3. MATCH_PLAYER_STATS TABLE
@@ -56,21 +58,36 @@ export const matchPlayerStats = sqliteTable("match_player_stats", {
   matchId: text("match_id").notNull().references(() => matches.id, { onDelete: "cascade" }),
   playerId: text("player_id").notNull().references(() => players.id, { onDelete: "cascade" }),
   agent: text("agent").notNull(),
-  acs: integer("acs").notNull(),
+  acs: integer("acs"),
   kills: integer("kills").notNull(),
   deaths: integer("deaths").notNull(),
   assists: integer("assists").notNull(),
-  adr: real("adr").notNull(),
+  adr: real("adr"),
   hsPercent: real("hs_percent"),
   firstKills: integer("first_kills").default(0).notNull(),
-  firstDeaths: integer("first_deaths").default(0).notNull(),
-  clutchesWon: integer("clutches_won").default(0).notNull(),
+  firstDeaths: integer("first_deaths"),
+  clutchesWon: integer("clutches_won"),
   kastPercent: real("kast_percent"),
+  plants: integer("plants"),
+  defuses: integer("defuses"),
 }, (table) => [
   uniqueIndex("match_player_unique_idx").on(table.matchId, table.playerId),
   index("stats_match_idx").on(table.matchId),
   index("stats_player_idx").on(table.playerId),
 ]);
+
+export const opponentMatchPlayerStats = sqliteTable("opponent_match_player_stats", {
+  id: text("id").primaryKey().$defaultFn(() => createId()),
+  matchId: text("match_id").notNull().references(() => matches.id, { onDelete: "cascade" }),
+  displayName: text("display_name").notNull(),
+  agent: text("agent").notNull(),
+  kills: integer("kills").notNull(),
+  deaths: integer("deaths").notNull(),
+  assists: integer("assists").notNull(),
+  firstKills: integer("first_kills").notNull().default(0),
+  plants: integer("plants").notNull().default(0),
+  defuses: integer("defuses").notNull().default(0),
+}, (table) => [index("opponent_stats_match_idx").on(table.matchId)]);
 
 // Spec compatibility aliases
 export const playerStats = matchPlayerStats;
@@ -108,6 +125,11 @@ export const playersRelations = relations(players, ({ many }) => ({
 
 export const matchesRelations = relations(matches, ({ many }) => ({
   playerStats: many(matchPlayerStats),
+  opponentPlayerStats: many(opponentMatchPlayerStats),
+}));
+
+export const opponentMatchPlayerStatsRelations = relations(opponentMatchPlayerStats, ({ one }) => ({
+  match: one(matches, { fields: [opponentMatchPlayerStats.matchId], references: [matches.id] }),
 }));
 
 export const matchPlayerStatsRelations = relations(matchPlayerStats, ({ one }) => ({
@@ -142,6 +164,7 @@ export type NewMatch = typeof matches.$inferInsert;
 
 export type MatchPlayerStat = typeof matchPlayerStats.$inferSelect;
 export type NewMatchPlayerStat = typeof matchPlayerStats.$inferInsert;
+export type OpponentMatchPlayerStat = typeof opponentMatchPlayerStats.$inferSelect;
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;

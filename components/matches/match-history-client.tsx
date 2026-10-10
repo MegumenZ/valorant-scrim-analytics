@@ -1,8 +1,9 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- Native game asset thumbnails avoid Vercel image optimization usage. */
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
-import { ExternalLink, Calendar, Trash2, Edit, RefreshCw, RotateCcw } from "lucide-react";
+import { ChevronRight, Calendar, Trash2, Edit, RefreshCw, RotateCcw } from "lucide-react";
 import { MatchWithStats, deleteMatch } from "@/lib/actions/matches";
 import { MatchFilters } from "./match-filters";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,8 @@ import { useUserRole } from "@/components/layout/role-context";
 import { useRouter } from "next/navigation";
 import { getAgentIcon, getMapListViewIcon } from "@/lib/data/valorant";
 import { useTranslation } from "@/lib/i18n/context";
+import { getTopFraggers, hasAdvancedMatchStats } from "@/lib/utils/match-scoreboard";
+import { PageHeader } from "@/components/ui/page-header";
 
 interface MatchHistoryClientProps {
   initialMatches: MatchWithStats[];
@@ -68,14 +71,7 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center justify-between border-b border-[#1C2433] pb-5">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-            {t.nav.matchHistory}
-          </h1>
-        </div>
-      </div>
+      <PageHeader title={t.nav.matchHistory} description={isEn ? "Browse match results and scoreboard data." : "Telusuri hasil scrim dan data scoreboard."} />
 
       {/* Top Bar Filters */}
       <MatchFilters
@@ -90,7 +86,7 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
       />
 
       {/* Main Table Card */}
-      <div className="rounded-lg border border-[#1C2433] bg-[#0C1017] overflow-hidden shadow-sm">
+      <div className="rounded-xl border border-[#1C2433] bg-[#0C1017] overflow-hidden shadow-sm">
         <div className="px-5 py-3.5 border-b border-[#1C2433] bg-[#090C10] flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-white uppercase tracking-wider">
@@ -121,6 +117,7 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
             </div>
           ) : (
             filteredMatches.map((m) => {
+              const topFraggers = getTopFraggers(m.playerStats);
               return (
                 <div
                   key={m.id}
@@ -130,7 +127,7 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                     {/* Map & Date */}
                     <div className="flex items-center gap-2.5">
                       <img
-                        src={getMapListViewIcon(m.map)}
+                        src={getMapListViewIcon(m.map)} width={32} height={32} loading="lazy" decoding="async"
                         alt={m.map}
                         className="w-8 h-8 rounded object-cover border border-[#1C2433] bg-[#161D28] shrink-0"
                       />
@@ -139,9 +136,10 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                           {m.map}
                         </div>
                         <div className="text-[11px] text-[#94A3B8] flex items-center gap-1">
-                          <Calendar className="w-3 h-3 text-[#64748B]" />
+                          <Calendar className="w-3 h-3 text-[#CBD5E1]" />
                           <span>{m.matchDate}</span>
                         </div>
+                        {!hasAdvancedMatchStats(m.playerStats) && <span className="inline-flex rounded border border-slate-700 px-1.5 py-0.5 text-[9px] text-slate-400">{isEn ? "Compact recap" : "Rekap ringkas"}</span>}
                       </div>
                     </div>
 
@@ -151,7 +149,7 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                         <span className={m.result === "WIN" ? "text-emerald-400" : m.result === "LOSS" ? "text-[#FF4655]" : "text-amber-400"}>
                           {m.scoreTeam}
                         </span>
-                        <span className="text-[#64748B] mx-1">-</span>
+                        <span className="text-[#CBD5E1] mx-1">-</span>
                         <span className="text-[#94A3B8]">{m.scoreOpponent}</span>
                       </div>
                       <span
@@ -168,29 +166,18 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                     </div>
                   </div>
 
-                  {/* Opponent & Side */}
-                  <div className="flex items-center justify-between text-xs py-0.5">
-                    <span className="font-semibold text-white truncate">
-                      vs {m.opponentName}
-                    </span>
-                    <span
-                      className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${
-                        m.startSide === "ATTACK"
-                          ? "text-[#FF4655] border-[#FF4655]/30 bg-[#FF4655]/10"
-                          : "text-sky-400 border-sky-500/30 bg-sky-500/10"
-                      }`}
-                    >
-                      {m.startSide === "ATTACK" ? (isEn ? "Attack" : "Attack") : (isEn ? "Defense" : "Defense")}
-                    </span>
-                  </div>
+                  <div className="text-xs font-semibold text-white truncate">vs {m.opponentName}</div>
 
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px]">
+                    {topFraggers.map((fragger) => <span key={fragger.id} className="inline-flex items-center gap-1.5"><span className="font-semibold text-white">{fragger.player?.name || "Player"}</span><span className="text-[#94A3B8]">{fragger.agent} · {fragger.kills} K</span></span>)}
+                  </div>
                   {/* 5-Agent Comp Stack & Actions */}
                   <div className="flex items-center justify-between pt-2 border-t border-[#1C2433] text-xs">
                     <div className="flex items-center -space-x-1.5 shrink-0">
                       {m.playerStats.slice(0, 5).map((stat) => (
                         <img
                           key={stat.id}
-                          src={getAgentIcon(stat.agent)}
+                          src={getAgentIcon(stat.agent)} width={24} height={24} loading="lazy" decoding="async"
                           alt={stat.agent}
                           title={`${stat.player?.name || "Player"} (${stat.agent})`}
                           className="w-5 h-5 rounded-full border border-[#0C1017] bg-[#090C10] object-cover"
@@ -203,10 +190,10 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-7 px-2 text-xs gap-1 hover:text-white hover:bg-[#1C2433] font-medium"
+                          className="h-11 px-2 text-xs gap-1 hover:text-white hover:bg-[#1C2433] font-medium"
                         >
                           <span>{t.common.detail}</span>
-                          <ExternalLink className="w-3 h-3" />
+                          <ChevronRight aria-hidden="true" className="w-3 h-3" />
                         </Button>
                       </Link>
 
@@ -216,8 +203,8 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-7 w-7 p-0 text-[#94A3B8] hover:text-white"
-                              title={isEn ? "Edit Match" : "Edit Match"}
+                              aria-label={isEn ? "Edit scrim" : "Edit scrim"} className="h-11 w-11 p-0 text-[#CBD5E1] hover:text-white"
+                              title={isEn ? "Edit scrim" : "Edit scrim"}
                             >
                               <Edit className="w-3.5 h-3.5" />
                             </Button>
@@ -226,8 +213,8 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                             variant="ghost"
                             size="sm"
                             onClick={() => setDeleteTargetId(m.id)}
-                            className="h-7 w-7 p-0 text-[#FF4655] hover:text-[#FF4655] hover:bg-[#FF4655]/10"
-                            title={isEn ? "Delete Match" : "Hapus Match"}
+                            aria-label={isEn ? "Delete scrim" : "Hapus scrim"} className="h-11 w-11 p-0 text-[#FF4655] hover:text-[#FF4655] hover:bg-[#FF4655]/10"
+                            title={isEn ? "Delete scrim" : "Hapus scrim"}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
@@ -251,16 +238,15 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                 <th className="py-3 px-4">{t.matches.opponent}</th>
                 <th className="py-3 px-4 text-center">{isEn ? "Score" : "Skor"}</th>
                 <th className="py-3 px-4 text-center">{isEn ? "Result" : "Hasil"}</th>
-                <th className="py-3 px-4 text-center">{t.matches.startSide}</th>
                 <th className="py-3 px-4">{isEn ? "Agent Composition" : "Komposisi Agent"}</th>
-                <th className="py-3 px-4">Top Fragger</th>
+                <th className="py-3 px-4">{t.matches.topFragger}</th>
                 <th className="py-3 px-4 text-right">{isEn ? "Actions" : "Aksi"}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#1C2433]">
               {filteredMatches.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-12 text-center">
+                  <td colSpan={8} className="py-12 text-center">
                     <div className="space-y-3 max-w-sm mx-auto">
                       <p className="text-xs text-[#94A3B8]">
                         {isEn ? "No scrim matches match the current filter criteria." : "Tidak ada pertandingan scrim yang sesuai dengan filter."}
@@ -279,7 +265,7 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                 </tr>
               ) : (
                 filteredMatches.map((m) => {
-                  const topFragger = m.playerStats[0];
+                  const topFraggers = getTopFraggers(m.playerStats);
 
                   return (
                     <tr
@@ -292,11 +278,12 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                       <td className="py-3.5 px-4 font-tactical text-base font-black text-white uppercase tracking-wide sticky left-0 bg-[#0C1017] group-hover:bg-[#141A24] z-10 transition-colors">
                         <div className="flex items-center gap-2.5">
                           <img
-                            src={getMapListViewIcon(m.map)}
+                            src={getMapListViewIcon(m.map)} width={32} height={32} loading="lazy" decoding="async"
                             alt={m.map}
                             className="w-7 h-7 rounded object-cover border border-[#1C2433] bg-[#161D28] shrink-0"
                           />
                           <span>{m.map}</span>
+                          {!hasAdvancedMatchStats(m.playerStats) && <span className="rounded border border-slate-700 px-1.5 py-0.5 text-[9px] font-sans font-medium normal-case tracking-normal text-slate-400">{isEn ? "Compact recap" : "Rekap ringkas"}</span>}
                         </div>
                       </td>
                       <td className="py-3.5 px-4 text-xs font-semibold text-white whitespace-nowrap">
@@ -306,7 +293,7 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                         <span className={m.result === "WIN" ? "text-emerald-400" : m.result === "LOSS" ? "text-[#FF4655]" : "text-amber-400"}>
                           {m.scoreTeam}
                         </span>
-                        <span className="text-[#64748B] mx-1">-</span>
+                        <span className="text-[#CBD5E1] mx-1">-</span>
                         <span className="text-[#94A3B8]">{m.scoreOpponent}</span>
                       </td>
                       <td className="py-3.5 px-4 text-center">
@@ -323,23 +310,12 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                           <span>{m.result}</span>
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-center">
-                        <span
-                          className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${
-                            m.startSide === "ATTACK"
-                              ? "text-[#FF4655] border-[#FF4655]/30 bg-[#FF4655]/10"
-                              : "text-sky-400 border-sky-500/30 bg-sky-500/10"
-                          }`}
-                        >
-                          {m.startSide === "ATTACK" ? (isEn ? "Attack" : "Attack") : (isEn ? "Defense" : "Defense")}
-                        </span>
-                      </td>
                       <td className="py-3.5 px-4">
                         <div className="flex items-center -space-x-1.5">
                           {m.playerStats.slice(0, 5).map((stat) => (
                             <img
                               key={stat.id}
-                              src={getAgentIcon(stat.agent)}
+                              src={getAgentIcon(stat.agent)} width={24} height={24} loading="lazy" decoding="async"
                               alt={stat.agent}
                               title={`${stat.player?.name || "Player"} (${stat.agent})`}
                               className="w-6 h-6 rounded-full border border-[#0C1017] bg-[#090C10] object-cover"
@@ -348,23 +324,9 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                         </div>
                       </td>
                       <td className="py-3.5 px-4">
-                        {topFragger ? (
-                          <div className="flex items-center gap-2 whitespace-nowrap">
-                            <img
-                              src={getAgentIcon(topFragger.agent)}
-                              alt={topFragger.agent}
-                              className="w-5 h-5 rounded-full bg-[#161D28] border border-[#2A364F] shrink-0 object-cover"
-                            />
-                            <span className="text-xs font-bold text-white">
-                              {topFragger.player?.name || "Player"}
-                            </span>
-                            <span className="text-xs font-bold text-sky-400">
-                              {topFragger.acs} ACS
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-[#64748B]">-</span>
-                        )}
+                        <div className="flex flex-wrap gap-2">
+                          {topFraggers.length ? topFraggers.map((fragger) => <span key={fragger.id} className="inline-flex items-center gap-1.5 whitespace-nowrap"><img src={getAgentIcon(fragger.agent)} width={20} height={20} loading="lazy" decoding="async" alt={fragger.agent} className="h-5 w-5 shrink-0 rounded-full border border-[#2A364F] object-cover" /><span className="font-bold text-white">{fragger.player?.name || "Player"}</span><span className="text-sky-400">{fragger.agent} · {fragger.kills} K</span></span>) : <span className="text-[#CBD5E1]">—</span>}
+                        </div>
                       </td>
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1">
@@ -372,10 +334,10 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-7 px-2 text-xs gap-1 hover:text-white hover:bg-[#1C2433]"
+                              className="h-11 px-2 text-xs gap-1 hover:text-white hover:bg-[#1C2433]"
                             >
                               <span>{t.common.detail}</span>
-                              <ExternalLink className="w-3 h-3" />
+                              <ChevronRight aria-hidden="true" className="w-3 h-3" />
                             </Button>
                           </Link>
 
@@ -385,8 +347,8 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-7 w-7 p-0 text-[#94A3B8] hover:text-white"
-                                  title={isEn ? "Edit Match" : "Edit Match"}
+                                  aria-label={isEn ? "Edit scrim" : "Edit scrim"} className="h-11 w-11 p-0 text-[#CBD5E1] hover:text-white"
+                                  title={isEn ? "Edit scrim" : "Edit scrim"}
                                 >
                                   <Edit className="w-3.5 h-3.5" />
                                 </Button>
@@ -395,8 +357,8 @@ export function MatchHistoryClient({ initialMatches }: MatchHistoryClientProps) 
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setDeleteTargetId(m.id)}
-                                className="h-7 w-7 p-0 text-[#FF4655] hover:text-[#FF4655] hover:bg-[#FF4655]/10"
-                                title={isEn ? "Delete Match" : "Hapus Match"}
+                                aria-label={isEn ? "Delete scrim" : "Hapus scrim"} className="h-11 w-11 p-0 text-[#FF4655] hover:text-[#FF4655] hover:bg-[#FF4655]/10"
+                                title={isEn ? "Delete scrim" : "Hapus scrim"}
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </Button>

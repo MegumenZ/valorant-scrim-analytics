@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { evaluateMatchTactics, evaluateTeamTacticalHealth } from "@/lib/utils/tactical-expert-engine";
+import { evaluateMatchTactics } from "@/lib/utils/tactical-expert-engine";
 import { MatchWithStats } from "@/lib/actions/matches";
 
 describe("Tactical Expert Engine", () => {
@@ -15,10 +15,11 @@ describe("Tactical Expert Engine", () => {
     vodUrl: null,
     notes: null,
     attachments: null,
+    idempotencyKey: null,
     roundTimeline: JSON.stringify([
-      { round: 1, side: "ATTACK", winner: "TEAM", winType: "ELIMINATION" },
-      { round: 2, side: "ATTACK", winner: "TEAM", winType: "DETONATION" },
-      { round: 3, side: "ATTACK", winner: "OPPONENT", winType: "DEFUSE" },
+      { round: 1, side: "ATTACK", winner: "TEAM", winType: "ELIMINATION", tradesWon: 1, tradedDeaths: 1 },
+      { round: 2, side: "ATTACK", winner: "TEAM", winType: "DETONATION", tradesWon: 1, tradedDeaths: 1 },
+      { round: 3, side: "ATTACK", winner: "OPPONENT", winType: "DEFUSE", tradesWon: 0, tradedDeaths: 0 },
     ]),
     createdAt: "2026-08-20T10:00:00Z",
     playerStats: [
@@ -34,6 +35,8 @@ describe("Tactical Expert Engine", () => {
         adr: 180,
         hsPercent: 28,
         firstKills: 6,
+        plants: 0,
+        defuses: 0,
         firstDeaths: 2,
         clutchesWon: 1,
         kastPercent: 82,
@@ -52,6 +55,8 @@ describe("Tactical Expert Engine", () => {
 
   it("should evaluate match tactics and return a valid grade and score between 0 and 100", () => {
     const report = evaluateMatchTactics(mockMatch, []);
+    expect(report).not.toBeNull();
+    if (!report) throw new Error("Expected tactical report for timeline with recorded trades");
     expect(report.score).toBeGreaterThanOrEqual(0);
     expect(report.score).toBeLessThanOrEqual(100);
     expect(["S", "A+", "A", "B+", "B", "C+", "C", "D"]).toContain(report.grade);
@@ -59,11 +64,13 @@ describe("Tactical Expert Engine", () => {
     expect(report.pillars.roundWinRate).toBe(59);
   });
 
-  it("should evaluate team collective tactical overview correctly", () => {
-    const overview = evaluateTeamTacticalHealth([mockMatch]);
-    expect(overview.totalMatchesAnalyzed).toBe(1);
-    expect(overview.averageScore).toBeGreaterThanOrEqual(0);
-    expect(overview.strongestMap?.map).toBe("Ascent");
-    expect(overview.topTeamPriorities.length).toBeGreaterThan(0);
+  it("does not crash when a new match has no timeline or optional advanced stats", () => {
+    const newScoreboardMatch = {
+      ...mockMatch,
+      roundTimeline: null,
+      parsedRoundTimeline: [],
+      playerStats: mockMatch.playerStats.map((stat) => ({ ...stat, acs: null, adr: null, hsPercent: null, kastPercent: null, firstDeaths: null, clutchesWon: null })),
+    };
+    expect(evaluateMatchTactics(newScoreboardMatch, [])).toBeNull();
   });
 });

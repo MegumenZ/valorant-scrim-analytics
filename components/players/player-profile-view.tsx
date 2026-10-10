@@ -1,262 +1,49 @@
 "use client";
-
 import React from "react";
 import Link from "next/link";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { AgentPoolTable } from "@/components/players/agent-pool-table";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { PlayerKdTrendChart } from "@/components/players/player-kd-trend-chart";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AGENT_ROLE_COLORS, ValorantRole, getAgentIcon } from "@/lib/data/valorant";
+import { AGENT_ROLE_COLORS, ValorantRole } from "@/lib/data/valorant";
 import { useTranslation } from "@/lib/i18n/context";
 import { Player } from "@/lib/db/schema";
 import { AgentStatSummary, PlayerAggregateStats } from "@/lib/utils/analytics";
+import { PlayerKdTrendPoint } from "@/components/players/player-kd-trend-chart";
+import { hasProfileMatchData } from "@/lib/utils/roster-behavior";
+import { SMALL_SAMPLE_THRESHOLD } from "@/lib/utils/ui-constants";
 
 interface PlayerProfileViewProps {
   player: Player;
   stats: PlayerAggregateStats;
   agentPool: AgentStatSummary[];
-  recentMatches: Array<{
-    matchId: string;
-    matchDate: string;
-    map: string;
-    opponentName: string;
-    scoreTeam: number;
-    scoreOpponent: number;
-    result: string;
-    agent: string;
-    acs: number;
-    kills: number;
-    deaths: number;
-    assists: number;
-    kdRatio: number;
-    firstKills: number;
-    clutchesWon: number;
-  }>;
+  kdTrend: PlayerKdTrendPoint[];
+  recentMatches: Array<{ matchId: string; matchDate: string; map: string; opponentName: string; scoreTeam: number; scoreOpponent: number; result: string; agent: string; kills: number; deaths: number; assists: number; kdRatio: number }>;
 }
 
-export function PlayerProfileView({
-  player,
-  stats,
-  agentPool,
-  recentMatches,
-}: PlayerProfileViewProps) {
+function ObjectiveMetric({ title, total, average, samples, matches, isEn }: { title: string; total: number | null; average: number | null; samples: number; matches: number; isEn: boolean }) {
+  return <div className="rounded-xl border border-[#1C2433] bg-[#0C1017] p-4"><div className="text-[11px] font-semibold uppercase tracking-wide text-[#94A3B8]">{title}</div><div className="mt-2 font-tactical text-2xl font-bold tabular-nums text-white">{total == null ? "—" : total}</div><div className="mt-1 text-xs text-[#94A3B8]">{average == null ? (isEn ? "No recorded samples" : "Tidak ada sampel") : `${isEn ? "Avg" : "Rata-rata"} ${average.toFixed(1)} / ${isEn ? "match" : "match"}`}</div><div className="mt-1 text-[10px] text-[#CBD5E1]">{samples}/{matches} {isEn ? "matches" : "match"}</div></div>;
+}
+
+export function PlayerProfileView({ player, stats, agentPool, kdTrend, recentMatches }: PlayerProfileViewProps) {
   const { t, language } = useTranslation();
   const isEn = language === "en";
-
-  const roleColor =
-    AGENT_ROLE_COLORS[player.primaryRole as ValorantRole] ||
-    AGENT_ROLE_COLORS.Flex;
-
-  const wins = recentMatches.filter((m) => m.result === "WIN").length;
-  const losses = recentMatches.filter((m) => m.result === "LOSS").length;
-  const winRate = stats.matchesPlayed > 0 ? Math.round((wins / stats.matchesPlayed) * 100) : 0;
-
-  return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-12 select-none">
-      {/* HEADER & BACK BUTTON */}
-      <div className="flex flex-col gap-3">
-        <Link href="/roster">
-          <Button variant="ghost" size="sm" className="gap-2 text-[#94A3B8] hover:text-white pl-0">
-            <ArrowLeft className="w-4 h-4" />
-            <span>{isEn ? "Back to Roster" : "Kembali ke Roster"}</span>
-          </Button>
-        </Link>
-
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-lg bg-[#0C1017] border border-[#1C2433] shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-lg bg-[#090C10] border border-[#1C2433] flex items-center justify-center font-tactical text-2xl font-black text-white shadow-inner">
-              {player.name.substring(0, 2).toUpperCase()}
-            </div>
-
-            <div className="space-y-1">
-              <div className="flex items-center gap-2.5">
-                <h1 className="font-tactical text-3xl font-black tracking-wide text-white uppercase">
-                  {player.name}
-                </h1>
-                <span
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase ${
-                    player.isActive
-                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                      : "bg-[#1C2433] text-[#94A3B8] border-[#2A364F]"
-                  }`}
-                >
-                  {player.isActive ? (isEn ? "Active Roster" : "Active Roster") : (isEn ? "Inactive" : "Inactive")}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-3 text-xs text-[#94A3B8]">
-                {player.riotId && (
-                  <span className="font-mono text-[#F1F5F9]">{player.riotId}</span>
-                )}
-                {player.riotId && <span>•</span>}
-                <span className={`text-[10px] px-2 py-0.5 rounded font-semibold border ${roleColor.badge}`}>
-                  {player.primaryRole}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* INDIVIDUAL KPI CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* K/D Ratio */}
-        <KpiCard
-          title={isEn ? "K/D Ratio" : "K/D Ratio"}
-          value={`${stats.kdRatio.toFixed(2)}`}
-          subtitle={`${stats.totalKills} Kills · ${stats.totalDeaths} Deaths`}
-          variant={stats.kdRatio >= 1.2 ? "win" : stats.kdRatio >= 1.0 ? "default" : "loss"}
-        />
-
-        {/* Combat Score */}
-        <KpiCard
-          title={isEn ? "Average Combat Score" : "Rata-rata Combat Score"}
-          value={`${stats.avgAcs} ACS`}
-          subtitle={`${stats.totalKills} Total Kills (${stats.matchesPlayed} ${isEn ? "Games" : "Game"})`}
-          variant="highlight"
-        />
-
-        {/* Win Rate */}
-        <KpiCard
-          title={isEn ? "Scrim Win Rate" : "Win Rate Scrim"}
-          value={`${winRate}%`}
-          subtitle={`${wins} ${t.common.win} · ${losses} ${t.common.loss}`}
-          variant={winRate >= 50 ? "win" : "loss"}
-        />
-
-        {/* First Bloods */}
-        <KpiCard
-          title={t.matchForm.firstKills}
-          value={`${stats.firstKills} FK`}
-          subtitle={isEn ? `Avg ${(stats.firstKills / (stats.matchesPlayed || 1)).toFixed(1)} FK per match` : `Rata-rata ${(stats.firstKills / (stats.matchesPlayed || 1)).toFixed(1)} FK per match`}
-          variant="amber"
-        />
-      </div>
-
-      {/* AGENT POOL EFFICIENCY TABLE */}
+  const roleColor = AGENT_ROLE_COLORS[player.primaryRole as ValorantRole] || AGENT_ROLE_COLORS.Flex;
+  return <div className="mx-auto max-w-6xl space-y-6 pb-12">
+    <div className="flex flex-col gap-3"><Link href="/roster"><Button variant="ghost" size="sm" className="gap-2 pl-0 text-[#94A3B8] hover:text-white"><ArrowLeft className="h-4 w-4" />{isEn ? "Back to Roster" : "Kembali ke Roster"}</Button></Link><div className="flex flex-col gap-4 rounded-lg border border-[#1C2433] bg-[#0C1017] p-5 sm:flex-row sm:items-center"><div className="flex h-14 w-14 items-center justify-center rounded-lg border border-[#1C2433] bg-[#090C10] font-tactical text-2xl font-black text-white">{player.name.substring(0, 2).toUpperCase()}</div><div><div className="flex flex-wrap items-center gap-2.5"><h1 className="font-tactical text-3xl font-black uppercase tracking-wide text-white">{player.name}</h1><span className={`rounded border px-2 py-0.5 text-[10px] font-bold uppercase ${player.isActive ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" : "border-[#2A364F] bg-[#1C2433] text-[#94A3B8]"}`}>{player.isActive ? (isEn ? "Active" : "Aktif") : (isEn ? "Inactive" : "Nonaktif")}</span></div><div className="mt-1 flex items-center gap-3 text-xs text-[#94A3B8]">{player.riotId && <><span className="font-mono text-white">{player.riotId}</span><span>•</span></>}<span className={`rounded border px-2 py-0.5 text-[10px] font-semibold ${roleColor.badge}`}>{player.primaryRole}</span></div></div></div></div>
+    {hasProfileMatchData(stats.matchesPlayed) ? <>
+      <section aria-label={isEn ? "Player scoreboard summary" : "Ringkasan scoreboard pemain"} className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard title="K/D Ratio" value={stats.kdRatio.toFixed(2)} subtitle={`${stats.totalKills} Kills · ${stats.totalDeaths} Deaths`} detail={stats.matchesPlayed < SMALL_SAMPLE_THRESHOLD ? `${isEn ? "Small sample" : "Sampel kecil"} (n=${stats.matchesPlayed})` : undefined} variant={stats.kdRatio >= 1.2 ? "win" : stats.kdRatio >= 1 ? "default" : "loss"} />
+        <KpiCard title={isEn ? "Average Kills / match" : "Rata-rata Kill / match"} value={stats.avgKills.toFixed(1)} subtitle={`${stats.matchesPlayed} ${isEn ? "matches" : "match"}`} />
+        <KpiCard title={isEn ? "Average Deaths / match" : "Rata-rata Death / match"} value={stats.avgDeaths.toFixed(1)} subtitle={`${stats.matchesPlayed} ${isEn ? "matches" : "match"}`} variant="loss" />
+        <KpiCard title={isEn ? "Average Assists / match" : "Rata-rata Assist / match"} value={stats.avgAssists.toFixed(1)} subtitle={`${stats.matchesPlayed} ${isEn ? "matches" : "match"}`} variant="highlight" />
+      </section>
+      <section aria-label={isEn ? "Objective statistics" : "Statistik objektif"} className="grid grid-cols-1 gap-3 sm:grid-cols-3"><ObjectiveMetric title={t.matchForm.firstKills} {...stats.firstBlood} matches={stats.matchesPlayed} isEn={isEn} /><ObjectiveMetric title={isEn ? "Plants" : "Plant"} {...stats.plants} matches={stats.matchesPlayed} isEn={isEn} /><ObjectiveMetric title={isEn ? "Defuses" : "Defuse"} {...stats.defuses} matches={stats.matchesPlayed} isEn={isEn} /></section>
+      <PlayerKdTrendChart data={kdTrend} />
       <AgentPoolTable agentPool={agentPool} />
-
-      {/* MATCH HISTORY FOR THIS PLAYER */}
-      <Card className="bg-[#0C1017] border-[#1C2433] overflow-hidden shadow-sm">
-        <CardHeader className="py-3.5 px-5 border-b border-[#1C2433] bg-[#090C10]">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-sm sm:text-base font-bold text-white tracking-tight">
-                {isEn ? "Player Match History" : "Riwayat Pertandingan Pemain"}
-              </CardTitle>
-              <p className="text-xs text-[#94A3B8] mt-0.5">
-                {isEn ? "Individual performance records in scrim matches played" : "Catatan performa individu pada setiap scrim yang diikuti"}
-              </p>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0 overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-[#1C2433] bg-[#090C10] text-[#94A3B8] font-semibold text-[11px]">
-                <th className="py-3 px-4">{t.matches.date}</th>
-                <th className="py-3 px-4 sticky left-0 bg-[#090C10] z-10">{t.matches.map}</th>
-                <th className="py-3 px-4">{t.matches.opponent}</th>
-                <th className="py-3 px-4 text-center">{t.matches.result}</th>
-                <th className="py-3 px-4">{t.matchDetail.agent}</th>
-                <th className="py-3 px-4 text-center">{t.matchDetail.acs}</th>
-                <th className="py-3 px-4 text-center">{t.matchDetail.kda}</th>
-                <th className="py-3 px-4 text-center">{t.matchDetail.kdRatio}</th>
-                <th className="py-3 px-4 text-center">{t.matchDetail.firstBlood}</th>
-                <th className="py-3 px-4 text-center">{t.matchDetail.clutch}</th>
-                <th className="py-3 px-4 text-right"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#1C2433]">
-              {recentMatches.length === 0 ? (
-                <tr>
-                  <td colSpan={11} className="py-8 text-center text-[#94A3B8]">
-                    {isEn ? "This player has no recorded matches yet." : "Pemain ini belum memiliki catatan pertandingan."}
-                  </td>
-                </tr>
-              ) : (
-                recentMatches.map((m) => {
-                  return (
-                    <tr key={m.matchId} className="hover:bg-[#141A24] transition-colors group">
-                      <td className="py-3.5 px-4 text-[#94A3B8] whitespace-nowrap">
-                        {m.matchDate}
-                      </td>
-                      <td className="py-3.5 px-4 font-tactical text-base font-black text-white uppercase tracking-wide sticky left-0 bg-[#0C1017] group-hover:bg-[#141A24] z-10 transition-colors">
-                        {m.map}
-                      </td>
-                      <td className="py-3.5 px-4 font-semibold text-white whitespace-nowrap">
-                        vs {m.opponentName}
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded border uppercase inline-flex items-center gap-1 ${
-                            m.result === "WIN"
-                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-                              : m.result === "LOSS"
-                              ? "bg-[#FF4655]/10 text-[#FF4655] border-[#FF4655]/40"
-                              : "bg-amber-500/10 text-amber-400 border-amber-500/30"
-                          }`}
-                        >
-                          <span>{m.result === "WIN" ? "✓" : m.result === "LOSS" ? "✕" : "−"}</span>
-                          <span>{m.result} ({m.scoreTeam}-{m.scoreOpponent})</span>
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 font-semibold text-white">
-                        <div className="flex items-center gap-2">
-                          <img
-                            src={getAgentIcon(m.agent)}
-                            alt={m.agent}
-                            className="w-5 h-5 rounded-full bg-[#161D28] border border-[#2A364F] object-cover shrink-0"
-                          />
-                          <span>{m.agent}</span>
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4 text-center font-tactical text-base font-bold text-sky-400 tabular-nums">
-                        {m.acs}
-                      </td>
-                      <td className="py-3.5 px-4 text-center tabular-nums font-semibold">
-                        <span className="text-emerald-400">{m.kills}</span>
-                        <span className="text-[#64748B] mx-1">/</span>
-                        <span className="text-[#FF4655]">{m.deaths}</span>
-                        <span className="text-[#64748B] mx-1">/</span>
-                        <span className="text-[#94A3B8]">{m.assists}</span>
-                      </td>
-                      <td className="py-3.5 px-4 text-center font-tactical text-base font-bold tabular-nums">
-                        <span
-                          className={
-                            m.kdRatio >= 1.2
-                              ? "text-emerald-400"
-                              : m.kdRatio >= 1.0
-                              ? "text-white"
-                              : "text-[#FF4655]"
-                          }
-                        >
-                          {m.kdRatio.toFixed(2)}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-center text-emerald-400 font-tactical text-base font-bold tabular-nums">
-                        {m.firstKills}
-                      </td>
-                      <td className="py-3.5 px-4 text-center text-amber-400 font-tactical text-base font-bold tabular-nums">
-                        {m.clutchesWon > 0 ? `${m.clutchesWon} W` : "-"}
-                      </td>
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                        <Link href={`/matches/${m.matchId}`}>
-                          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 hover:text-white hover:bg-[#1C2433]">
-                            <span>{t.common.detail}</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </Button>
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
-    </div>
-  );
+      <Card className="overflow-hidden border-[#1C2433] bg-[#0C1017]"><CardHeader className="border-b border-[#1C2433] bg-[#090C10] py-3.5 px-5"><CardTitle className="text-sm font-bold tracking-tight text-white">{isEn ? "Player Match History" : "Riwayat Pertandingan Pemain"}</CardTitle><p className="mt-0.5 text-xs text-[#94A3B8]">{isEn ? "Scoreboard records for each match played" : "Catatan scoreboard dari setiap pertandingan yang diikuti"}</p></CardHeader><CardContent className="overflow-x-auto p-0"><table className="w-full min-w-[780px] border-collapse text-left text-xs"><thead><tr className="border-b border-[#1C2433] bg-[#090C10] text-[11px] font-semibold text-[#94A3B8]"><th className="px-4 py-3">{t.matches.date}</th><th className="px-4 py-3">{t.matches.map}</th><th className="px-4 py-3">{t.matches.opponent}</th><th className="px-4 py-3">{t.matchDetail.agent}</th><th className="px-4 py-3 text-center">{t.matchDetail.kda}</th><th className="px-4 py-3 text-center">{t.matches.result}</th><th className="px-4 py-3 text-right" /></tr></thead><tbody className="divide-y divide-[#1C2433]">{recentMatches.map((m) => <tr key={m.matchId} className="group hover:bg-[#141A24]"><td className="whitespace-nowrap px-4 py-3.5 text-[#94A3B8]">{m.matchDate}</td><td className="px-4 py-3.5 font-tactical font-bold uppercase text-white">{m.map}</td><td className="whitespace-nowrap px-4 py-3.5 font-semibold text-white">vs {m.opponentName}<div className="text-[10px] font-normal text-[#94A3B8]">{m.scoreTeam}-{m.scoreOpponent}</div></td><td className="px-4 py-3.5 font-semibold text-white">{m.agent}</td><td className="px-4 py-3.5 text-center font-semibold tabular-nums"><span className="text-emerald-400">{m.kills}</span><span className="mx-1 text-[#CBD5E1]">/</span><span className="text-[#FF4655]">{m.deaths}</span><span className="mx-1 text-[#CBD5E1]">/</span><span className="text-[#94A3B8]">{m.assists}</span></td><td className="px-4 py-3.5 text-center"><span className={m.result === "WIN" ? "text-emerald-400" : m.result === "LOSS" ? "text-[#FF4655]" : "text-amber-400"}>{m.result}</span></td><td className="whitespace-nowrap px-4 py-3.5 text-right"><Link href={`/matches/${m.matchId}`}><Button variant="ghost" size="sm" className="h-7 gap-1 px-2 text-xs"><span>{t.common.detail}</span><ChevronRight aria-hidden="true" className="h-3 w-3" /></Button></Link></td></tr>)}</tbody></table></CardContent></Card>
+    </> : <Card className="border-[#1C2433] bg-[#0C1017] p-6 sm:p-8"><CardContent className="p-0 text-center"><h2 className="text-base font-semibold text-white">{isEn ? "No match data yet" : "Belum ada data match"}</h2><p className="mt-2 text-sm text-[#94A3B8]">{isEn ? "Player statistics will appear here after this player is included in a recorded match." : "Statistik pemain akan muncul setelah pemain ini tercatat dalam match."}</p></CardContent></Card>}
+  </div>;
 }

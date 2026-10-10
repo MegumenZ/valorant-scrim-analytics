@@ -1,1787 +1,208 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PlusCircle, Check, AlertCircle, RefreshCw, Sparkles, HelpCircle, Calendar, Shield, Crosshair, Zap, RotateCcw, Swords, FileText, Image as ImageIcon, Trash2, UploadCloud, Eye, CheckCircle2, Bomb, ShieldCheck, Timer, Flame, Trophy } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
+import { AlertCircle, LoaderCircle, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { VALORANT_MAPS, VALORANT_AGENTS, ValorantMap, getAgentIcon } from "@/lib/data/valorant";
-import { Player, MatchAttachment } from "@/lib/db/schema";
+import { VALORANT_MAPS, ValorantMap } from "@/lib/data/valorant";
+import { MatchAttachment, Player } from "@/lib/db/schema";
 import { createMatch, updateMatch } from "@/lib/actions/matches";
-import { calculateKD, calculateMatchResult } from "@/lib/utils/calculations";
-import { compressImageToWebP, processAndCompressPdf, formatFileSize } from "@/lib/utils/file-compressor";
-import { RoundItem, RoundOutcomeType, RoundWinType } from "@/lib/validations/match";
+import { calculateMatchResult } from "@/lib/utils/calculations";
+import { compressImageToWebP } from "@/lib/utils/file-compressor";
+import { useTranslation } from "@/lib/i18n/context";
+import { getInitialPlayerSelection } from "@/lib/utils/roster-behavior";
+import { AgentPicker } from "@/components/matches/agent-picker";
+import { isAgentSelectedElsewhere } from "@/lib/utils/agent-picker";
+import { PageHeader } from "@/components/ui/page-header";
+import { clearIdempotencyKey, getOrCreateIdempotencyKey } from "@/lib/utils/idempotency-key";
 
-export interface OutcomeConfig {
-  label: string;
-  short: string;
-  desc: string;
-  color: string;
-  bg: string;
-  border: string;
-}
+type StatRow = {
+  playerId: string; agent: string; kills: string; deaths: string; assists: string;
+  firstKills: string; plants: string; defuses: string;
+  acs: string; adr: string; hsPercent: string; kastPercent: string; firstDeaths: string; clutchesWon: string;
+};
+type EnemyRow = Omit<StatRow, "playerId"> & { displayName: string };
+type ExistingStat = NonNullable<MatchEntryFormProps["initialData"]>["stats"][number];
+const emptyRow = (playerId = ""): StatRow => ({ playerId, agent: "", kills: "", deaths: "", assists: "", firstKills: "", plants: "", defuses: "", acs: "", adr: "", hsPercent: "", kastPercent: "", firstDeaths: "", clutchesWon: "" });
+const emptyEnemy = (): EnemyRow => ({ ...emptyRow(), displayName: "" });
+const optional = (value: string) => value === "" ? null : Number(value);
+const getLocalCalendarDate = () => {
+  const now = new Date();
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+};
 
-import { Language } from "@/lib/i18n/types";
-
-export function getOutcomeConfig(
-  side: "ATTACK" | "DEFENSE",
-  winner: "TEAM" | "OPPONENT",
-  outcome?: RoundOutcomeType | null,
-  lang: Language = "id"
-): OutcomeConfig {
-  const isEn = lang === "en";
-  const isWin = winner === "TEAM";
-
-  if (isWin) {
-    if (side === "ATTACK") {
-      if (outcome === "DETONATION") {
-        return {
-          label: isEn ? "Spike Detonated (Post-Plant)" : "Spike Meledak (Post-Plant)",
-          short: "Post-Plant",
-          desc: isEn ? "Spike successfully detonated" : "Spike berhasil meledak",
-          color: "text-amber-400",
-          bg: "bg-amber-500/15",
-          border: "border-amber-500/30",
-        };
-      }
-      return {
-        label: isEn ? "Enemies Eliminated" : "Musuh Tereliminasi",
-        short: isEn ? "Elimination" : "Eliminasi",
-        desc: isEn ? "All defending players eliminated" : "Semua defender tereliminasi",
-        color: "text-rose-400",
-        bg: "bg-rose-500/15",
-        border: "border-rose-500/30",
-      };
-    } else {
-      // DEFENSE WIN
-      if (outcome === "DEFUSE") {
-        return {
-          label: isEn ? "Spike Defused (Retake)" : "Spike Defused (Retake)",
-          short: "Retake",
-          desc: isEn ? "Spike successfully defused" : "Spike berhasil didefuse",
-          color: "text-sky-400",
-          bg: "bg-sky-500/15",
-          border: "border-sky-500/30",
-        };
-      }
-      if (outcome === "TIME") {
-        return {
-          label: isEn ? "Time Expired (Site Stall)" : "Waktu Habis (Stall)",
-          short: isEn ? "Time Out" : "Waktu Habis",
-          desc: isEn ? "Held site until 0:00 timer expired" : "Menahan site hingga 0:00",
-          color: "text-emerald-400",
-          bg: "bg-emerald-500/15",
-          border: "border-emerald-500/30",
-        };
-      }
-      return {
-        label: isEn ? "Enemies Eliminated" : "Musuh Tereliminasi",
-        short: isEn ? "Elimination" : "Eliminasi",
-        desc: isEn ? "All attacking players eliminated" : "Semua attacker tereliminasi",
-        color: "text-rose-400",
-        bg: "bg-rose-500/15",
-        border: "border-rose-500/30",
-      };
-    }
-  } else {
-    // LOSS (L)
-    if (side === "ATTACK") {
-      // ATTACK LOSS
-      if (outcome === "DEFUSE") {
-        return {
-          label: isEn ? "Enemy Retake & Defuse" : "Musuh Retake Spike",
-          short: isEn ? "Enemy Retake" : "Musuh Retake",
-          desc: isEn ? "Defenders successfully defused our spike" : "Defender berhasil defuse spike kita",
-          color: "text-sky-400",
-          bg: "bg-sky-500/15",
-          border: "border-sky-500/30",
-        };
-      }
-      if (outcome === "TIME") {
-        return {
-          label: isEn ? "Time Expired (Plant Failed)" : "Waktu Habis (Gagal Plant)",
-          short: isEn ? "Time Out" : "Waktu Habis",
-          desc: isEn ? "Ran out of time before planting spike" : "Kehabisan waktu sebelum plant",
-          color: "text-emerald-400",
-          bg: "bg-emerald-500/15",
-          border: "border-emerald-500/30",
-        };
-      }
-      return {
-        label: isEn ? "Team Eliminated" : "Tim Tereliminasi",
-        short: isEn ? "Eliminated" : "Tereliminasi",
-        desc: isEn ? "All teammates died in combat" : "Semua anggota tim mati",
-        color: "text-rose-400",
-        bg: "bg-rose-500/15",
-        border: "border-rose-500/30",
-      };
-    } else {
-      // DEFENSE LOSS
-      if (outcome === "DETONATION") {
-        return {
-          label: isEn ? "Enemy Spike Detonated" : "Spike Musuh Meledak",
-          short: isEn ? "Detonated" : "Spike Meledak",
-          desc: isEn ? "Failed to retake and defuse enemy spike" : "Gagal retake spike musuh",
-          color: "text-amber-400",
-          bg: "bg-amber-500/15",
-          border: "border-amber-500/30",
-        };
-      }
-      return {
-        label: isEn ? "Team Eliminated" : "Tim Tereliminasi",
-        short: isEn ? "Eliminated" : "Tereliminasi",
-        desc: isEn ? "All team defenders died in combat" : "Semua defender tim mati",
-        color: "text-rose-400",
-        bg: "bg-rose-500/15",
-        border: "border-rose-500/30",
-      };
-    }
-  }
-}
-
-export function getValidOutcomes(
-  side: "ATTACK" | "DEFENSE",
-  winner: "TEAM" | "OPPONENT"
-): RoundOutcomeType[] {
-  if (winner === "TEAM") {
-    return side === "ATTACK" ? ["DETONATION", "ELIMINATION"] : ["DEFUSE", "ELIMINATION", "TIME"];
-  } else {
-    return side === "ATTACK" ? ["DEFUSE", "ELIMINATION", "TIME"] : ["DETONATION", "ELIMINATION"];
-  }
-}
-
-interface PlayerStatRow {
-  playerId: string;
-  agent: string;
-  acs: number | string;
-  kills: number | string;
-  deaths: number | string;
-  assists: number | string;
-  firstKills: number | string;
-  clutchesWon: number | string;
+export function getOutcomeConfig(_side: "ATTACK" | "DEFENSE", winner: "TEAM" | "OPPONENT", outcome?: string | null, language: "id" | "en" = "id") {
+  const won = winner === "TEAM";
+  const outcomeText = outcome === "DEFUSE"
+    ? (won ? (language === "en" ? "Spike Defused" : "Spike Berhasil Di-defuse") : (language === "en" ? "Enemy Retake & Defuse" : "Musuh Retake & Defuse"))
+    : outcome === "DETONATION"
+      ? (won ? (language === "en" ? "Spike Detonated" : "Spike Meledak") : (language === "en" ? "Enemy Spike Detonated" : "Spike Musuh Meledak"))
+      : outcome === "TIME"
+        ? (won ? (language === "en" ? "Time Expired" : "Waktu Habis") : (language === "en" ? "Time Expired (Plant Failed)" : "Waktu Habis (Gagal Plant)"))
+        : (won ? (language === "en" ? "Enemies Eliminated" : "Musuh Tereliminasi") : (language === "en" ? "Team Eliminated" : "Tim Tereliminasi"));
+  return { label: outcomeText, short: outcomeText, desc: outcomeText, color: won ? "text-emerald-400" : "text-rose-400", bg: won ? "bg-emerald-500/10" : "bg-rose-500/10", border: won ? "border-emerald-500/30" : "border-rose-500/30" };
 }
 
 interface MatchEntryFormProps {
   availablePlayers: Player[];
+  initialPlayerIds?: string[];
   initialData?: {
-    id: string;
-    matchDate: string;
-    map: ValorantMap;
-    opponentName: string;
-    scoreTeam: number;
-    scoreOpponent: number;
-    startSide: "ATTACK" | "DEFENSE";
-    vodUrl?: string | null;
-    notes?: string | null;
-    attachments?: MatchAttachment[] | null;
-    roundsTimeline?: RoundItem[] | null;
-    stats: Array<{
-      playerId: string;
-      agent: string;
-      acs: number;
-      kills: number;
-      deaths: number;
-      assists: number;
-      adr?: number;
-      hsPercent?: number | null;
-      firstKills: number;
-      firstDeaths?: number;
-      clutchesWon?: number;
-    }>;
+    id: string; matchDate: string; map: ValorantMap; opponentName: string; scoreTeam: number; scoreOpponent: number;
+    startSide: "ATTACK" | "DEFENSE"; vodUrl?: string | null; notes?: string | null; attachments?: MatchAttachment[] | null;
+    roundsTimeline?: Array<{ round: number; side: "ATTACK" | "DEFENSE"; winner: "TEAM" | "OPPONENT"; winType?: any; outcomeType?: any; tradedDeaths?: number | null; tradesWon?: number | null }> | null;
+    stats: Array<{ playerId: string; agent: string; acs: number | null; kills: number; deaths: number; assists: number; adr: number | null; hsPercent?: number | null; kastPercent?: number | null; firstKills: number; firstDeaths?: number | null; clutchesWon?: number | null; plants?: number | null; defuses?: number | null }>;
+    opponentStats?: Array<{ displayName: string; agent: string; kills: number; deaths: number; assists: number; firstKills: number; plants: number; defuses: number }>;
   };
 }
 
-import { useTranslation } from "@/lib/i18n/context";
+const rowFrom = (row: ExistingStat): StatRow => ({
+  playerId: row.playerId, agent: row.agent, kills: String(row.kills), deaths: String(row.deaths), assists: String(row.assists),
+  firstKills: String(row.firstKills), plants: row.plants == null ? "" : String(row.plants), defuses: row.defuses == null ? "" : String(row.defuses),
+  acs: row.acs == null ? "" : String(row.acs), adr: row.adr == null ? "" : String(row.adr),
+  hsPercent: row.hsPercent == null ? "" : String(row.hsPercent), kastPercent: row.kastPercent == null ? "" : String(row.kastPercent),
+  firstDeaths: row.firstDeaths == null ? "" : String(row.firstDeaths), clutchesWon: row.clutchesWon == null ? "" : String(row.clutchesWon),
+});
 
-export function MatchEntryForm({ availablePlayers, initialData }: MatchEntryFormProps) {
+function numericCell(label: string, value: string, onChange: (value: string) => void, props: { min?: number; max?: number; step?: number; className?: string; id?: string; onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>; onPaste?: React.ClipboardEventHandler<HTMLInputElement> } = {}) {
+  return <label className="min-w-0"><span className="sr-only">{label}</span><Input aria-label={label} id={props.id} onKeyDown={props.onKeyDown} onPaste={props.onPaste} type="number" min={props.min ?? 0} max={props.max ?? 99} step={props.step ?? 1} value={value} onChange={(e) => onChange(e.target.value)} className={`h-9 text-center tabular-nums ${props.className ?? ""}`} /></label>;
+}
+
+export function MatchEntryForm({ availablePlayers, initialData, initialPlayerIds = [] }: MatchEntryFormProps) {
   const router = useRouter();
-  const { t, language } = useTranslation();
-  const isEn = language === "en";
+  const { language } = useTranslation();
+  const en = language === "en";
+  const playerOptions = [...availablePlayers].sort((a, b) => Number(b.isActive) - Number(a.isActive));
+  const initialSelection = getInitialPlayerSelection(playerOptions, initialPlayerIds);
+  const [date, setDate] = useState(() => initialData?.matchDate ?? getLocalCalendarDate());
+  const [map, setMap] = useState<ValorantMap>(initialData?.map ?? "Ascent");
+  const [opponent, setOpponent] = useState(initialData?.opponentName ?? "");
+  const [teamScore, setTeamScore] = useState(initialData ? String(initialData.scoreTeam) : "");
+  const [opponentScore, setOpponentScore] = useState(initialData ? String(initialData.scoreOpponent) : "");
+  const [startSide, setStartSide] = useState<"ATTACK" | "DEFENSE">(initialData?.startSide ?? "ATTACK");
+  const [vodUrl, setVodUrl] = useState(initialData?.vodUrl ?? "");
+  const [notes, setNotes] = useState(initialData?.notes ?? "");
+  const [attachments, setAttachments] = useState<MatchAttachment[]>(initialData?.attachments ?? []);
+  const [rows, setRows] = useState<StatRow[]>(() => initialData?.stats.length ? initialData.stats.map(rowFrom) : Array.from({ length: 5 }, (_, i) => emptyRow(initialSelection[i] ?? "")));
+  const [enemyRows, setEnemyRows] = useState<EnemyRow[]>(() => initialData?.opponentStats?.length ? initialData.opponentStats.map((row) => ({ ...emptyEnemy(), ...row, kills: String(row.kills), deaths: String(row.deaths), assists: String(row.assists), firstKills: String(row.firstKills), plants: String(row.plants), defuses: String(row.defuses) })) : Array.from({ length: 5 }, emptyEnemy));
+  const [showEnemy, setShowEnemy] = useState(Boolean(initialData?.opponentStats?.length));
+  const [showAdvanced, setShowAdvanced] = useState(Boolean(initialData?.stats.some((row) => row.acs != null || row.adr != null || row.hsPercent != null || row.kastPercent != null || row.firstDeaths != null || row.clutchesWon != null)));
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const idempotencyKey = useRef<string | null>(null);
 
-  const [matchDate, setMatchDate] = useState(
-    initialData?.matchDate || new Date().toISOString().split("T")[0]
-  );
-  const [map, setMap] = useState<ValorantMap>(initialData?.map || "Ascent");
-  const [opponentName, setOpponentName] = useState(initialData?.opponentName || "");
-  const [scoreTeam, setScoreTeam] = useState<number | string>(initialData?.scoreTeam ?? 13);
-  const [scoreOpponent, setScoreOpponent] = useState<number | string>(initialData?.scoreOpponent ?? 9);
-  const [startSide, setStartSide] = useState<"ATTACK" | "DEFENSE">(initialData?.startSide || "ATTACK");
-  const [vodUrl, setVodUrl] = useState(initialData?.vodUrl || "");
-  const [notes, setNotes] = useState(initialData?.notes || "");
-  const [attachments, setAttachments] = useState<MatchAttachment[]>(initialData?.attachments || []);
-  const [isCompressing, setIsCompressing] = useState(false);
-  const [compressionFeedback, setCompressionFeedback] = useState<string | null>(null);
-
-  const generateDefaultTimeline = (teamScore: number, oppScore: number, side: "ATTACK" | "DEFENSE"): RoundItem[] => {
-    const total = teamScore + oppScore;
-    if (total <= 0) return [];
-
-    const items: RoundItem[] = [];
-    let remWins = teamScore;
-    let remLoss = oppScore;
-
-    for (let r = 1; r <= total; r++) {
-      let roundSide: "ATTACK" | "DEFENSE";
-      if (r <= 12) {
-        roundSide = side;
-      } else if (r <= 24) {
-        roundSide = side === "ATTACK" ? "DEFENSE" : "ATTACK";
-      } else {
-        const otCycle = Math.floor((r - 25) / 2);
-        roundSide = otCycle % 2 === 0 ? side : (side === "ATTACK" ? "DEFENSE" : "ATTACK");
-      }
-
-      let winner: "TEAM" | "OPPONENT" = "TEAM";
-      if (remWins > 0 && remLoss > 0) {
-        if (r % 2 === 1 && remWins > 0) {
-          winner = "TEAM";
-          remWins--;
-        } else if (remLoss > 0) {
-          winner = "OPPONENT";
-          remLoss--;
-        } else {
-          winner = "TEAM";
-          remWins--;
-        }
-      } else if (remWins > 0) {
-        winner = "TEAM";
-        remWins--;
-      } else {
-        winner = "OPPONENT";
-        remLoss--;
-      }
-
-      const valid = getValidOutcomes(roundSide, winner);
-      const outcome = valid[0];
-
-      items.push({
-        round: r,
-        side: roundSide,
-        winner,
-        winType: outcome,
-        outcomeType: outcome,
-      });
-    }
-    return items;
-  };
-
-  const [roundsTimeline, setRoundsTimeline] = useState<RoundItem[]>(() => {
-    if (initialData?.roundsTimeline && initialData.roundsTimeline.length > 0) {
-      return initialData.roundsTimeline;
-    }
-    return generateDefaultTimeline(Number(scoreTeam) || 0, Number(scoreOpponent) || 0, startSide);
-  });
-
-  useEffect(() => {
-    const total = (Number(scoreTeam) || 0) + (Number(scoreOpponent) || 0);
-    if (total <= 0) {
-      setRoundsTimeline([]);
-      return;
-    }
-
-    setRoundsTimeline((prev) => {
-      if (prev.length === total) {
-        return prev.map((item, idx) => {
-          const r = idx + 1;
-          let roundSide: "ATTACK" | "DEFENSE";
-          if (r <= 12) {
-            roundSide = startSide;
-          } else if (r <= 24) {
-            roundSide = startSide === "ATTACK" ? "DEFENSE" : "ATTACK";
-          } else {
-            const otCycle = Math.floor((r - 25) / 2);
-            roundSide = otCycle % 2 === 0 ? startSide : (startSide === "ATTACK" ? "DEFENSE" : "ATTACK");
-          }
-          return { ...item, round: r, side: roundSide };
-        });
-      }
-
-      const newItems: RoundItem[] = [];
-      for (let r = 1; r <= total; r++) {
-        let roundSide: "ATTACK" | "DEFENSE";
-        if (r <= 12) {
-          roundSide = startSide;
-        } else if (r <= 24) {
-          roundSide = startSide === "ATTACK" ? "DEFENSE" : "ATTACK";
-        } else {
-          const otCycle = Math.floor((r - 25) / 2);
-          roundSide = otCycle % 2 === 0 ? startSide : (startSide === "ATTACK" ? "DEFENSE" : "ATTACK");
-        }
-
-        const existing = prev[r - 1];
-        const winner = existing ? existing.winner : "TEAM";
-        const valid = getValidOutcomes(roundSide, winner);
-        const outcome = existing?.outcomeType || existing?.winType || valid[0];
-
-        newItems.push({
-          round: r,
-          side: roundSide,
-          winner,
-          winType: outcome,
-          outcomeType: outcome,
-        });
-      }
-      return newItems;
-    });
-  }, [scoreTeam, scoreOpponent, startSide]);
-
-  // Guard against unsaved data loss on accidental page reload/leave
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if ((opponentName.trim() || notes.trim()) && !loading) {
-        e.preventDefault();
-        e.returnValue = "";
-      }
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [opponentName, notes, loading]);
-
-  const handleToggleRoundWinner = (roundNum: number) => {
-    setRoundsTimeline((prev) =>
-      prev.map((item) => {
-        if (item.round === roundNum) {
-          const nextWinner = item.winner === "TEAM" ? "OPPONENT" : "TEAM";
-          const valid = getValidOutcomes(item.side, nextWinner);
-          return {
-            ...item,
-            winner: nextWinner,
-            winType: valid[0],
-            outcomeType: valid[0],
-          };
-        }
-        return item;
-      })
-    );
-  };
-
-  const handleCycleOutcome = (roundNum: number, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setRoundsTimeline((prev) =>
-      prev.map((item) => {
-        if (item.round === roundNum) {
-          const valid = getValidOutcomes(item.side, item.winner);
-          const current = item.outcomeType || item.winType || valid[0];
-          const currIdx = valid.indexOf(current as RoundOutcomeType);
-          const nextOutcome = valid[(currIdx + 1) % valid.length];
-          return { ...item, winType: nextOutcome, outcomeType: nextOutcome };
-        }
-        return item;
-      })
-    );
-  };
-
-  const handleMatrixKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement>,
-    rowIndex: number,
-    colIndex: number
-  ) => {
-    if (e.key === "ArrowDown" || e.key === "Enter") {
-      e.preventDefault();
-      const target = document.getElementById(`stat-matrix-${rowIndex + 1}-${colIndex}`);
-      if (target) {
-        target.focus();
-        (target as HTMLInputElement).select?.();
-      }
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      const target = document.getElementById(`stat-matrix-${rowIndex - 1}-${colIndex}`);
-      if (target) {
-        target.focus();
-        (target as HTMLInputElement).select?.();
-      }
-    } else if (e.key === "ArrowRight") {
-      const input = e.currentTarget;
-      if (input.selectionEnd === input.value.length) {
-        const target = document.getElementById(`stat-matrix-${rowIndex}-${colIndex + 1}`);
-        if (target) {
-          e.preventDefault();
-          target.focus();
-          (target as HTMLInputElement).select?.();
-        }
-      }
-    } else if (e.key === "ArrowLeft") {
-      const input = e.currentTarget;
-      if (input.selectionStart === 0) {
-        const target = document.getElementById(`stat-matrix-${rowIndex}-${colIndex - 1}`);
-        if (target) {
-          e.preventDefault();
-          target.focus();
-          (target as HTMLInputElement).select?.();
-        }
-      }
-    }
-  };
-
-  const handleAutoFillTimeline = () => {
-    const sTeam = Number(scoreTeam) || 0;
-    const sOpp = Number(scoreOpponent) || 0;
-    setRoundsTimeline(generateDefaultTimeline(sTeam, sOpp, startSide));
-  };
-
-  const handleSetAllRounds = (winner: "TEAM" | "OPPONENT") => {
-    setRoundsTimeline((prev) => prev.map((item) => ({ ...item, winner })));
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    setIsCompressing(true);
-    setErrorMsg(null);
-    setCompressionFeedback(null);
-
+  const ensureIdempotencyKey = () => {
+    if (idempotencyKey.current) return idempotencyKey.current;
+    let key: string;
     try {
-      if (attachments.length + files.length > 3) {
-        throw new Error("Batas kuota lampiran: Maksimal 3 berkas (Gambar/PDF) per pertandingan untuk menjaga performa database tetap ringan.");
-      }
-
-      const newAttachments: MatchAttachment[] = [];
-      const feedbackList: string[] = [];
-
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const isImage = file.type.startsWith("image/");
-        const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
-
-        if (!isImage && !isPdf) {
-          throw new Error(`File "${file.name}" tidak didukung. Mohon unggah berkas Gambar (PNG/JPEG) atau Dokumen PDF.`);
-        }
-
-        if (isImage) {
-          const res = await compressImageToWebP(file);
-          newAttachments.push(res.attachment);
-          feedbackList.push(`${res.attachment.name}: ${res.originalSizeFormatted} ➔ ${res.compressedSizeFormatted} (WebP - Hemat ${res.savingsPercent}%)`);
-        } else if (isPdf) {
-          const res = await processAndCompressPdf(file);
-          newAttachments.push(res.attachment);
-          feedbackList.push(`${res.attachment.name}: ${res.compressedSizeFormatted} (PDF Optimal)`);
-        }
-      }
-
-      setAttachments((prev) => [...prev, ...newAttachments]);
-      setCompressionFeedback(feedbackList.join(" • "));
-    } catch (err: any) {
-      setErrorMsg(err.message || "Gagal memproses lampiran.");
-    } finally {
-      setIsCompressing(false);
-      e.target.value = "";
+      key = getOrCreateIdempotencyKey(window.sessionStorage, () => globalThis.crypto.randomUUID());
+    } catch {
+      // Storage can be unavailable in restricted browser contexts; in-memory retries still work.
+      key = globalThis.crypto.randomUUID();
     }
+    idempotencyKey.current = key;
+    return key;
   };
 
-  const handleRemoveAttachment = (id: string) => {
-    setAttachments((prev) => prev.filter((a) => a.id !== id));
-  };
-
-  const activeStarters = availablePlayers.filter((p) => p.isActive).slice(0, 5);
-
-  const defaultRows: PlayerStatRow[] = [
-    { playerId: activeStarters[0]?.id || availablePlayers[0]?.id || "", agent: "Jett", acs: 240, kills: 18, deaths: 12, assists: 4, firstKills: 4, clutchesWon: 1 },
-    { playerId: activeStarters[1]?.id || availablePlayers[1]?.id || "", agent: "Raze", acs: 220, kills: 16, deaths: 14, assists: 5, firstKills: 3, clutchesWon: 0 },
-    { playerId: activeStarters[2]?.id || availablePlayers[2]?.id || "", agent: "Omen", acs: 195, kills: 14, deaths: 11, assists: 9, firstKills: 1, clutchesWon: 2 },
-    { playerId: activeStarters[3]?.id || availablePlayers[3]?.id || "", agent: "Sova", acs: 185, kills: 13, deaths: 12, assists: 11, firstKills: 2, clutchesWon: 0 },
-    { playerId: activeStarters[4]?.id || availablePlayers[4]?.id || "", agent: "Cypher", acs: 160, kills: 11, deaths: 10, assists: 6, firstKills: 0, clutchesWon: 1 },
-  ];
-
-  const [playerRows, setPlayerRows] = useState<PlayerStatRow[]>(() => {
-    if (initialData && initialData.stats.length > 0) {
-      return initialData.stats.map((s) => ({
-        playerId: s.playerId,
-        agent: s.agent,
-        acs: s.acs,
-        kills: s.kills,
-        deaths: s.deaths,
-        assists: s.assists,
-        firstKills: s.firstKills,
-        clutchesWon: s.clutchesWon ?? 0,
-      }));
-    }
-    return defaultRows;
-  });
-
-  const numTeam = Number(scoreTeam) || 0;
-  const numOpp = Number(scoreOpponent) || 0;
-  const computedResult = calculateMatchResult(numTeam, numOpp);
-
-  const totalTeamDeaths = playerRows.reduce((acc, r) => acc + (Number(r.deaths) || 0), 0);
-
-  // Trading Kills State (Single input for coach)
-  const [tradeKills, setTradeKills] = useState<number>(() => {
-    if (initialData?.roundsTimeline && initialData.roundsTimeline.length > 0) {
-      const sum = initialData.roundsTimeline.reduce((acc, r) => acc + (r.tradedDeaths || r.tradesWon || 0), 0);
-      if (sum > 0) return sum;
-    }
-    return 14;
-  });
-
-  const untradedDeaths = Math.max(0, totalTeamDeaths - tradeKills);
-  const tradeEfficiency = totalTeamDeaths > 0
-    ? Math.min(100, Math.round((tradeKills / totalTeamDeaths) * 100))
-    : 0;
-
-  const handleRowChange = (index: number, field: keyof PlayerStatRow, value: any) => {
-    setPlayerRows((prev) => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
-      return updated;
-    });
-  };
-
-  const handleFillDemoData = () => {
-    setOpponentName("Alter Ego");
-    setScoreTeam(13);
-    setScoreOpponent(8);
-    setMap("Ascent");
-    setStartSide("ATTACK");
-    setNotes("Anti-eco sangat rapi, retake A site berhasil dengan koordinasi flash dan smoke.");
-    setVodUrl("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
-    setTradeKills(15);
-
-    if (availablePlayers.length >= 5) {
-      setPlayerRows([
-        { playerId: availablePlayers[0].id, agent: "Jett", acs: 285, kills: 22, deaths: 11, assists: 4, firstKills: 5, clutchesWon: 1 },
-        { playerId: availablePlayers[1].id, agent: "Raze", acs: 245, kills: 18, deaths: 13, assists: 5, firstKills: 4, clutchesWon: 0 },
-        { playerId: availablePlayers[2].id, agent: "Omen", acs: 210, kills: 15, deaths: 10, assists: 10, firstKills: 1, clutchesWon: 2 },
-        { playerId: availablePlayers[3].id, agent: "Fade", acs: 190, kills: 13, deaths: 12, assists: 12, firstKills: 2, clutchesWon: 0 },
-        { playerId: availablePlayers[4].id, agent: "Cypher", acs: 165, kills: 11, deaths: 9, assists: 7, firstKills: 0, clutchesWon: 1 },
-      ]);
+  const updateRow = (index: number, key: keyof StatRow, value: string) => setRows((prev) => prev.map((row, i) => i === index ? { ...row, [key]: value } : row));
+  const updateEnemy = (index: number, key: keyof EnemyRow, value: string) => setEnemyRows((prev) => prev.map((row, i) => i === index ? { ...row, [key]: value } : row));
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>, index: number, key: "kills" | "deaths" | "assists") => {
+    const parts = e.clipboardData.getData("text").trim().split(/[\t/ ,]+/);
+    if (parts.length === 3 && parts.every((part) => /^\d{1,2}$/.test(part))) {
+      e.preventDefault(); setRows((prev) => prev.map((row, i) => i === index ? { ...row, kills: parts[0], deaths: parts[1], assists: parts[2] } : row));
     }
   };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setErrorMsg(null);
-
+  const handleAttachments = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+    setError("");
     try {
-      if (!opponentName.trim()) {
-        throw new Error(isEn ? "Please enter Opponent Team Name." : "Mohon isi Nama Tim Lawan.");
-      }
-
-      const emptyPlayerRow = playerRows.find((r) => !r.playerId);
-      if (emptyPlayerRow) {
-        throw new Error(isEn ? "Please select 5 active players for this match." : "Mohon pilih 5 pemain aktif untuk match ini.");
-      }
-
-      const playerIds = playerRows.map((r) => r.playerId).filter(Boolean);
-      const uniquePlayerIds = new Set(playerIds);
-      if (uniquePlayerIds.size !== 5) {
-        throw new Error(isEn ? "Please ensure 5 distinct players are assigned to all 5 slots." : "Pastikan 5 slot diisi oleh 5 pemain yang berbeda (tidak boleh ada pemain yang dipilih lebih dari satu kali).");
-      }
-      
-      const formattedStats = playerRows.map((row) => {
-        const acsVal = Number(row.acs) || 0;
-        const computedAdr = Number((acsVal * 0.65).toFixed(1));
-        return {
-          playerId: row.playerId,
-          agent: row.agent,
-          acs: acsVal,
-          kills: Number(row.kills) || 0,
-          deaths: Number(row.deaths) || 0,
-          assists: Number(row.assists) || 0,
-          adr: computedAdr,
-          hsPercent: null,
-          firstKills: Number(row.firstKills) || 0,
-          firstDeaths: 0,
-          clutchesWon: Number(row.clutchesWon) || 0,
-          kastPercent: null,
-        };
-      });
-
-      const finalRoundsTimeline = roundsTimeline.map((r) => {
-        const valid = getValidOutcomes(r.side, r.winner);
-        const outcome = r.outcomeType || r.winType || valid[0];
-        return {
-          round: r.round,
-          side: r.side,
-          winner: r.winner,
-          winType: outcome,
-          outcomeType: outcome,
-          tradedDeaths: r.tradedDeaths ?? Math.round(tradeKills / Math.max(1, roundsTimeline.length)),
-          tradesWon: r.tradesWon ?? Math.round(tradeKills / Math.max(1, roundsTimeline.length)),
-        };
-      });
-
-      if (initialData?.id) {
-        const res = await updateMatch(initialData.id, {
-          matchDate,
-          map,
-          opponentName,
-          scoreTeam: numTeam,
-          scoreOpponent: numOpp,
-          startSide,
-          vodUrl: vodUrl.trim() || undefined,
-          notes: notes.trim() || undefined,
-          attachments,
-          roundsTimeline: finalRoundsTimeline,
-          playerStats: formattedStats,
-        });
-
-        if (!res.success) {
-          throw new Error(res.error || (isEn ? "Failed to update match" : "Gagal memperbarui match"));
-        }
-
-        router.push(`/matches/${initialData.id}`);
-      } else {
-        const res = await createMatch({
-          matchDate,
-          map,
-          opponentName,
-          scoreTeam: numTeam,
-          scoreOpponent: numOpp,
-          startSide,
-          vodUrl: vodUrl.trim() || undefined,
-          notes: notes.trim() || undefined,
-          attachments,
-          roundsTimeline: finalRoundsTimeline,
-          playerStats: formattedStats,
-        });
-
-        if (!res.success) {
-          throw new Error(res.error || (isEn ? "Failed to create match" : "Gagal mencatat match"));
-        }
-
-        const matchId = (res.data as any)?.id || (res.data as any)?.[0]?.id;
-        router.push(`/matches/${matchId}`);
-      }
-      router.refresh();
-    } catch (err: any) {
-      setErrorMsg(err.message || (isEn ? "Failed to save match data." : "Gagal menyimpan match data."));
-      setLoading(false);
-    }
+      if (files.some((file) => !file.type.startsWith("image/"))) throw new Error(en ? "Only screenshots are supported for new attachments." : "Lampiran baru hanya mendukung screenshot.");
+      if (attachments.length + files.length > 3) throw new Error(en ? "Maximum 3 screenshots." : "Maksimal 3 screenshot.");
+      const result: MatchAttachment[] = [];
+      for (const file of files) result.push((await compressImageToWebP(file)).attachment);
+      setAttachments((current) => [...current, ...result]);
+    } catch (err) { setError(err instanceof Error ? err.message : "Gagal memproses screenshot."); }
+    finally { e.target.value = ""; }
   };
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-6xl mx-auto pb-12 select-none">
-      {/* Header Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1C2433] pb-5">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-            {initialData ? (isEn ? "Edit Scrim" : "Edit Scrim") : (isEn ? "Record New Scrim" : "Catat Scrim Baru")}
-          </h1>
-        </div>
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault(); setError(""); setLoading(true);
+    try {
+      const submissionIdempotencyKey = initialData ? undefined : ensureIdempotencyKey();
+      const existingPlayerIds = new Set(initialData?.stats.map((stat) => stat.playerId) ?? []);
+      if (rows.some((row) => !row.playerId || !row.agent || row.kills === "" || row.deaths === "" || row.assists === "" || row.firstKills === "" || ((!initialData || !existingPlayerIds.has(row.playerId)) && (row.plants === "" || row.defuses === "")))) throw new Error(en ? "Complete all five Team SC scoreboard rows." : "Lengkapi lima baris scoreboard Team SC.");
+      if (showEnemy && enemyRows.some((row) => !row.displayName.trim() || !row.agent || row.kills === "" || row.deaths === "" || row.assists === "" || row.firstKills === "" || row.plants === "" || row.defuses === "")) throw new Error(en ? "Complete all five opponent rows or close the opponent section." : "Lengkapi lima baris statistik lawan atau tutup bagian lawan.");
+      const ts = Number(teamScore); const os = Number(opponentScore);
+      const enemy = showEnemy ? enemyRows : null;
+      const legacyTimeline = initialData?.roundsTimeline?.length ? initialData.roundsTimeline : null;
+      const input = {
+        matchDate: date, map, opponentName: opponent, scoreTeam: ts, scoreOpponent: os, startSide, vodUrl: vodUrl.trim(), notes: notes.trim(),
+        attachments: initialData ? attachments.filter((attachment) => !initialData.attachments?.some((old) => old.id === attachment.id)) : attachments,
+        preservedAttachmentIds: initialData ? (initialData.attachments ?? []).filter((old) => attachments.some((attachment) => attachment.id === old.id)).map((old) => old.id) : [],
+        roundsTimeline: legacyTimeline,
+        ...(!initialData ? { idempotencyKey: submissionIdempotencyKey } : {}),
+        playerStats: rows.map((row) => ({ playerId: row.playerId, agent: row.agent, kills: Number(row.kills), deaths: Number(row.deaths), assists: Number(row.assists), firstKills: Number(row.firstKills), plants: optional(row.plants), defuses: optional(row.defuses), acs: optional(row.acs), adr: optional(row.adr), hsPercent: optional(row.hsPercent), kastPercent: optional(row.kastPercent), firstDeaths: optional(row.firstDeaths), clutchesWon: optional(row.clutchesWon) })),
+        opponentPlayerStats: enemy?.map((row) => ({ displayName: row.displayName.trim(), agent: row.agent, kills: Number(row.kills), deaths: Number(row.deaths), assists: Number(row.assists), firstKills: Number(row.firstKills), plants: Number(row.plants), defuses: Number(row.defuses) })) ?? null,
+        confirmWarnings: false,
+      };
+      let result = initialData ? await updateMatch(initialData.id, input) : await createMatch(input);
+      if (!result.success && result.confirmationRequired) {
+        const proceed = window.confirm(`${result.warnings?.join("\n")}\n\n${en ? "Save anyway?" : "Simpan tetap?"}`);
+        if (!proceed) { setLoading(false); return; }
+        const confirmedInput = { ...input, confirmWarnings: true };
+        result = initialData ? await updateMatch(initialData.id, confirmedInput) : await createMatch(confirmedInput);
+      }
+      if (!result.success) throw new Error(result.error || (en ? "Failed to save match." : "Gagal menyimpan match."));
+      if (submissionIdempotencyKey) {
+        try { clearIdempotencyKey(window.sessionStorage, submissionIdempotencyKey); } catch { /* Storage may be unavailable. */ }
+        idempotencyKey.current = null;
+      }
+      router.push(`/matches/${result.data.id}`); router.refresh();
+    } catch (err) { setError(err instanceof Error ? err.message : (en ? "Failed to save match." : "Gagal menyimpan match.")); setLoading(false); }
+  };
 
-        {process.env.NODE_ENV !== "production" && (
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={handleFillDemoData}
-              className="text-xs gap-1.5 border border-[#2A364F] text-[#94A3B8] hover:text-white"
-              title="Khusus mode development lokal"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>{isEn ? "Fill Demo Data (Dev)" : "Isi Contoh Data (Dev)"}</span>
-            </Button>
-          </div>
-        )}
+  const result = teamScore !== "" && opponentScore !== "" ? calculateMatchResult(Number(teamScore), Number(opponentScore)) : "—";
+  const tableHead = "px-2 py-2 text-[11px] font-semibold uppercase tracking-wide text-[#CBD5E1]";
+  const textInput = "h-9";
+  return <form onSubmit={submit} className="mx-auto max-w-7xl space-y-6 pb-12">
+    <PageHeader eyebrow="Team SC · Scrim Analytics" title={initialData ? (en ? "Edit Scrim" : "Edit Scrim") : (en ? "Record Scrim" : "Catat Scrim")} description={en ? "Enter the final post-match scoreboard." : "Catat scoreboard setelah pertandingan selesai."} action={<div className="rounded-lg border border-[#1C2433] bg-[#0C1017] px-4 py-2 text-sm"><span className="mr-2 text-[#CBD5E1]">{en ? "Result" : "Hasil"}</span><strong className={result === "WIN" ? "text-emerald-400" : result === "LOSS" ? "text-rose-400" : "text-amber-300"}>{result}</strong></div>} />
+    {error && <div role="alert" className="flex gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-200"><AlertCircle className="h-4 w-4 shrink-0" />{error}</div>}
+
+    <section className="rounded-xl border border-[#1C2433] bg-[#0C1017] p-4 sm:p-6">
+      <div className="mb-4"><h2 className="font-semibold text-white">{en ? "Match information" : "Informasi pertandingan"}</h2><p className="text-sm text-[#CBD5E1]">{en ? "Final score and match context" : "Skor akhir dan konteks pertandingan"}</p></div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <label className="space-y-1 text-xs text-[#CBD5E1]">{en ? "Date" : "Tanggal"}<Input required type="date" value={date} onChange={(e) => setDate(e.target.value)} className={textInput} /></label>
+        <label className="space-y-1 text-xs text-[#CBD5E1]">Map<Select value={map} onChange={(e) => setMap(e.target.value as ValorantMap)}>{VALORANT_MAPS.map((item) => <option key={item} value={item}>{item}</option>)}</Select></label>
+        <label className="space-y-1 text-xs text-[#CBD5E1]">{en ? "Opponent" : "Lawan"}<Input required maxLength={50} value={opponent} onChange={(e) => setOpponent(e.target.value)} className={textInput} /></label>
+        <label className="space-y-1 text-xs text-[#CBD5E1]">{en ? "Starting side" : "Sisi awal"}<Select value={startSide} onChange={(e) => setStartSide(e.target.value as "ATTACK" | "DEFENSE")}><option value="ATTACK">Attack</option><option value="DEFENSE">Defense</option></Select></label>
+        <label className="space-y-1 text-xs text-[#CBD5E1]">{en ? "Team SC score" : "Skor Team SC"}<Input required type="number" min="0" max="99" value={teamScore} onChange={(e) => setTeamScore(e.target.value)} className="h-11 text-center font-mono text-xl tabular-nums" /></label>
+        <label className="space-y-1 text-xs text-[#CBD5E1]">{en ? "Opponent score" : "Skor lawan"}<Input required type="number" min="0" max="99" value={opponentScore} onChange={(e) => setOpponentScore(e.target.value)} className="h-11 text-center font-mono text-xl tabular-nums" /></label>
+        <label className="space-y-1 text-xs text-[#CBD5E1] sm:col-span-2">VOD URL (optional)<Input type="url" placeholder="https://" value={vodUrl} onChange={(e) => setVodUrl(e.target.value)} className={textInput} /></label>
       </div>
+    </section>
 
-      {errorMsg && (
-        <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2.5">
-          <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
-          <span>{errorMsg}</span>
-        </div>
-      )}
+    <section className="rounded-xl border border-[#1C2433] bg-[#0C1017] p-4 sm:p-6">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-2"><div><h2 className="font-semibold text-white">Team SC scoreboard</h2><p className="text-sm text-[#CBD5E1]">{en ? "Five players · K/D/A and round events" : "Lima pemain · K/D/A dan statistik ronde"}</p></div><span className="text-xs text-[#CBD5E1]">{en ? "Paste K/D/A e.g. 30/11/8" : "Tempel K/D/A, contoh 30/11/8"}</span></div>
+      <div className="overflow-x-auto overflow-y-clip xl:overflow-visible"><table className="w-full min-w-[850px] border-separate border-spacing-y-2"><thead><tr>{[en ? "Player" : "Pemain", "Agent", "K", "D", "A", "FB", "Plants", "Defuses"].map((heading) => <th key={heading} className={`${tableHead} text-left`}>{heading}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={index} className="bg-[#090C10] [&>td:first-child]:rounded-l-lg [&>td:last-child]:rounded-r-lg">
+        <td className="min-w-44 p-1"><Select aria-label={`${en ? "Player" : "Pemain"} ${index + 1}`} value={row.playerId} onChange={(e) => updateRow(index, "playerId", e.target.value)}><option value="">{en ? "Select player" : "Pilih pemain"}</option>{playerOptions.map((player) => <option key={player.id} value={player.id}>{player.name}{!player.isActive ? (en ? " (Inactive)" : " (Nonaktif)") : ""}</option>)}</Select></td>
+        <td className="min-w-40 p-1"><AgentPicker label={`Agent ${index + 1}`} placeholder={en ? "Choose agent" : "Pilih agent"} duplicateLabel={en ? "Already picked" : "Sudah dipilih"} value={row.agent} onChange={(value) => updateRow(index, "agent", value)} otherSelections={rows.filter((_, otherIndex) => otherIndex !== index).map((item) => item.agent)} focusAfterSelect={() => document.getElementById(`stat-matrix-${index}-0`)?.focus()} />{isAgentSelectedElsewhere(row.agent, rows.filter((_, otherIndex) => otherIndex !== index).map((item) => item.agent)) && <p className="px-1 pt-1 text-[10px] font-medium text-amber-200">{en ? "Agent already picked by another teammate." : "Agent sudah dipilih baris lain; pilihan tetap bisa digunakan."}</p>}</td>
+        {(["kills", "deaths", "assists", "firstKills", "plants", "defuses"] as const).map((key, col) => <td key={key} className="w-[72px] p-1">{numericCell(`${key} row ${index + 1}`, row[key], (value) => updateRow(index, key, value), { className: "font-mono", id: `stat-matrix-${index}-${col}`, onPaste: col < 3 ? (event) => handlePaste(event, index, key as "kills" | "deaths" | "assists") : undefined, onKeyDown: (event) => { if (event.key === "Enter") { event.preventDefault(); const next = col < 5 ? document.getElementById(`stat-matrix-${index}-${col + 1}`) : document.getElementById(`stat-matrix-${index + 1}-0`); next?.focus(); } } })}</td>)}
+      </tr>)}</tbody></table></div>
+    </section>
 
-      {/* SECTION 1: MATCH METADATA */}
-      <Card>
-        <CardHeader className="py-3.5 px-5 border-b border-[#1C2433]">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold">{t.matchForm.section1Title}</CardTitle>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-[#94A3B8]">{isEn ? "Result:" : "Hasil:"}</span>
-              <Badge
-                variant={
-                  computedResult === "WIN"
-                    ? "win"
-                    : computedResult === "LOSS"
-                    ? "loss"
-                    : "draw"
-                }
-              >
-                {computedResult} ({numTeam} - {numOpp})
-              </Badge>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4">
-          {/* Tanggal */}
-          <div className="md:col-span-1 space-y-1.5">
-            <label className="text-xs font-semibold text-[#94A3B8]">
-              {t.matchForm.matchDate} *
-            </label>
-            <Input
-              type="date"
-              value={matchDate}
-              onChange={(e) => setMatchDate(e.target.value)}
-              onClick={(e) => (e.target as HTMLInputElement).showPicker?.()}
-              required
-              className="text-xs font-mono cursor-pointer"
-            />
-          </div>
+    <details open={showEnemy} onToggle={(e) => setShowEnemy((e.currentTarget as HTMLDetailsElement).open)} className="rounded-xl border border-[#1C2433] bg-[#0C1017] p-4 sm:p-6"><summary className="cursor-pointer list-none"><span className="font-semibold text-white">{en ? "Add opponent stats" : "Tambah statistik lawan"}</span><span className="ml-2 text-sm text-[#CBD5E1]">{en ? "Optional · five rows when enabled" : "Opsional · wajib lima baris jika dibuka"}</span></summary>
+      {showEnemy && <div className="mt-4 overflow-x-auto overflow-y-clip xl:overflow-visible"><table className="w-full min-w-[850px] border-separate border-spacing-y-2"><thead><tr>{[en ? "Player name" : "Nama pemain", "Agent", "K", "D", "A", "FB", "Plants", "Defuses"].map((heading) => <th key={heading} className={`${tableHead} text-left`}>{heading}</th>)}</tr></thead><tbody>{enemyRows.map((row, index) => <tr key={index} className="bg-[#090C10] [&>td:first-child]:rounded-l-lg [&>td:last-child]:rounded-r-lg"><td className="min-w-44 p-1"><Input aria-label={`Opponent name ${index + 1}`} maxLength={50} value={row.displayName} onChange={(e) => updateEnemy(index, "displayName", e.target.value)} className="h-9" /></td><td className="min-w-40 p-1"><AgentPicker label={`${en ? "Opponent agent" : "Agent lawan"} ${index + 1}`} placeholder={en ? "Choose agent" : "Pilih agent"} duplicateLabel={en ? "Already picked" : "Sudah dipilih"} value={row.agent} onChange={(value) => updateEnemy(index, "agent", value)} otherSelections={enemyRows.filter((_, otherIndex) => otherIndex !== index).map((item) => item.agent)} focusAfterSelect={() => document.getElementById(`opponent-stat-matrix-${index}-0`)?.focus()} />{isAgentSelectedElsewhere(row.agent, enemyRows.filter((_, otherIndex) => otherIndex !== index).map((item) => item.agent)) && <p className="px-1 pt-1 text-[10px] font-medium text-amber-200">{en ? "Agent already picked by another opponent." : "Agent sudah dipilih baris lawan lain; pilihan tetap bisa digunakan."}</p>}</td>{(["kills", "deaths", "assists", "firstKills", "plants", "defuses"] as const).map((key, col) => <td key={key} className="w-[72px] p-1">{numericCell(`Opponent ${key} row ${index + 1}`, row[key], (value) => updateEnemy(index, key, value), { className: "font-mono", id: `opponent-stat-matrix-${index}-${col}` })}</td>)}</tr>)}</tbody></table></div>}
+    </details>
 
-          {/* Map */}
-          <div className="md:col-span-1 space-y-1.5">
-            <label className="text-xs font-semibold text-[#94A3B8]">
-              {t.matchForm.selectMap} *
-            </label>
-            <Select
-              value={map}
-              onChange={(e) => setMap(e.target.value as ValorantMap)}
-              className="text-xs font-semibold"
-            >
-              {VALORANT_MAPS.map((m) => (
-                <option key={m} value={m} className="bg-[#090C10] text-[#F1F5F9]">
-                  {m}
-                </option>
-              ))}
-            </Select>
-          </div>
+    <details open={showAdvanced} onToggle={(e) => setShowAdvanced((e.currentTarget as HTMLDetailsElement).open)} className="rounded-xl border border-[#1C2433] bg-[#0C1017] p-4 sm:p-6"><summary className="cursor-pointer list-none"><span className="font-semibold text-white">{en ? "Advanced player stats" : "Statistik lanjutan pemain"}</span><span className="ml-2 text-sm text-[#CBD5E1]">{en ? "Optional · blank values stay unknown" : "Opsional · nilai kosong tetap tidak diketahui"}</span></summary>
+      {showAdvanced && <div className="mt-4 overflow-x-auto"><table className="w-full min-w-[850px] border-separate border-spacing-y-2"><thead><tr>{[en ? "Player" : "Pemain", "ACS", "ADR", "HS%", "KAST%", "FD", "Clutches"].map((heading) => <th key={heading} className={`${tableHead} text-left`}>{heading}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={index} className="bg-[#090C10] [&>td:first-child]:rounded-l-lg [&>td:last-child]:rounded-r-lg"><td className="min-w-44 px-3 text-sm text-[#F1F5F9]">{availablePlayers.find((player) => player.id === row.playerId)?.name ?? `Player ${index + 1}`}</td>{(["acs", "adr", "hsPercent", "kastPercent", "firstDeaths", "clutchesWon"] as const).map((key) => <td key={key} className="w-24 p-1">{numericCell(key, row[key], (value) => updateRow(index, key, value), { max: key === "acs" || key === "adr" ? 999 : 100, step: 1 })}</td>)}</tr>)}</tbody></table></div>}
+    </details>
 
-          {/* Tim Lawan */}
-          <div className="md:col-span-2 space-y-1.5">
-            <label className="text-xs font-semibold text-[#94A3B8]">
-              {t.matchForm.opponentName} *
-            </label>
-            <Input
-              type="text"
-              placeholder="e.g. Alter Ego, BOOM Esports"
-              value={opponentName}
-              onChange={(e) => setOpponentName(e.target.value)}
-              required
-              className="text-xs font-medium"
-            />
-          </div>
+    <section className="grid gap-4 lg:grid-cols-[1fr_1.4fr]"><div className="rounded-xl border border-[#1C2433] bg-[#0C1017] p-4 sm:p-6"><h2 className="font-semibold text-white">{en ? "Notes & screenshots" : "Catatan & screenshot"}</h2><p className="mt-1 text-sm text-[#CBD5E1]">{en ? "Up to 3 screenshots" : "Maksimal 3 screenshot"}</p><label className="mt-4 flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-[#1C2433] p-4 text-sm text-[#F1F5F9] hover:border-[#FF4655]"><Upload className="h-4 w-4" />{en ? "Choose screenshots" : "Pilih screenshot"}<input type="file" accept="image/*" multiple className="sr-only" onChange={handleAttachments} /></label><ul className="mt-3 space-y-2">{attachments.map((attachment) => <li key={attachment.id} className="flex items-center justify-between gap-2 text-xs text-[#CBD5E1]"><span className="truncate">{attachment.name}</span><button type="button" aria-label={`Remove ${attachment.name}`} onClick={() => setAttachments((current) => current.filter((item) => item.id !== attachment.id))} className="rounded p-1 text-[#CBD5E1] hover:text-rose-400"><X className="h-4 w-4" /></button></li>)}</ul></div><label className="rounded-xl border border-[#1C2433] bg-[#0C1017] p-4 sm:p-6"><span className="font-semibold text-white">{en ? "Match notes" : "Catatan pertandingan"}</span><Textarea maxLength={2000} rows={7} value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-3 resize-y" placeholder={en ? "Optional post-match notes" : "Catatan pasca-match (opsional)"} /></label></section>
 
-          {/* Skor Tim vs Lawan */}
-          <div className="md:col-span-1 space-y-1.5">
-            <label className="text-xs font-semibold text-emerald-400">
-              {t.matchForm.scoreTeam} *
-            </label>
-            <Input
-              type="number"
-              min="0"
-              max="99"
-              value={scoreTeam}
-              onChange={(e) => setScoreTeam(e.target.value)}
-              onFocus={(e) => e.target.select()}
-              required
-              className="font-bold text-emerald-400 text-center text-sm"
-            />
-          </div>
-
-          <div className="md:col-span-1 space-y-1.5">
-            <label className="text-xs font-semibold text-rose-400">
-              {t.matchForm.scoreOpponent} *
-            </label>
-            <Input
-              type="number"
-              min="0"
-              max="99"
-              value={scoreOpponent}
-              onChange={(e) => setScoreOpponent(e.target.value)}
-              onFocus={(e) => e.target.select()}
-              required
-              className="font-bold text-rose-400 text-center text-sm"
-            />
-          </div>
-
-          {/* Sisi Awal */}
-          <div className="md:col-span-2 space-y-1.5">
-            <label className="text-xs font-semibold text-[#94A3B8]">
-              {t.matchForm.startSide} *
-            </label>
-            <Select
-              value={startSide}
-              onChange={(e) => setStartSide(e.target.value as "ATTACK" | "DEFENSE")}
-              className="text-xs font-medium"
-            >
-              <option value="ATTACK" className="bg-[#090C10] text-rose-400 font-semibold">
-                {isEn ? "Attack Side (Attacker)" : "Attack Side (Penyerang)"}
-              </option>
-              <option value="DEFENSE" className="bg-[#090C10] text-sky-400 font-semibold">
-                {isEn ? "Defense Side (Defender)" : "Defense Side (Bertahan)"}
-              </option>
-            </Select>
-          </div>
-
-          {/* Link VOD */}
-          <div className="md:col-span-4 space-y-1.5">
-            <label className="text-xs font-semibold text-[#94A3B8]">
-              {isEn ? "VOD Review URL (YouTube / Twitch)" : "Link Rekaman VOD (YouTube / Twitch)"}
-            </label>
-            <Input
-              type="url"
-              placeholder="https://www.youtube.com/watch?v=..."
-              value={vodUrl}
-              onChange={(e) => setVodUrl(e.target.value)}
-              className="text-xs text-[#F1F5F9]"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* SECTION 2: ROUND-BY-ROUND TIMELINE */}
-      <Card>
-        <CardHeader className="py-3.5 px-5 border-b border-[#1C2433]">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Swords className="w-4 h-4 text-[#FF4655]" />
-                <span>{t.matchForm.section2Title}</span>
-              </CardTitle>
-              <CardDescription className="text-xs text-[#94A3B8] mt-0.5">
-                {isEn ? "Individual round progression timeline" : "Rincian urutan jalannya setiap ronde"}
-              </CardDescription>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleAutoFillTimeline}
-                className="text-xs h-7 gap-1 text-[#94A3B8] hover:text-white"
-              >
-                <Sparkles className="w-3 h-3 text-amber-400" />
-                <span>{t.matchForm.autoFillTimeline}</span>
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => handleSetAllRounds("TEAM")}
-                className="text-[11px] h-7 px-2 text-emerald-400 hover:bg-emerald-500/10"
-              >
-                {isEn ? "All Win" : "Semua Menang"}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => handleSetAllRounds("OPPONENT")}
-                className="text-[11px] h-7 px-2 text-rose-400 hover:bg-rose-500/10"
-              >
-                {isEn ? "All Loss" : "Semua Kalah"}
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-4 sm:p-5 space-y-4">
-          {roundsTimeline.length === 0 ? (
-            <div className="py-6 text-center text-xs text-[#64748B]">
-              {isEn ? "Enter Team & Opponent scores above to activate the round timeline." : "Masukkan Skor Tim & Lawan di atas untuk mengaktifkan kronologi ronde."}
-            </div>
-          ) : (
-            <>
-              {/* Tally / Sync Status Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg bg-[#090C10] border border-[#1C2433] text-xs">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-1.5 font-bold">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                    <span className="text-emerald-400">Team: {roundsTimeline.filter(r => r.winner === "TEAM").length} W</span>
-                    <span className="text-[#64748B]">/ {scoreTeam}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 font-bold">
-                    <span className="w-2 h-2 rounded-full bg-rose-400" />
-                    <span className="text-rose-400">{isEn ? "Opponent" : "Lawan"}: {roundsTimeline.filter(r => r.winner === "OPPONENT").length} L</span>
-                    <span className="text-[#64748B]">/ {scoreOpponent}</span>
-                  </div>
-                </div>
-
-                <div className="text-[11px] text-[#94A3B8]">
-                  💡 {isEn ? "Click W/L to toggle win/loss, click Tactical Tag to toggle round win/loss condition" : "Klik W/L untuk ganti hasil, klik Tag Taktik untuk ganti cara menang / cara kalah"}
-                </div>
-
-                {roundsTimeline.filter(r => r.winner === "TEAM").length !== Number(scoreTeam) && (
-                  <span className="text-[11px] text-amber-400 font-medium flex items-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    {isEn ? `Recorded W (${roundsTimeline.filter(r => r.winner === "TEAM").length}) does not match Team Score (${scoreTeam})` : `Jumlah W belum sesuai dengan skor tim (${scoreTeam})`}
-                  </span>
-                )}
-              </div>
-
-              {/* Babak 1 (R1 - R12) */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-white">{isEn ? "1st Half (Rounds 1 - 12)" : "Babak 1 (Ronde 1 - 12)"}</span>
-                    <Badge variant={startSide === "ATTACK" ? "attack" : "defense"} className="text-[10px] py-0 px-2">
-                      {startSide === "ATTACK" ? (isEn ? "Attack Side" : "Attack Side") : (isEn ? "Defense Side" : "Defense Side")}
-                    </Badge>
-                  </div>
-                  <span className="text-[11px] text-[#94A3B8]">
-                    Pistol Round: R1
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-1.5">
-                  {roundsTimeline.slice(0, 12).map((item) => {
-                    const isWin = item.winner === "TEAM";
-                    const isPistol = item.round === 1;
-                    const outcomeConfig = getOutcomeConfig(item.side, item.winner, item.outcomeType || item.winType, language);
-
-                    return (
-                      <div
-                        key={item.round}
-                        className={`relative rounded-xl border p-1.5 flex flex-col items-center justify-between gap-1.5 transition-all select-none ${
-                          isWin
-                            ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
-                            : "bg-rose-500/10 border-rose-500/30 text-rose-400"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between w-full text-[10px] font-bold text-[#94A3B8]">
-                          <span>R{item.round}</span>
-                          {isPistol && (
-                            <span title="Pistol Round">
-                              <Crosshair className="w-2.5 h-2.5 text-amber-400" />
-                            </span>
-                          )}
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => handleToggleRoundWinner(item.round)}
-                          title={isEn ? "Click to toggle Win (W) / Loss (L)" : "Klik untuk ubah Menang (W) / Kalah (L)"}
-                          className="text-lg font-black tracking-wider hover:scale-110 active:scale-95 transition-transform py-0.5"
-                        >
-                          {isWin ? "W" : "L"}
-                        </button>
-
-                        {/* Tactical Outcome Cycler (Both for W and L) */}
-                        <button
-                          type="button"
-                          onClick={(e) => handleCycleOutcome(item.round, e)}
-                          title={`${isWin ? (isEn ? "Win Method" : "Cara Menang") : (isEn ? "Loss Reason" : "Cara Kalah")}: ${outcomeConfig.label} - ${outcomeConfig.desc}`}
-                          className={`w-full py-1 px-0.5 rounded text-[8px] sm:text-[9px] font-bold border truncate hover:brightness-125 transition-all text-center ${outcomeConfig.bg} ${outcomeConfig.border} ${outcomeConfig.color}`}
-                        >
-                          {outcomeConfig.short}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Babak 2 (R13 - R24) */}
-              {roundsTimeline.length > 12 && (
-                <div className="space-y-2 pt-2 border-t border-[#1C2433]">
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-white">{isEn ? "2nd Half (Rounds 13 - 24)" : "Babak 2 (Ronde 13 - 24)"}</span>
-                      <Badge variant={startSide === "ATTACK" ? "defense" : "attack"} className="text-[10px] py-0 px-2">
-                        {startSide === "ATTACK" ? (isEn ? "Defense Side" : "Defense Side") : (isEn ? "Attack Side" : "Attack Side")}
-                      </Badge>
-                    </div>
-                    <span className="text-[11px] text-[#94A3B8]">
-                      Pistol Round: R13
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-1.5">
-                    {roundsTimeline.slice(12, 24).map((item) => {
-                      const isWin = item.winner === "TEAM";
-                      const isPistol = item.round === 13;
-                      const outcomeConfig = getOutcomeConfig(item.side, item.winner, item.outcomeType || item.winType, language);
-
-                      return (
-                        <div
-                          key={item.round}
-                          className={`relative rounded-xl border p-1.5 flex flex-col items-center justify-between gap-1.5 transition-all select-none ${
-                            isWin
-                              ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
-                              : "bg-rose-500/10 border-rose-500/30 text-rose-400"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between w-full text-[10px] font-bold text-[#94A3B8]">
-                            <span>R{item.round}</span>
-                            {isPistol && (
-                              <span title="Pistol Round">
-                                <Crosshair className="w-2.5 h-2.5 text-amber-400" />
-                              </span>
-                            )}
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => handleToggleRoundWinner(item.round)}
-                            title={isEn ? "Click to toggle Win (W) / Loss (L)" : "Klik untuk ubah Menang (W) / Kalah (L)"}
-                            className="text-lg font-black tracking-wider hover:scale-110 active:scale-95 transition-transform py-0.5"
-                          >
-                            {isWin ? "W" : "L"}
-                          </button>
-
-                          {/* Tactical Outcome Cycler (Both for W and L) */}
-                          <button
-                            type="button"
-                            onClick={(e) => handleCycleOutcome(item.round, e)}
-                            title={`${isWin ? (isEn ? "Win Method" : "Cara Menang") : (isEn ? "Loss Reason" : "Cara Kalah")}: ${outcomeConfig.label} - ${outcomeConfig.desc}`}
-                            className={`w-full py-1 px-0.5 rounded text-[8px] sm:text-[9px] font-bold border truncate hover:brightness-125 transition-all text-center ${outcomeConfig.bg} ${outcomeConfig.border} ${outcomeConfig.color}`}
-                          >
-                            {outcomeConfig.short}
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Overtime (R25+) */}
-              {roundsTimeline.length > 24 && (
-                <div className="space-y-2 pt-2 border-t border-[#1C2433]">
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-amber-400">{isEn ? "Overtime (Rounds 25+)" : "Overtime (Ronde 25+)"}</span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-1.5">
-                    {roundsTimeline.slice(24).map((item) => {
-                      const isWin = item.winner === "TEAM";
-                      const outcomeConfig = getOutcomeConfig(item.side, item.winner, item.outcomeType || item.winType, language);
-
-                      return (
-                        <div
-                          key={item.round}
-                          className={`relative rounded-xl border p-1.5 flex flex-col items-center justify-between gap-1.5 transition-all select-none ${
-                            isWin
-                              ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
-                              : "bg-rose-500/10 border-rose-500/30 text-rose-400"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between w-full text-[10px] font-bold text-[#94A3B8]">
-                            <span>R{item.round}</span>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => handleToggleRoundWinner(item.round)}
-                            title={isEn ? "Click to toggle Win (W) / Loss (L)" : "Klik untuk ubah Menang (W) / Kalah (L)"}
-                            className="text-lg font-black tracking-wider hover:scale-110 active:scale-95 transition-transform py-0.5"
-                          >
-                            {isWin ? "W" : "L"}
-                          </button>
-
-                          {/* Tactical Outcome Cycler (Both for W and L) */}
-                          <button
-                            type="button"
-                            onClick={(e) => handleCycleOutcome(item.round, e)}
-                            title={`${isWin ? (isEn ? "Win Method" : "Cara Menang") : (isEn ? "Loss Reason" : "Cara Kalah")}: ${outcomeConfig.label} - ${outcomeConfig.desc}`}
-                            className={`w-full py-1 px-0.5 rounded text-[8px] sm:text-[9px] font-bold border truncate hover:brightness-125 transition-all text-center ${outcomeConfig.bg} ${outcomeConfig.border} ${outcomeConfig.color}`}
-                          >
-                            {outcomeConfig.short}
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* TACTICAL BREAKDOWN SUMMARY IN SECTION 2 */}
-              {(() => {
-                const teamWins = roundsTimeline.filter(r => r.winner === "TEAM");
-                const teamLosses = roundsTimeline.filter(r => r.winner === "OPPONENT");
-
-                const defuseWins = teamWins.filter(r => (r.outcomeType || r.winType) === "DEFUSE").length;
-                const detonationWins = teamWins.filter(r => (r.outcomeType || r.winType) === "DETONATION").length;
-                const timeWins = teamWins.filter(r => (r.outcomeType || r.winType) === "TIME").length;
-                const elimWins = teamWins.filter(r => !(r.outcomeType || r.winType) || (r.outcomeType || r.winType) === "ELIMINATION").length;
-
-                const defusedLosses = teamLosses.filter(r => (r.outcomeType || r.winType) === "DEFUSE").length;
-                const detonationLosses = teamLosses.filter(r => (r.outcomeType || r.winType) === "DETONATION").length;
-                const timeoutLosses = teamLosses.filter(r => (r.outcomeType || r.winType) === "TIME").length;
-                const elimLosses = teamLosses.filter(r => !(r.outcomeType || r.winType) || (r.outcomeType || r.winType) === "ELIMINATION").length;
-
-                return (
-                  <div className="space-y-3 pt-2">
-                    {/* W Breakdown */}
-                    <div className="p-3.5 rounded-xl bg-[#090C10] border border-[#1C2433] space-y-2.5">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-emerald-400">Analisis Cara Menang ({teamWins.length} W)</span>
-                        <span className="text-[10px] text-[#94A3B8]">Klik badge pada ronde W untuk mengganti</span>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
-                        <div className="p-2 rounded-lg bg-[#0F141C] border border-sky-500/20">
-                          <span className="text-[10px] text-sky-400 font-semibold block">Retake / Defuse</span>
-                          <span className="text-base font-black text-white">{defuseWins}</span>
-                          <span className="text-[9px] text-[#64748B] block">Defender</span>
-                        </div>
-                        <div className="p-2 rounded-lg bg-[#0F141C] border border-amber-500/20">
-                          <span className="text-[10px] text-amber-400 font-semibold block">Post-Plant</span>
-                          <span className="text-base font-black text-white">{detonationWins}</span>
-                          <span className="text-[9px] text-[#64748B] block">Attacker</span>
-                        </div>
-                        <div className="p-2 rounded-lg bg-[#0F141C] border border-rose-500/20">
-                          <span className="text-[10px] text-rose-400 font-semibold block">Eliminasi</span>
-                          <span className="text-base font-black text-white">{elimWins}</span>
-                          <span className="text-[9px] text-[#64748B] block">Duel Bersih</span>
-                        </div>
-                        <div className="p-2 rounded-lg bg-[#0F141C] border border-emerald-500/20">
-                          <span className="text-[10px] text-emerald-400 font-semibold block">Waktu Habis</span>
-                          <span className="text-base font-black text-white">{timeWins}</span>
-                          <span className="text-[9px] text-[#64748B] block">Defender Stall</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* L Breakdown */}
-                    <div className="p-3.5 rounded-xl bg-[#090C10] border border-[#1C2433] space-y-2.5">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-rose-400">Analisis Cara Kalah ({teamLosses.length} L)</span>
-                        <span className="text-[10px] text-[#94A3B8]">Klik badge pada ronde L untuk mengganti</span>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
-                        <div className="p-2 rounded-lg bg-[#0F141C] border border-sky-500/20">
-                          <span className="text-[10px] text-sky-400 font-semibold block">Musuh Retake</span>
-                          <span className="text-base font-black text-white">{defusedLosses}</span>
-                          <span className="text-[9px] text-[#64748B] block">Saat Attack</span>
-                        </div>
-                        <div className="p-2 rounded-lg bg-[#0F141C] border border-amber-500/20">
-                          <span className="text-[10px] text-amber-400 font-semibold block">Spike Meledak</span>
-                          <span className="text-base font-black text-white">{detonationLosses}</span>
-                          <span className="text-[9px] text-[#64748B] block">Saat Defense</span>
-                        </div>
-                        <div className="p-2 rounded-lg bg-[#0F141C] border border-rose-500/20">
-                          <span className="text-[10px] text-rose-400 font-semibold block">Tereliminasi</span>
-                          <span className="text-base font-black text-white">{elimLosses}</span>
-                          <span className="text-[9px] text-[#64748B] block">Wiped Out</span>
-                        </div>
-                        <div className="p-2 rounded-lg bg-[#0F141C] border border-emerald-500/20">
-                          <span className="text-[10px] text-emerald-400 font-semibold block">Gagal Plant (0:00)</span>
-                          <span className="text-base font-black text-white">{timeoutLosses}</span>
-                          <span className="text-[9px] text-[#64748B] block">Saat Attack</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* SECTION 3: 5 PLAYER STATS MATRIX */}
-      <Card>
-        <CardHeader className="py-3.5 px-5 border-b border-[#1C2433]">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold">{t.matchForm.section3Title}</CardTitle>
-            <span className="text-xs text-[#94A3B8]">
-              {isEn ? "5 Active Player Slots" : "5 Slot Pemain"}
-            </span>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          {/* MOBILE VIEW: Player Stat Input Cards (md:hidden) */}
-          <div className="md:hidden divide-y divide-[#1C2433] p-3 space-y-4">
-            {playerRows.map((row, index) => {
-              const k = Number(row.kills) || 0;
-              const d = Number(row.deaths) || 0;
-              const liveKD = calculateKD(k, d);
-
-              return (
-                <div
-                  key={index}
-                  className="rounded-xl bg-[#090C10] border border-[#1C2433] p-3.5 space-y-3"
-                >
-                  {/* Card Header: Slot Number & Live KD */}
-                  <div className="flex items-center justify-between pb-2 border-b border-[#1C2433]">
-                    <div className="flex items-center gap-2">
-                      <span className="w-5 h-5 rounded-md bg-[#161D28] border border-[#2A364F] text-[#FF4655] font-bold text-xs flex items-center justify-center">
-                        {index + 1}
-                      </span>
-                      <span className="text-xs font-semibold text-white">
-                        {isEn ? `Player Slot #${index + 1}` : `Slot Pemain #${index + 1}`}
-                      </span>
-                    </div>
-
-                    <Badge
-                      variant={
-                        liveKD >= 1.2 ? "win" : liveKD >= 1.0 ? "draw" : "loss"
-                      }
-                      className="text-[10px] px-2 py-0.5 font-semibold"
-                    >
-                      {liveKD.toFixed(2)} KD
-                    </Badge>
-                  </div>
-
-                  {/* Player & Agent Dropdowns */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-semibold text-[#94A3B8]">{isEn ? "Player *" : "Pemain *"}</label>
-                      <Select
-                        value={row.playerId}
-                        onChange={(e) => handleRowChange(index, "playerId", e.target.value)}
-                        className="h-9 text-xs font-semibold"
-                        required
-                      >
-                        <option value="" disabled>{isEn ? "Select Player..." : "Pilih Pemain..."}</option>
-                        {availablePlayers.map((p) => (
-                          <option key={p.id} value={p.id} className="bg-[#090C10] text-[#F1F5F9]">
-                            {p.name} ({p.primaryRole})
-                          </option>
-                        ))}
-                      </Select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-semibold text-[#94A3B8]">{isEn ? "Agent *" : "Agent *"}</label>
-                      <div className="flex items-center gap-2">
-                        <div className="w-9 h-9 rounded-lg bg-[#090C10] border border-[#1C2433] p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
-                          <img
-                            src={getAgentIcon(row.agent)}
-                            alt={row.agent}
-                            loading="lazy"
-                            decoding="async"
-                            className="w-full h-full object-cover rounded-full"
-                          />
-                        </div>
-                        <Select
-                          value={row.agent}
-                          onChange={(e) => handleRowChange(index, "agent", e.target.value)}
-                          className="h-9 text-xs font-semibold flex-1"
-                          required
-                        >
-                          {VALORANT_AGENTS.map((a) => (
-                            <option key={a.name} value={a.name} className="bg-[#090C10] text-[#F1F5F9]">
-                              {a.name} ({a.role})
-                            </option>
-                          ))}
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Primary Combat Stats Grid (6 cols) */}
-                  <div className="space-y-1 pt-1">
-                    <div className="text-[10px] font-semibold text-[#94A3B8]">{isEn ? "Match Performance Stats" : "Statistik Pertandingan"}</div>
-                    <div className="grid grid-cols-6 gap-1 text-center">
-                      <div className="space-y-0.5">
-                        <span className="text-[9px] text-sky-400 font-bold">{isEn ? "ACS *" : "ACS *"}</span>
-                        <Input
-                          type="number"
-                          min="0"
-                          placeholder="240"
-                          value={row.acs}
-                          onChange={(e) => handleRowChange(index, "acs", e.target.value)}
-                          onFocus={(e) => e.target.select()}
-                          required
-                          className="h-8 text-center font-bold text-sky-400 px-1 text-xs"
-                        />
-                      </div>
-                      <div className="space-y-0.5">
-                        <span className="text-[9px] text-emerald-400 font-bold">{t.matchForm.kills} *</span>
-                        <Input
-                          type="number"
-                          min="0"
-                          placeholder="18"
-                          value={row.kills}
-                          onChange={(e) => handleRowChange(index, "kills", e.target.value)}
-                          onFocus={(e) => e.target.select()}
-                          required
-                          className="h-8 text-center font-bold text-emerald-400 px-1 text-xs"
-                        />
-                      </div>
-                      <div className="space-y-0.5">
-                        <span className="text-[9px] text-rose-400 font-bold">{t.matchForm.deaths} *</span>
-                        <Input
-                          type="number"
-                          min="0"
-                          placeholder="12"
-                          value={row.deaths}
-                          onChange={(e) => handleRowChange(index, "deaths", e.target.value)}
-                          onFocus={(e) => e.target.select()}
-                          required
-                          className="h-8 text-center font-bold text-rose-400 px-1 text-xs"
-                        />
-                      </div>
-                      <div className="space-y-0.5">
-                        <span className="text-[9px] text-[#94A3B8] font-bold">{t.matchForm.assists} *</span>
-                        <Input
-                          type="number"
-                          min="0"
-                          placeholder="5"
-                          value={row.assists}
-                          onChange={(e) => handleRowChange(index, "assists", e.target.value)}
-                          onFocus={(e) => e.target.select()}
-                          required
-                          className="h-8 text-center font-bold text-[#F1F5F9] px-1 text-xs"
-                        />
-                      </div>
-                      <div className="space-y-0.5">
-                        <span className="text-[9px] text-emerald-400 font-medium">{t.matchForm.firstKills}</span>
-                        <Input
-                          type="number"
-                          min="0"
-                          placeholder="2"
-                          value={row.firstKills}
-                          onChange={(e) => handleRowChange(index, "firstKills", e.target.value)}
-                          onFocus={(e) => e.target.select()}
-                          className="h-8 text-center text-emerald-400 px-1 text-xs"
-                        />
-                      </div>
-                      <div className="space-y-0.5">
-                        <span className="text-[9px] text-amber-400 font-bold">{isEn ? "Clutch" : "Clutch"}</span>
-                        <Input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          value={row.clutchesWon}
-                          onChange={(e) => handleRowChange(index, "clutchesWon", e.target.value)}
-                          onFocus={(e) => e.target.select()}
-                          className="h-8 text-center text-amber-400 font-bold px-1 text-xs"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* DESKTOP VIEW: Full Data Table (hidden md:block) */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-[#1C2433] bg-[#090C10] text-[#94A3B8] font-semibold text-[11px]">
-                  <th className="py-3 px-3.5 min-w-[150px]">{isEn ? "Player *" : "Pemain *"}</th>
-                  <th className="py-3 px-3.5 min-w-[165px]">{isEn ? "Agent *" : "Agent *"}</th>
-                  <th className="py-3 px-2 text-center w-20">{isEn ? "ACS *" : "ACS *"}</th>
-                  <th className="py-3 px-2 text-center w-16">{t.matchForm.kills} *</th>
-                  <th className="py-3 px-2 text-center w-16">{t.matchForm.deaths} *</th>
-                  <th className="py-3 px-2 text-center w-16">{t.matchForm.assists} *</th>
-                  <th className="py-3 px-2 text-center w-20">{t.matchForm.firstKills}</th>
-                  <th className="py-3 px-2 text-center w-20">{isEn ? "Clutches" : "Clutch"}</th>
-                  <th className="py-3 px-3 text-center min-w-[90px]">{isEn ? "Live K/D" : "Live K/D"}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#1C2433]">
-                {playerRows.map((row, index) => {
-                  const k = Number(row.kills) || 0;
-                  const d = Number(row.deaths) || 0;
-                  const liveKD = calculateKD(k, d);
-
-                  return (
-                    <tr
-                      key={index}
-                      className="hover:bg-[#161D28]/40 transition-colors"
-                    >
-                      {/* Pemain */}
-                      <td className="p-2.5">
-                        <Select
-                          value={row.playerId}
-                          onChange={(e) => handleRowChange(index, "playerId", e.target.value)}
-                          className="h-8 text-xs font-semibold"
-                          required
-                        >
-                          <option value="" disabled>{isEn ? "Select Player..." : "Pilih Pemain..."}</option>
-                          {availablePlayers.map((p) => (
-                            <option key={p.id} value={p.id} className="bg-[#090C10] text-[#F1F5F9]">
-                              {p.name} ({p.primaryRole})
-                            </option>
-                          ))}
-                        </Select>
-                      </td>
-
-                      {/* Agent */}
-                      <td className="p-2.5 min-w-[165px]">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-lg bg-[#090C10] border border-[#1C2433] p-1 flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
-                            <img
-                              src={getAgentIcon(row.agent)}
-                              alt={row.agent}
-                              loading="lazy"
-                              decoding="async"
-                              className="w-full h-full object-cover rounded-full"
-                            />
-                          </div>
-                          <Select
-                            value={row.agent}
-                            onChange={(e) => handleRowChange(index, "agent", e.target.value)}
-                            className="h-8 text-xs font-semibold flex-1"
-                            required
-                          >
-                            {VALORANT_AGENTS.map((a) => (
-                              <option key={a.name} value={a.name} className="bg-[#090C10] text-[#F1F5F9]">
-                                {a.name} ({a.role})
-                              </option>
-                            ))}
-                          </Select>
-                        </div>
-                      </td>
-
-                      {/* ACS */}
-                      <td className="p-1.5">
-                        <Input
-                          id={`stat-matrix-${index}-0`}
-                          type="number"
-                          min="0"
-                          placeholder="240"
-                          value={row.acs}
-                          onChange={(e) => handleRowChange(index, "acs", e.target.value)}
-                          onKeyDown={(e) => handleMatrixKeyDown(e, index, 0)}
-                          onFocus={(e) => e.target.select()}
-                          required
-                          className="h-8 text-center font-bold text-sky-400 text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        />
-                      </td>
-
-                      {/* Kills */}
-                      <td className="p-1.5">
-                        <Input
-                          id={`stat-matrix-${index}-1`}
-                          type="number"
-                          min="0"
-                          placeholder="18"
-                          value={row.kills}
-                          onChange={(e) => handleRowChange(index, "kills", e.target.value)}
-                          onKeyDown={(e) => handleMatrixKeyDown(e, index, 1)}
-                          onFocus={(e) => e.target.select()}
-                          required
-                          className="h-8 text-center font-bold text-emerald-400 text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        />
-                      </td>
-
-                      {/* Deaths */}
-                      <td className="p-1.5">
-                        <Input
-                          id={`stat-matrix-${index}-2`}
-                          type="number"
-                          min="0"
-                          placeholder="12"
-                          value={row.deaths}
-                          onChange={(e) => handleRowChange(index, "deaths", e.target.value)}
-                          onKeyDown={(e) => handleMatrixKeyDown(e, index, 2)}
-                          onFocus={(e) => e.target.select()}
-                          required
-                          className="h-8 text-center font-bold text-rose-400 text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        />
-                      </td>
-
-                      {/* Assists */}
-                      <td className="p-1.5">
-                        <Input
-                          id={`stat-matrix-${index}-3`}
-                          type="number"
-                          min="0"
-                          placeholder="5"
-                          value={row.assists}
-                          onChange={(e) => handleRowChange(index, "assists", e.target.value)}
-                          onKeyDown={(e) => handleMatrixKeyDown(e, index, 3)}
-                          onFocus={(e) => e.target.select()}
-                          required
-                          className="h-8 text-center font-bold text-[#F1F5F9] text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        />
-                      </td>
-
-                      {/* First Kills */}
-                      <td className="p-1.5">
-                        <Input
-                          id={`stat-matrix-${index}-4`}
-                          type="number"
-                          min="0"
-                          placeholder="2"
-                          value={row.firstKills}
-                          onChange={(e) => handleRowChange(index, "firstKills", e.target.value)}
-                          onKeyDown={(e) => handleMatrixKeyDown(e, index, 4)}
-                          onFocus={(e) => e.target.select()}
-                          className="h-8 text-center text-emerald-400 text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        />
-                      </td>
-
-                      {/* Clutches Won */}
-                      <td className="p-1.5">
-                        <Input
-                          id={`stat-matrix-${index}-5`}
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          value={row.clutchesWon}
-                          onChange={(e) => handleRowChange(index, "clutchesWon", e.target.value)}
-                          onKeyDown={(e) => handleMatrixKeyDown(e, index, 5)}
-                          onFocus={(e) => e.target.select()}
-                          className="h-8 text-center text-amber-400 font-bold text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        />
-                      </td>
-
-                      {/* Live K/D */}
-                      <td className="p-2.5 text-center">
-                        <span
-                          className={
-                            liveKD >= 1.2
-                              ? "text-emerald-400 font-extrabold"
-                              : liveKD >= 1.0
-                              ? "text-slate-200"
-                              : "text-rose-400"
-                          }
-                        >
-                          {liveKD.toFixed(2)} KD
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* SECTION 4: ANALISIS TRADING KILLS */}
-      <Card>
-        <CardHeader className="py-3.5 px-5 border-b border-[#1C2433]">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Swords className="w-4 h-4 text-rose-400" />
-              <CardTitle className="text-sm font-semibold">{t.matchForm.section4Title}</CardTitle>
-              <Badge variant="outline" className="text-[10px] text-amber-400 border-amber-500/30 bg-amber-500/10">
-                {isEn ? "Coach Tactical Feature" : "Fitur Analisis Coach"}
-              </Badge>
-            </div>
-            <Badge
-              variant={tradeEfficiency >= 60 ? "win" : tradeEfficiency >= 45 ? "draw" : "loss"}
-              className="text-xs font-bold"
-            >
-              {tradeEfficiency}% Trade Rate
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="p-5 space-y-5">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
-            <div className="p-3 rounded-xl bg-[#090C10] border border-[#1C2433]">
-              <span className="text-xs font-semibold text-[#94A3B8] block">{isEn ? "Total Deaths" : "Total Kematian"}</span>
-              <span className="text-2xl font-black text-rose-400">{totalTeamDeaths}</span>
-              <span className="text-[10px] text-[#64748B] block mt-0.5">{isEn ? "5 players aggregate" : "Akumulasi 5 pemain"}</span>
-            </div>
-            <div className="p-3 rounded-xl bg-[#090C10] border border-emerald-500/20">
-              <span className="text-xs font-semibold text-emerald-400 block">{t.matchForm.tradedDeaths}</span>
-              <span className="text-2xl font-black text-emerald-400">{tradeKills}</span>
-              <span className="text-[10px] text-[#64748B] block mt-0.5">{isEn ? "Teammate death avenged immediately" : "Teman mati langsung dibalas"}</span>
-            </div>
-            <div className="p-3 rounded-xl bg-[#090C10] border border-amber-500/20">
-              <span className="text-xs font-semibold text-amber-400 block">{isEn ? "Untraded Deaths" : "Mati Tanpa Balasan"}</span>
-              <span className="text-2xl font-black text-amber-400">{untradedDeaths}</span>
-              <span className="text-[10px] text-[#64748B] block mt-0.5">{isEn ? "Died without a refrag opportunity" : "Mati tanpa sempat di-refrag"}</span>
-            </div>
-          </div>
-
-          {/* Single Stepper Input for Coach */}
-          <div className="p-4 rounded-xl bg-[#090C10] border border-[#1C2433] space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <label className="text-xs font-bold text-white block">
-                  {isEn ? "Trade Kills Counter (Refragged):" : "Penghitung Trade Kills (Refrag):"}
-                </label>
-                <span className="text-[11px] text-[#64748B]">
-                  {isEn ? "Times team instantly traded enemy after teammate death (within 3-5s)" : "Berapa kali tim langsung membalas membunuh musuh saat rekan tim gugur (jeda 3-5 detik)"}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5 self-end sm:self-auto">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setTradeKills((prev) => Math.max(0, prev - 1))}
-                  className="h-8 w-8 p-0 text-sm font-bold"
-                >
-                  -
-                </Button>
-                <input
-                  type="number"
-                  min="0"
-                  max={totalTeamDeaths || 100}
-                  value={tradeKills}
-                  onChange={(e) => setTradeKills(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                  onFocus={(e) => e.target.select()}
-                  title="Trade kill count"
-                  className="w-14 text-center font-bold text-base bg-[#0F141C] border border-[#1C2433] rounded px-1 py-1 text-emerald-400 focus:outline-none focus:border-emerald-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setTradeKills((prev) => Math.min(totalTeamDeaths || 100, prev + 1))}
-                  className="h-8 w-8 p-0 text-sm font-bold"
-                >
-                  +
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Assessment Note */}
-          <div className={`p-3.5 rounded-xl border text-xs leading-relaxed ${
-            tradeEfficiency >= 60
-              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
-              : tradeEfficiency >= 45
-              ? "bg-amber-500/10 border-amber-500/30 text-amber-300"
-              : "bg-rose-500/10 border-rose-500/30 text-rose-300"
-          }`}>
-            {tradeEfficiency >= 60 ? (
-              <p>🔥 <strong>{isEn ? `Excellent Trades (${tradeEfficiency}%):` : `Trade Sangat Baik (${tradeEfficiency}%):`}</strong> {isEn ? "Player spacing and refrag crosshair reaction are tight, team rarely loses men for free." : "Spacing dan reaksi crosshair refrag pemain sangat rapat, tim jarang kehilangan orang secara gratis."}</p>
-            ) : tradeEfficiency >= 45 ? (
-              <p>⚡ <strong>{isEn ? `Standard Trades (${tradeEfficiency}%):` : `Trade Standar (${tradeEfficiency}%):`}</strong> {isEn ? `Trade coordination is solid, but ${untradedDeaths} dry deaths occurred during site rotations.` : `Koordinasi trade cukup solid, namun masih terdapat ${untradedDeaths} kematian tanpa balasan saat rotasi atau isolasi site.`}</p>
-            ) : (
-              <p>⚠️ <strong>{isEn ? `Trades Need Improvement (${tradeEfficiency}%):` : `Trade Perlu Evaluasi (${tradeEfficiency}%):`}</strong> {isEn ? `Too many dry deaths (${untradedDeaths} isolated deaths). Improve crosshair spacing during executions or defensive holds.` : `Terlalu banyak dry deaths (${untradedDeaths} kali mati tanpa balasan). Perbaiki jarak antar pemain saat eksekusi atau defense.`}</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* SECTION 5: EVALUATION & ATTACHMENTS */}
-      <Card>
-        <CardHeader className="py-3.5 px-5 border-b border-[#1C2433]">
-          <CardTitle className="text-sm font-semibold">{t.matchForm.section5Title}</CardTitle>
-        </CardHeader>
-        <CardContent className="p-5 space-y-4">
-          <Textarea
-            rows={3}
-            placeholder={t.matchForm.coachNotesPlaceholder}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            className="text-xs text-[#F1F5F9] leading-relaxed"
-          />
-
-          {/* Attachments Section */}
-          <div className="space-y-3 pt-3 border-t border-[#1C2433]">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-              <label className="text-xs font-semibold text-white flex items-center gap-1.5">
-                <UploadCloud className="w-4 h-4 text-[#FF4655]" />
-                <span>{t.matchDetail.attachmentsTitle}</span>
-              </label>
-              <span className="text-[11px] text-[#94A3B8]">
-                {t.matchDetail.attachmentsSubtitle}
-              </span>
-            </div>
-
-            {/* Drag & Drop Upload Box */}
-            <div className="relative border-2 border-dashed border-[#1C2433] hover:border-[#FF4655]/50 bg-[#090C10] rounded-xl p-5 transition-colors flex flex-col items-center justify-center text-center group cursor-pointer">
-              <input
-                type="file"
-                multiple
-                accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,.pdf"
-                onChange={handleFileUpload}
-                disabled={isCompressing || loading}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-              />
-              <div className="flex flex-col items-center gap-2 pointer-events-none">
-                <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-[#FF4655] group-hover:scale-105 transition-transform">
-                  <UploadCloud className="w-5 h-5" />
-                </div>
-                <div className="text-xs font-semibold text-white">
-                  {isCompressing
-                    ? (isEn ? "Compressing & processing files..." : "Memproses berkas...")
-                    : (isEn ? "Drag & drop files here, or click to browse" : "Drag & drop file di sini, atau klik untuk memilih")}
-                </div>
-                <p className="text-[11px] text-[#94A3B8]">
-                  {isEn
-                    ? "Supports PNG, JPEG, WebP, GIF, and PDF (auto-compressed & stored locally in SQLite)"
-                    : "Mendukung PNG, JPEG, WebP, GIF, dan PDF (terkompresi otomatis & tersimpan lokal di SQLite)"}
-                </p>
-              </div>
-            </div>
-
-            {/* Compression Feedback Banner */}
-            {compressionFeedback && (
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-start gap-2.5 text-xs text-emerald-300">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
-                <span className="leading-relaxed">{compressionFeedback}</span>
-              </div>
-            )}
-
-            {/* Uploaded Attachments Grid */}
-            {attachments.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-1">
-                {attachments.map((att) => (
-                  <div
-                    key={att.id}
-                    className="p-3 rounded-xl bg-[#0F141C] border border-[#1C2433] flex items-center justify-between gap-3 group relative overflow-hidden"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      {att.type === "image" ? (
-                        <div className="w-10 h-10 rounded-lg bg-[#090C10] border border-[#1C2433] overflow-hidden shrink-0">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={att.dataUrl}
-                            alt={att.name}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-10 h-10 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 shrink-0">
-                          <FileText className="w-5 h-5" />
-                        </div>
-                      )}
-
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold text-white truncate" title={att.name}>
-                          {att.name}
-                        </p>
-                        <div className="flex items-center gap-1.5 text-[10px] text-[#94A3B8] mt-0.5">
-                          <span className="px-1.5 py-0.2 rounded bg-[#090C10] border border-[#1C2433] text-emerald-400 font-semibold uppercase">
-                            {att.type === "image" ? "WebP" : "PDF"}
-                          </span>
-                          <span>{formatFileSize(att.sizeBytes)}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveAttachment(att.id)}
-                      className="h-7 w-7 p-0 text-[#94A3B8] hover:text-rose-400 hover:bg-rose-500/10 shrink-0"
-                      title={isEn ? "Remove Attachment" : "Hapus Lampiran"}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* SUBMIT BUTTONS */}
-      <div className="flex items-center justify-end gap-3 pt-2">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => router.back()}
-          disabled={loading}
-        >
-          {t.common.cancel}
-        </Button>
-        <Button
-          type="submit"
-          disabled={loading}
-          className="gap-2 px-6 font-bold shadow-lg shadow-rose-950/50"
-        >
-          {loading ? (
-            <>
-              <RefreshCw className="w-4 h-4 animate-spin" />
-              <span>{t.matchForm.submitSaving}</span>
-            </>
-          ) : (
-            <>
-              <Check className="w-4 h-4" />
-              <span>{initialData ? t.matchForm.submitUpdate : t.matchForm.submitCreate}</span>
-            </>
-          )}
-        </Button>
-      </div>
-    </form>
-  );
+    <footer className="flex flex-col-reverse justify-end gap-3 border-t border-[#1C2433] pt-4 sm:flex-row"><Button type="button" variant="secondary" onClick={() => router.back()} disabled={loading}>{en ? "Cancel" : "Batal"}</Button><Button type="submit" disabled={loading} className="min-w-40 bg-[#C92F3D] text-white hover:bg-[#A91E2C]">{loading && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}{loading ? (en ? "Saving…" : "Menyimpan…") : (en ? "Save match" : "Simpan match")}</Button></footer>
+  </form>;
 }

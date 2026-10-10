@@ -33,53 +33,54 @@ export async function compressImageToWebP(file: File): Promise<CompressionResult
       const img = new Image();
       img.onerror = () => reject(new Error("Gagal memproses gambar"));
       img.onload = () => {
-        // Max bounds for crisp tactical review (Full HD max)
-        const MAX_WIDTH = 1920;
-        const MAX_HEIGHT = 1080;
+        const MAX_SIDE = 1600;
+        const MAX_BYTES = 400 * 1024;
         let width = img.width;
         let height = img.height;
 
-        if (width > MAX_WIDTH || height > MAX_HEIGHT) {
-          if (width / height > MAX_WIDTH / MAX_HEIGHT) {
-            height = Math.round((height * MAX_WIDTH) / width);
-            width = MAX_WIDTH;
-          } else {
-            width = Math.round((width * MAX_HEIGHT) / height);
-            height = MAX_HEIGHT;
-          }
+        if (Math.max(width, height) > MAX_SIDE) {
+          const scale = MAX_SIDE / Math.max(width, height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
         }
 
         const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-
         const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          return reject(new Error("Gagal menginisialisasi canvas compressor"));
-        }
-
-        // Draw with high quality smoothing
+        if (!ctx) return reject(new Error("Gagal menginisialisasi canvas compressor"));
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = "high";
-        ctx.drawImage(img, 0, 0, width, height);
 
-        // Convert to WebP format with quality 0.82
-        let webpDataUrl = canvas.toDataURL("image/webp", 0.82);
-        
-        // If browser doesn't support WebP export fallback to JPEG
-        if (!webpDataUrl.startsWith("data:image/webp")) {
-          webpDataUrl = canvas.toDataURL("image/jpeg", 0.82);
+        let webpDataUrl = "";
+        // Reduce quality first, then dimensions. Never fall back to the source file or another MIME type.
+        for (let attempt = 0; attempt < 18; attempt++) {
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+          webpDataUrl = canvas.toDataURL("image/webp", Math.max(0.35, 0.82 - (attempt % 7) * 0.08));
+          if (!webpDataUrl.startsWith("data:image/webp;base64,")) {
+            return reject(new Error("Browser tidak mendukung ekspor WebP. Gunakan browser yang mendukung WebP."));
+          }
+          const encoded = webpDataUrl.slice(webpDataUrl.indexOf(",") + 1);
+          const bytes = Math.floor((encoded.length * 3) / 4) - (encoded.endsWith("==") ? 2 : encoded.endsWith("=") ? 1 : 0);
+          if (bytes <= MAX_BYTES) break;
+          if (attempt % 7 === 6) {
+            width = Math.max(1, Math.floor(width * 0.85));
+            height = Math.max(1, Math.floor(height * 0.85));
+          }
         }
 
         // Calculate approximate size in bytes from base64
-        const base64Length = webpDataUrl.length - (webpDataUrl.indexOf(",") + 1);
-        const compressedSize = Math.round((base64Length * 3) / 4);
+        const base64 = webpDataUrl.slice(webpDataUrl.indexOf(",") + 1);
+        const padding = base64.endsWith("==") ? 2 : base64.endsWith("=") ? 1 : 0;
+        const compressedSize = Math.floor((base64.length * 3) / 4) - padding;
 
         const savings = Math.max(0, Math.round(((file.size - compressedSize) / file.size) * 100));
         const originalBaseName = file.name.substring(0, file.name.lastIndexOf(".")) || file.name;
 
+        if (compressedSize > MAX_BYTES) return reject(new Error("Screenshot tetap melebihi 400 KB setelah dikompresi. Pilih gambar yang lebih sederhana."));
+
         const attachment: MatchAttachment = {
-          id: `att-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          id: `att-webp-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
           name: `${originalBaseName}.webp`,
           type: "image",
           mimeType: "image/webp",

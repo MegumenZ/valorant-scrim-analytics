@@ -1,6 +1,7 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- Native Valorant art and database attachment previews avoid Vercel image optimization usage. */
 
-import React, { useState } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -35,6 +36,7 @@ import { MAP_METADATA, ValorantMap, VALORANT_AGENTS, getAgentIcon, getMapSplash 
 import { useUserRole } from "../layout/role-context";
 import { MatchAttachment } from "@/lib/db/schema";
 import { calculateKD } from "@/lib/utils/calculations";
+import { canShowMvp, getVisibleScoreboardColumns, sortScoreboardRows } from "@/lib/utils/match-scoreboard";
 import { formatFileSize } from "@/lib/utils/file-compressor";
 import { RoundOutcomeType, RoundWinType } from "@/lib/validations/match";
 import { getOutcomeConfig } from "@/components/matches/match-entry-form";
@@ -58,6 +60,10 @@ export function MatchDetailView({ match, pastMatches = [] }: MatchDetailViewProp
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<MatchAttachment | null>(null);
   const [selectedPdf, setSelectedPdf] = useState<MatchAttachment | null>(null);
+  const imageDialogRef = useRef<HTMLDivElement>(null);
+  const pdfDialogRef = useRef<HTMLDivElement>(null);
+  const imageDialogTitleId = useId();
+  const pdfDialogTitleId = useId();
   const [showTranslatedNotes, setShowTranslatedNotes] = useState(false);
 
   const attachments: MatchAttachment[] = match.parsedAttachments || [];
@@ -88,8 +94,27 @@ export function MatchDetailView({ match, pastMatches = [] }: MatchDetailViewProp
 
   const [isCopiedSummary, setIsCopiedSummary] = useState(false);
 
-  const sortedStats = [...match.playerStats].sort((a, b) => b.acs - a.acs);
+  useEffect(() => {
+    if (!selectedImage && !selectedPdf) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const dialog = selectedImage ? imageDialogRef.current : pdfDialogRef.current;
+    dialog?.querySelector<HTMLElement>("button")?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { setSelectedImage(null); setSelectedPdf(null); }
+      if (event.key !== "Tab" || !dialog) return;
+      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>('button:not(:disabled), [href], iframe, [tabindex]:not([tabindex="-1"])'));
+      if (!focusable.length) return;
+      if (event.shiftKey && document.activeElement === focusable[0]) { event.preventDefault(); focusable.at(-1)?.focus(); }
+      else if (!event.shiftKey && document.activeElement === focusable.at(-1)) { event.preventDefault(); focusable[0].focus(); }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => { window.removeEventListener("keydown", onKeyDown); previousFocus?.focus(); };
+  }, [selectedImage, selectedPdf]);
+
+  const sortedStats = sortScoreboardRows(match.playerStats);
   const topFragger = sortedStats[0];
+  const scoreboardColumns = getVisibleScoreboardColumns(match.playerStats);
+  const showMvp = canShowMvp(match.playerStats);
 
   const handleCopyMatchSummary = () => {
     const topFraggerKd = topFragger ? calculateKD(topFragger.kills, topFragger.deaths) : 0;
@@ -100,18 +125,18 @@ export function MatchDetailView({ match, pastMatches = [] }: MatchDetailViewProp
 🗺️ **Map:** ${match.map} (${match.startSide === "ATTACK" ? "Attack" : "Defense"} Start) | 📅 ${match.matchDate}
 🏆 **Result:** Team SC **${match.scoreTeam} - ${match.scoreOpponent}** ${match.opponentName} (${resultEmoji})
 
-👑 **MVP / Top Fragger:** ${topFragger?.player?.name || "Player"} (${topFragger?.agent}) - ${topFragger?.acs} ACS | ${topFragger?.kills}/${topFragger?.deaths}/${topFragger?.assists} (${topFraggerKd.toFixed(2)} KD)
+${showMvp ? "👑 **MVP:**" : "**Top Fragger:**"} ${topFragger?.player?.name || "Player"} (${topFragger?.agent}) - ${topFragger?.acs ?? "—"} ACS | ${topFragger?.kills}/${topFragger?.deaths}/${topFragger?.assists} (${topFraggerKd.toFixed(2)} KD)
 
 📊 **Team SC Scoreboard:**
-${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔ **${p.acs} ACS** | ${p.kills}/${p.deaths}/${p.assists} | ${p.firstKills} FK${p.clutchesWon > 0 ? ` | ${p.clutchesWon} Clutch` : ""}`).join("\n")}`
+${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔ **${p.acs ?? "—"} ACS** | ${p.kills}/${p.deaths}/${p.assists} | ${p.firstKills} FK${(p.clutchesWon ?? 0) > 0 ? ` | ${p.clutchesWon} Clutch` : ""}`).join("\n")}`
       : `🎮 **SCRIM MATCH SUMMARY - TEAM SC**
 🗺️ **Map:** ${match.map} (${match.startSide === "ATTACK" ? "Attack" : "Defense"} Start) | 📅 ${match.matchDate}
 🏆 **Hasil:** Team SC **${match.scoreTeam} - ${match.scoreOpponent}** ${match.opponentName} (${resultEmoji})
 
-👑 **MVP / Top Fragger:** ${topFragger?.player?.name || "Player"} (${topFragger?.agent}) - ${topFragger?.acs} ACS | ${topFragger?.kills}/${topFragger?.deaths}/${topFragger?.assists} (${topFraggerKd.toFixed(2)} KD)
+${showMvp ? "👑 **MVP:**" : "**Top Fragger:**"} ${topFragger?.player?.name || "Player"} (${topFragger?.agent}) - ${topFragger?.acs ?? "—"} ACS | ${topFragger?.kills}/${topFragger?.deaths}/${topFragger?.assists} (${topFraggerKd.toFixed(2)} KD)
 
 📊 **Scoreboard Tim SC:**
-${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔ **${p.acs} ACS** | ${p.kills}/${p.deaths}/${p.assists} | ${p.firstKills} FK${p.clutchesWon > 0 ? ` | ${p.clutchesWon} Clutch` : ""}`).join("\n")}`;
+${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔ **${p.acs ?? "—"} ACS** | ${p.kills}/${p.deaths}/${p.assists} | ${p.firstKills} FK${(p.clutchesWon ?? 0) > 0 ? ` | ${p.clutchesWon} Clutch` : ""}`).join("\n")}`;
 
     navigator.clipboard.writeText(text.trim());
     setIsCopiedSummary(true);
@@ -189,7 +214,7 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
         {/* Background Map Banner */}
         {mapMeta.listViewIcon && (
           <img
-            src={mapMeta.listViewIcon}
+            src={mapMeta.listViewIcon} width={1280} height={720}
             alt={match.map}
             loading="lazy"
             decoding="async"
@@ -258,189 +283,94 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
       </div>
 
       {/* TACTICAL EXPERT & COACH EVALUATION CARD */}
-      {(() => {
+      {match.parsedRoundTimeline && match.parsedRoundTimeline.length > 0 && match.parsedRoundTimeline.some((round) => round.tradedDeaths != null || round.tradesWon != null) && (() => {
         const tacticalReport = evaluateMatchTactics(match, pastMatches, language);
-        return <TacticalExpertCard report={tacticalReport} />;
+        return tacticalReport ? <TacticalExpertCard report={tacticalReport} /> : null;
       })()}
 
       {/* MATCH PERFORMANCE SCOREBOARD */}
       <Card className="bg-[#0F141C] border-[#1C2433]">
         <CardHeader className="py-4 px-5 border-b border-[#1C2433]">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base font-bold text-white">
-              {t.matchDetail.scoreboardTitle}
-            </CardTitle>
-            <span className="text-xs text-[#94A3B8]">
-              {t.matchDetail.scoreboardSubtitle}
-            </span>
+            <CardTitle className="text-base font-bold text-white">{t.matchDetail.scoreboardTitle}</CardTitle>
+            <span className="text-xs text-[#94A3B8]">{t.matchDetail.scoreboardSubtitle}</span>
           </div>
         </CardHeader>
-
-        <CardContent className="p-0">
-          {/* MOBILE VIEW: Scoreboard Player Cards (md:hidden) */}
-          <div className="md:hidden divide-y divide-[#242e40]/70">
-            {match.playerStats.map((stat, idx) => {
-              const kd = calculateKD(stat.kills, stat.deaths);
-              const isMVP = idx === 0;
-
-              return (
-                <div
-                  key={stat.id}
-                  className={`p-3.5 space-y-2.5 ${
-                    isMVP ? "bg-amber-500/5" : ""
-                  }`}
-                >
-                  {/* Top Bar: Agent, Player, MVP, ACS, KD Badge */}
-                  <div className="flex items-center justify-between gap-2">
+        <CardContent className="overflow-x-auto p-0">
+          <table className="w-full min-w-max text-left border-collapse text-xs">
+            <thead><tr className="border-b border-[#1C2433] bg-[#090C10] text-[#94A3B8] font-semibold text-[11px] uppercase">
+              <th className="sticky left-0 z-10 bg-[#090C10] px-4 py-3">{t.matchDetail.player}</th>
+              <th className="px-4 py-3">{t.matchDetail.agent}</th>
+              <th className="px-4 py-3 text-center">{t.matchDetail.kda}</th>
+              <th className="px-4 py-3 text-center">{t.matchDetail.kdRatio}</th>
+              {scoreboardColumns.firstKills && <th className="px-4 py-3 text-center">{t.matchDetail.firstBlood}</th>}
+              {scoreboardColumns.plants && <th className="px-4 py-3 text-center">Plants</th>}
+              {scoreboardColumns.defuses && <th className="px-4 py-3 text-center">Defuses</th>}
+              {scoreboardColumns.acs && <th className="px-4 py-3 text-right">{t.matchDetail.acs}</th>}
+              {scoreboardColumns.adr && <th className="px-4 py-3 text-right">ADR</th>}
+              {scoreboardColumns.hsPercent && <th className="px-4 py-3 text-right">HS%</th>}
+              {scoreboardColumns.kastPercent && <th className="px-4 py-3 text-right">KAST%</th>}
+              {scoreboardColumns.firstDeaths && <th className="px-4 py-3 text-center">FD</th>}
+              {scoreboardColumns.clutchesWon && <th className="px-4 py-3 text-center">{t.matchDetail.clutch}</th>}
+            </tr></thead>
+            <tbody className="divide-y divide-[#1C2433]">
+              {sortedStats.map((stat, idx) => {
+                const kd = calculateKD(stat.kills, stat.deaths);
+                const isMvpRow = showMvp && idx === 0;
+                return <tr key={stat.id} className={`group transition-colors hover:bg-[#141A24] ${isMvpRow ? "bg-amber-500/5" : ""}`}>
+                  <td className="sticky left-0 z-10 bg-[#0C1017] px-4 py-3.5 font-bold text-[#F1F5F9] transition-colors group-hover:bg-[#141A24]">
                     <div className="flex items-center gap-2">
-                      <img
-                        src={getAgentIcon(stat.agent)}
-                        alt={stat.agent}
-                        className="w-8 h-8 rounded-full bg-[#141a24] border border-[#242e40] shrink-0 object-cover"
-                      />
-                      <div>
-                        <div className="flex items-center gap-1.5 font-bold text-slate-100 text-xs">
-                          {isMVP && <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
-                          <Link
-                            href={`/players/${stat.playerId}`}
-                            className="hover:text-rose-400 transition-colors"
-                          >
-                            {stat.player.name}
-                          </Link>
-                        </div>
-                        <span className="text-[10px] text-slate-400 font-normal">{stat.agent}</span>
-                      </div>
+                      {isMvpRow && <Crown aria-label="MVP" className="h-3.5 w-3.5 shrink-0 text-amber-400" />}
+                      <Link href={`/players/${stat.playerId}`} className="whitespace-nowrap hover:text-rose-400">{stat.player.name}</Link>
                     </div>
-
-                    <div className="flex items-center gap-2">
-                      <div className="text-right">
-                        <div className="text-xs font-black text-rose-400 tabular-nums">
-                          {stat.acs} ACS
-                        </div>
-                      </div>
-                      <Badge
-                        variant={
-                          kd >= 1.2 ? "win" : kd >= 1.0 ? "draw" : "loss"
-                        }
-                        className="text-[10px] px-1.5 py-0.2 font-bold"
-                      >
-                        {kd.toFixed(2)} KD
-                      </Badge>
-                    </div>
-                  </div>
-
-                  {/* 3-Stat Grid: KDA, First Blood, Clutch */}
-                  <div className="grid grid-cols-3 gap-1.5 text-center text-xs pt-1 border-t border-[#242e40]/50">
-                    <div className="p-1.5 rounded-lg bg-[#0e131b] border border-[#242e40]/60">
-                      <div className="text-[9px] text-slate-400">K/D/A</div>
-                      <div className="font-bold text-[11px] tabular-nums">
-                        <span className="text-emerald-400">{stat.kills}</span>/
-                        <span className="text-rose-400">{stat.deaths}</span>/
-                        <span className="text-sky-400">{stat.assists}</span>
-                      </div>
-                    </div>
-
-                    <div className="p-1.5 rounded-lg bg-[#0e131b] border border-[#242e40]/60">
-                      <div className="text-[9px] text-slate-400">First Blood</div>
-                      <div className="font-bold text-[11px] text-emerald-400 tabular-nums">
-                        {stat.firstKills} FK
-                      </div>
-                    </div>
-
-                    <div className="p-1.5 rounded-lg bg-[#0e131b] border border-[#242e40]/60">
-                      <div className="text-[9px] text-slate-400">Clutch 1vX</div>
-                      <div className="font-bold text-[11px] text-amber-400 tabular-nums">
-                        {stat.clutchesWon > 0 ? `${stat.clutchesWon} W` : "-"}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* DESKTOP VIEW: Full Data Table (hidden md:block) */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-[#1C2433] bg-[#090C10] text-[#94A3B8] font-semibold text-[11px]">
-                  <th className="py-3 px-4 sticky left-0 bg-[#090C10] z-10">{t.matchDetail.player}</th>
-                  <th className="py-3 px-4">{t.matchDetail.agent}</th>
-                  <th className="py-3 px-4 text-right">{t.matchDetail.acs}</th>
-                  <th className="py-3 px-4 text-center">{t.matchDetail.kda}</th>
-                  <th className="py-3 px-4 text-center">{t.matchDetail.kdRatio}</th>
-                  <th className="py-3 px-4 text-center">{t.matchDetail.firstBlood}</th>
-                  <th className="py-3 px-4 text-center">{t.matchDetail.clutch}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#1C2433]">
-                {match.playerStats.map((stat, idx) => {
-                  const kd = calculateKD(stat.kills, stat.deaths);
-                  const isMVP = idx === 0;
-
-                  return (
-                    <tr
-                      key={stat.id}
-                      className={`hover:bg-[#141A24] transition-colors group ${
-                        isMVP ? "bg-amber-500/5 font-medium" : ""
-                      }`}
-                    >
-                      <td className="py-3.5 px-4 font-bold text-[#F1F5F9] sticky left-0 bg-[#0C1017] group-hover:bg-[#141A24] z-10 transition-colors">
-                        <div className="flex items-center gap-2">
-                          {isMVP && <Crown className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
-                          <Link
-                            href={`/players/${stat.playerId}`}
-                            className="hover:text-rose-400 transition-colors"
-                          >
-                            {stat.player.name}
-                          </Link>
-                        </div>
-                      </td>
-
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-2">
-                          <img
-                            src={getAgentIcon(stat.agent)}
-                            alt={stat.agent}
-                            className="w-7 h-7 rounded-full bg-[#161D28] border border-[#2A364F] shrink-0 object-cover"
-                          />
-                          <span className="font-semibold text-[#F1F5F9]">{stat.agent}</span>
-                        </div>
-                      </td>
-
-                      <td className="py-3.5 px-4 text-right font-black text-rose-400 text-sm tabular-nums font-tactical">
-                        {stat.acs}
-                      </td>
-
-                      <td className="py-3.5 px-4 text-center font-bold text-[#F1F5F9] tabular-nums">
-                        <span className="text-emerald-400">{stat.kills}</span>
-                        <span className="text-[#64748B] mx-1">/</span>
-                        <span className="text-rose-400">{stat.deaths}</span>
-                        <span className="text-[#64748B] mx-1">/</span>
-                        <span className="text-sky-400">{stat.assists}</span>
-                      </td>
-
-                      <td className="py-3.5 px-4 text-center font-bold tabular-nums">
-                        <span className={kd >= 1.2 ? "text-emerald-400" : kd >= 1.0 ? "text-[#F1F5F9]" : "text-rose-400"}>
-                          {kd.toFixed(2)}
-                        </span>
-                      </td>
-
-                      <td className="py-3.5 px-4 text-center font-bold text-emerald-400 tabular-nums">
-                        {stat.firstKills} FK
-                      </td>
-
-                      <td className="py-3.5 px-4 text-center font-bold text-amber-400 tabular-nums">
-                        {stat.clutchesWon > 0 ? `${stat.clutchesWon} Menang` : "-"}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                  </td>
+                  <td className="px-4 py-3.5"><div className="flex items-center gap-2"><img src={getAgentIcon(stat.agent)} width={28} height={28} loading="lazy" decoding="async" alt={stat.agent} className="h-7 w-7 rounded-full border border-[#2A364F] bg-[#161D28] object-cover" /><span className="font-semibold text-[#F1F5F9]">{stat.agent}</span></div></td>
+                  <td className="px-4 py-3.5 text-center font-bold tabular-nums"><span className="text-emerald-400">{stat.kills}</span><span className="mx-1 text-[#64748B]">/</span><span className="text-rose-400">{stat.deaths}</span><span className="mx-1 text-[#64748B]">/</span><span className="text-sky-400">{stat.assists}</span></td>
+                  <td className="px-4 py-3.5 text-center font-bold tabular-nums"><span className={kd >= 1.2 ? "text-emerald-400" : kd >= 1 ? "text-[#F1F5F9]" : "text-rose-400"}>{kd.toFixed(2)}</span></td>
+                  {scoreboardColumns.firstKills && <td className="px-4 py-3.5 text-center tabular-nums">{stat.firstKills ?? "—"}</td>}
+                  {scoreboardColumns.plants && <td className="px-4 py-3.5 text-center tabular-nums">{stat.plants ?? "—"}</td>}
+                  {scoreboardColumns.defuses && <td className="px-4 py-3.5 text-center tabular-nums">{stat.defuses ?? "—"}</td>}
+                  {scoreboardColumns.acs && <td className="px-4 py-3.5 text-right font-black tabular-nums text-rose-400">{stat.acs ?? "—"}</td>}
+                  {scoreboardColumns.adr && <td className="px-4 py-3.5 text-right tabular-nums">{stat.adr ?? "—"}</td>}
+                  {scoreboardColumns.hsPercent && <td className="px-4 py-3.5 text-right tabular-nums">{stat.hsPercent == null ? "—" : `${stat.hsPercent}%`}</td>}
+                  {scoreboardColumns.kastPercent && <td className="px-4 py-3.5 text-right tabular-nums">{stat.kastPercent == null ? "—" : `${stat.kastPercent}%`}</td>}
+                  {scoreboardColumns.firstDeaths && <td className="px-4 py-3.5 text-center tabular-nums">{stat.firstDeaths ?? "—"}</td>}
+                  {scoreboardColumns.clutchesWon && <td className="px-4 py-3.5 text-center tabular-nums">{stat.clutchesWon ?? "—"}</td>}
+                </tr>;
+              })}
+            </tbody>
+          </table>
         </CardContent>
       </Card>
+
+      {(match.opponentPlayerStats?.length ?? 0) > 0 && (() => {
+        const opponentRows = match.opponentPlayerStats ?? [];
+        const opponentColumns = getVisibleScoreboardColumns(opponentRows);
+        return <Card className="bg-[#0F141C] border-[#1C2433]">
+          <CardHeader className="py-4 px-5 border-b border-[#1C2433]"><CardTitle className="text-base font-bold text-white">{match.opponentName}</CardTitle></CardHeader>
+          <CardContent className="overflow-x-auto p-0">
+            <table className="w-full min-w-max text-left text-xs">
+              <thead><tr className="border-b border-[#1C2433] bg-[#090C10] text-[#94A3B8] text-[11px] uppercase">
+                <th className="px-4 py-3">{t.matchDetail.player}</th><th className="px-4 py-3">{t.matchDetail.agent}</th>
+                <th className="px-4 py-3 text-center">{t.matchDetail.kda}</th><th className="px-4 py-3 text-center">{t.matchDetail.kdRatio}</th>
+                {opponentColumns.firstKills && <th className="px-4 py-3 text-center">{t.matchDetail.firstBlood}</th>}
+                {opponentColumns.plants && <th className="px-4 py-3 text-center">Plants</th>}
+                {opponentColumns.defuses && <th className="px-4 py-3 text-center">Defuses</th>}
+              </tr></thead>
+              <tbody className="divide-y divide-[#1C2433]">{opponentRows.map((stat) => {
+                const kd = calculateKD(stat.kills, stat.deaths);
+                return <tr key={stat.id}>
+                  <td className="px-4 py-3 font-semibold text-white">{stat.displayName}</td><td className="px-4 py-3 text-slate-300">{stat.agent}</td>
+                  <td className="px-4 py-3 text-center font-mono tabular-nums">{stat.kills}/{stat.deaths}/{stat.assists}</td><td className="px-4 py-3 text-center font-mono tabular-nums">{kd.toFixed(2)}</td>
+                  {opponentColumns.firstKills && <td className="px-4 py-3 text-center font-mono tabular-nums">{stat.firstKills ?? "—"}</td>}
+                  {opponentColumns.plants && <td className="px-4 py-3 text-center font-mono tabular-nums">{stat.plants ?? "—"}</td>}
+                  {opponentColumns.defuses && <td className="px-4 py-3 text-center font-mono tabular-nums">{stat.defuses ?? "—"}</td>}
+                </tr>;
+              })}</tbody>
+            </table>
+          </CardContent>
+        </Card>;
+      })()}
 
       {/* ROUND PROGRESSION TIMELINE (IF RECORDED) */}
       {match.parsedRoundTimeline && match.parsedRoundTimeline.length > 0 && (
@@ -785,27 +715,30 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         {att.type === "image" ? (
-                          <div
+                          <button
+                            type="button"
+                            aria-label={isEn ? `Preview ${att.name}` : `Pratinjau ${att.name}`}
                             onClick={() => setSelectedImage(att)}
-                            className="w-10 h-10 rounded-lg bg-[#161D28] border border-[#2A364F] overflow-hidden shrink-0 cursor-pointer relative group/thumb"
+                            className="h-11 w-11 rounded-lg bg-[#161D28] border border-[#2A364F] overflow-hidden shrink-0 cursor-pointer relative group/thumb"
                           >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
-                              src={att.dataUrl}
+                              src={att.dataUrl} width={1600} height={900} loading="lazy" decoding="async"
                               alt={att.name}
                               className="w-full h-full object-cover group-hover/thumb:scale-110 transition-transform"
                             />
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center text-white">
                               <Eye className="w-3.5 h-3.5" />
                             </div>
-                          </div>
+                          </button>
                         ) : (
-                          <div
+                          <button
+                            type="button"
+                            aria-label={isEn ? `Preview ${att.name}` : `Pratinjau ${att.name}`}
                             onClick={() => setSelectedPdf(att)}
-                            className="w-10 h-10 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0 cursor-pointer hover:bg-rose-500/20 transition-colors"
+                            className="h-11 w-11 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-300 shrink-0 cursor-pointer hover:bg-rose-500/20 transition-colors"
                           >
                             <FileText className="w-5 h-5" />
-                          </div>
+                          </button>
                         )}
 
                         <div className="min-w-0 flex-1">
@@ -908,14 +841,14 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
           onClick={() => setSelectedImage(null)}
         >
           <div
-            className="relative max-w-4xl w-full max-h-[90vh] bg-[#141a24] border border-[#242e40] rounded-2xl overflow-hidden shadow-2xl flex flex-col"
+            ref={imageDialogRef} role="dialog" aria-modal="true" aria-labelledby={imageDialogTitleId} tabIndex={-1} className="relative max-w-4xl w-full max-h-[90vh] bg-[#141a24] border border-[#242e40] rounded-2xl overflow-hidden shadow-2xl flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
             <div className="p-4 border-b border-[#242e40] bg-[#0e131b] flex items-center justify-between">
               <div className="flex items-center gap-2 min-w-0">
                 <ImageIcon className="w-4 h-4 text-rose-500 shrink-0" />
-                <span className="font-bold text-slate-100 text-sm truncate">{selectedImage.name}</span>
+                <span id={imageDialogTitleId} className="font-bold text-slate-100 text-sm truncate">{selectedImage.name}</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-400 font-semibold border border-emerald-500/30">
                   {formatFileSize(selectedImage.sizeBytes)}
                 </span>
@@ -934,7 +867,7 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
                   variant="ghost"
                   size="sm"
                   onClick={() => setSelectedImage(null)}
-                  className="h-8 w-8 p-0 text-slate-400 hover:text-white"
+                  aria-label={t.common.close} className="h-11 w-11 p-0 text-[#CBD5E1] hover:text-white"
                 >
                   <X className="w-4 h-4" />
                 </Button>
@@ -943,9 +876,8 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
 
             {/* Modal Body */}
             <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-black/40">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={selectedImage.dataUrl}
+                src={selectedImage.dataUrl} width={1600} height={900} decoding="async"
                 alt={selectedImage.name}
                 className="max-h-[70vh] w-auto object-contain rounded-lg border border-[#242e40]"
               />
@@ -961,14 +893,14 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
           onClick={() => setSelectedPdf(null)}
         >
           <div
-            className="relative max-w-4xl w-full h-[85vh] bg-[#141a24] border border-[#242e40] rounded-2xl overflow-hidden shadow-2xl flex flex-col"
+            ref={pdfDialogRef} role="dialog" aria-modal="true" aria-labelledby={pdfDialogTitleId} tabIndex={-1} className="relative max-w-4xl w-full h-[85vh] bg-[#141a24] border border-[#242e40] rounded-2xl overflow-hidden shadow-2xl flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
             <div className="p-4 border-b border-[#242e40] bg-[#0e131b] flex items-center justify-between">
               <div className="flex items-center gap-2 min-w-0">
                 <FileText className="w-4 h-4 text-rose-500 shrink-0" />
-                <span className="font-bold text-slate-100 text-sm truncate">{selectedPdf.name}</span>
+                <span id={pdfDialogTitleId} className="font-bold text-slate-100 text-sm truncate">{selectedPdf.name}</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] bg-rose-500/10 text-rose-400 font-semibold border border-rose-500/30">
                   {formatFileSize(selectedPdf.sizeBytes)} PDF
                 </span>
@@ -987,7 +919,7 @@ ${sortedStats.map((p, idx) => `${idx + 1}. **${p.player.name}** (${p.agent}) ➔
                   variant="ghost"
                   size="sm"
                   onClick={() => setSelectedPdf(null)}
-                  className="h-8 w-8 p-0 text-slate-400 hover:text-white"
+                  aria-label={t.common.close} className="h-11 w-11 p-0 text-[#CBD5E1] hover:text-white"
                 >
                   <X className="w-4 h-4" />
                 </Button>

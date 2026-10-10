@@ -24,12 +24,13 @@
     --text-dim: #64748b;
   }
 
+  html,
   body {
+    height: 100%;
     background-color: #090c10;
     color: #f1f5f9;
     font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
+    overflow: hidden;
   }
 }
 
