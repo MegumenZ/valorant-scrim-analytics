@@ -328,6 +328,7 @@ export function MatchEntryForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const idempotencyKey = useRef<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const ensureIdempotencyKey = () => {
     if (idempotencyKey.current) return idempotencyKey.current;
@@ -375,7 +376,8 @@ export function MatchEntryForm({
   };
 
   const handleAttachments = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
+    const input = e.target;
+    const files = Array.from(input.files ?? []);
     if (!files.length) return;
     setError("");
     try {
@@ -398,7 +400,7 @@ export function MatchEntryForm({
         err instanceof Error ? err.message : "Gagal memproses screenshot.",
       );
     } finally {
-      e.target.value = "";
+      input.value = "";
     }
   };
 
@@ -721,7 +723,7 @@ export function MatchEntryForm({
               ? "Five players · K/D/A and round events"
               : "Lima pemain · K/D/A dan statistik ronde"}
           </p>
-          <p id="kd-paste-hint" className="mt-1 text-xs text-[#64748B]">
+          <p className="mt-1 text-xs text-[#64748B]">
             {en
               ? "Tip: paste 30/11/8 into the K column to fill K, D, and A at once."
               : "Tip: tempel 30/11/8 di kolom K untuk mengisi K, D, dan A sekaligus."}
@@ -1064,17 +1066,22 @@ export function MatchEntryForm({
           <p className="mt-1 text-sm text-[#CBD5E1]">
             {en ? "Up to 3 screenshots" : "Maksimal 3 screenshot"}
           </p>
-          <label className="mt-4 flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-[#1C2433] p-4 text-sm text-[#F1F5F9] hover:border-[#FF4655]">
-            <Upload className="h-4 w-4" />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-[#1C2433] p-4 text-sm text-[#F1F5F9] transition-colors hover:border-[#FF4655] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF4655]"
+          >
+            <Upload className="h-4 w-4" aria-hidden="true" />
             {en ? "Choose screenshots" : "Pilih screenshot"}
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              className="sr-only"
-              onChange={handleAttachments}
-            />
-          </label>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={handleAttachments}
+          />
           <ul className="mt-3 space-y-2">
             {attachments.map((attachment) => (
               <li
