@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:sync-local": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/sync-turso-to-local.mjs"
   },
   "dependencies": {
     "@libsql/client": "^0.17.4",
