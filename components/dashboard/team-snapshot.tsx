@@ -13,7 +13,12 @@ const TONE_COLOR: Record<Tone, string> = {
   flat: "text-[#94A3B8]",
 };
 
+// Minimum games on a map before we're willing to label it as a strength
+// or weakness. Below this, a single lucky/unlucky match would dominate.
 const MIN_MAP_SAMPLE = 2;
+// A map only counts as a "strength" if it wins more than it loses (>50%).
+// Equal or worse than 50% is not a strength, regardless of ranking position.
+const STRENGTH_WIN_RATE = 50;
 
 interface TeamSnapshotProps {
   summary: DashboardSummary;
@@ -40,12 +45,13 @@ export function TeamSnapshot({ summary }: TeamSnapshotProps) {
   const kdTone: Tone =
     teamKdRatio > 1.05 ? "up" : teamKdRatio < 0.95 ? "down" : "flat";
 
-  // Require at least MIN_MAP_SAMPLE games before calling a map a strength / weakness.
   const rankedMaps = [...mapBreakdown]
     .filter((item) => item.total >= MIN_MAP_SAMPLE)
     .sort((a, b) => b.winRate - a.winRate);
-  const bestMap = rankedMaps[0];
-  const worstMap = rankedMaps[rankedMaps.length - 1];
+  const bestMap = rankedMaps.find((item) => item.winRate > STRENGTH_WIN_RATE);
+  const worstMap = [...rankedMaps]
+    .reverse()
+    .find((item) => item.winRate < STRENGTH_WIN_RATE);
 
   const narration = isEn
     ? `Team SC has played ${totalMatches} scrims with a ${winRate}% win rate (${wins}W · ${losses}L${draws ? ` · ${draws}D` : ""}).`
@@ -85,12 +91,14 @@ export function TeamSnapshot({ summary }: TeamSnapshotProps) {
           map={bestMap}
           isEn={isEn}
           sampleFloor={MIN_MAP_SAMPLE}
+          winRateFloor={STRENGTH_WIN_RATE}
         />
         <MapSignal
           kind="worst"
-          map={bestMap && worstMap !== bestMap ? worstMap : undefined}
+          map={worstMap}
           isEn={isEn}
           sampleFloor={MIN_MAP_SAMPLE}
+          winRateFloor={STRENGTH_WIN_RATE}
         />
       </div>
     </section>
@@ -135,9 +143,16 @@ interface MapSignalProps {
   map?: { map: string; winRate: number; total: number };
   isEn: boolean;
   sampleFloor: number;
+  winRateFloor: number;
 }
 
-function MapSignal({ kind, map, isEn, sampleFloor }: MapSignalProps) {
+function MapSignal({
+  kind,
+  map,
+  isEn,
+  sampleFloor,
+  winRateFloor,
+}: MapSignalProps) {
   const label =
     kind === "best"
       ? isEn
@@ -148,6 +163,14 @@ function MapSignal({ kind, map, isEn, sampleFloor }: MapSignalProps) {
         : "Perlu latihan";
 
   if (!map) {
+    const emptyNote =
+      kind === "best"
+        ? isEn
+          ? `No map above ${winRateFloor}% win rate (≥${sampleFloor} games)`
+          : `Belum ada map >${winRateFloor}% win rate (≥${sampleFloor} game)`
+        : isEn
+          ? `No map below ${winRateFloor}% win rate (≥${sampleFloor} games)`
+          : `Tidak ada map <${winRateFloor}% win rate (≥${sampleFloor} game)`;
     return (
       <div className="flex items-start gap-3">
         <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#1C2433] bg-[#090C10] text-[#475569]">
@@ -158,11 +181,7 @@ function MapSignal({ kind, map, isEn, sampleFloor }: MapSignalProps) {
             {label}
           </p>
           <p className="mt-0.5 text-base font-bold text-[#475569]">—</p>
-          <p className="mt-0.5 text-xs text-[#64748B]">
-            {isEn
-              ? `Need ≥${sampleFloor} games per map`
-              : `Butuh ≥${sampleFloor} game per map`}
-          </p>
+          <p className="mt-0.5 text-xs text-[#64748B]">{emptyNote}</p>
         </div>
       </div>
     );

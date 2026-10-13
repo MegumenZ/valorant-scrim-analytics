@@ -1,10 +1,10 @@
 "use client";
 
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
-  LabelList,
+  Line,
+  LineChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -28,12 +28,22 @@ const MIN_TREND_SAMPLE = 5;
 export function KdTrendChart({ data }: { data: KdTrendPoint[] }) {
   const { language, t } = useTranslation();
   const isEn = language === "en";
+
+  // Recharts treats the X axis as categorical. Two scrims sharing a matchDate
+  // would collapse into one tick, so we key the axis on matchId and format the
+  // tick back to a date. Same pattern as the individual player chart.
+  const chartData = data.map((point) => ({
+    ...point,
+    xKey: `${point.matchDate}#${point.matchId}`,
+  }));
+
   const resultLabel = (result: string) =>
     result === "WIN"
       ? t.common.win
       : result === "LOSS"
         ? t.common.loss
         : t.common.draw;
+
   const description = isEn
     ? `Team K/D for ${data.length} scrims, ordered by date. ${data.map((item) => `${item.matchDate}, ${item.map} against ${item.opponent}, K/D ${item.teamKd.toFixed(2)}`).join(". ")}`
     : `K/D tim dari ${data.length} scrim, diurutkan berdasarkan tanggal. ${data.map((item) => `${item.matchDate}, ${item.map} melawan ${item.opponent}, K/D ${item.teamKd.toFixed(2)}`).join(". ")}`;
@@ -74,13 +84,14 @@ export function KdTrendChart({ data }: { data: KdTrendPoint[] }) {
             aria-describedby="kd-trend-description"
           >
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={data}
+              <LineChart
+                data={chartData}
                 margin={{ top: 24, right: 12, left: -20, bottom: 4 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#1C2433" />
                 <XAxis
-                  dataKey="matchDate"
+                  dataKey="xKey"
+                  tickFormatter={(value: string) => value.split("#")[0]}
                   stroke="#94A3B8"
                   fontSize={10}
                   tickLine={false}
@@ -96,11 +107,15 @@ export function KdTrendChart({ data }: { data: KdTrendPoint[] }) {
                   tickMargin={8}
                   domain={[0, "auto"]}
                 />
+                {/* Break-even reference: K/D = 1 */}
+                <ReferenceLine y={1} stroke="#475569" strokeDasharray="4 4" />
                 <Tooltip
-                  cursor={{ fill: "#1C2433", opacity: 0.55 }}
+                  cursor={{ stroke: "#1C2433", strokeWidth: 1 }}
                   content={({ active, payload }) => {
                     if (!active || !payload?.length) return null;
-                    const item = payload[0].payload as KdTrendPoint;
+                    const item = payload[0].payload as KdTrendPoint & {
+                      xKey: string;
+                    };
                     return (
                       <div className="space-y-1 rounded-lg border border-[#2A364F] bg-[#090C10] p-3 text-xs shadow-xl">
                         <p className="font-semibold text-white">
@@ -130,23 +145,21 @@ export function KdTrendChart({ data }: { data: KdTrendPoint[] }) {
                     );
                   }}
                 />
-                <Bar
+                <Line
+                  type="monotone"
                   dataKey="teamKd"
                   name={t.dashboard.teamKd}
-                  fill="#FF4655"
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={48}
-                >
-                  <LabelList
-                    dataKey="teamKd"
-                    position="top"
-                    formatter={(value) => Number(value).toFixed(2)}
-                    fill="#F8FAFC"
-                    fontSize={11}
-                    fontWeight={700}
-                  />
-                </Bar>
-              </BarChart>
+                  stroke="#FF4655"
+                  strokeWidth={2.5}
+                  dot={{
+                    r: 3,
+                    fill: "#FF4655",
+                    stroke: "#0C1017",
+                    strokeWidth: 2,
+                  }}
+                  activeDot={{ r: 5 }}
+                />
+              </LineChart>
             </ResponsiveContainer>
           </div>
         )}
